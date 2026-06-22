@@ -145,7 +145,7 @@ public class LightInspectorPanel extends CLUIElement {
         });
 
         // General adjustments
-        this.trackIntensity = new CLUITrackpad(CALKeys.PROP_INTENSITY.get(), light.intensity, 0.0f, 100.0f, val -> {
+        this.trackIntensity = new CLUITrackpad(CALKeys.PROP_INTENSITY.get(), light.intensity, 0.0f, 20.0f, val -> {
             light.intensity = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
@@ -159,39 +159,39 @@ public class LightInspectorPanel extends CLUIElement {
         });
 
         // Specific point / spot adjustments
-        this.trackRadius = new CLUITrackpad(CALKeys.PROP_RADIUS.get(), light.radius, 0.1f, 1000.0f, val -> {
+        this.trackRadius = new CLUITrackpad(CALKeys.PROP_RADIUS.get(), light.radius, 0.1f, 64.0f, val -> {
             light.radius = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.5f);
-        this.trackInner = new CLUITrackpad(CALKeys.PROP_INNER_ANGLE.get(), light.innerAngle, 0.0f, 90.0f, val -> {
+        this.trackInner = new CLUITrackpad(CALKeys.PROP_INNER_ANGLE.get(), light.innerAngle, 0.0f, 179.0f, val -> {
             light.innerAngle = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackOuter = new CLUITrackpad(CALKeys.PROP_OUTER_ANGLE.get(), light.outerAngle, 0.0f, 90.0f, val -> {
+        this.trackOuter = new CLUITrackpad(CALKeys.PROP_OUTER_ANGLE.get(), light.outerAngle, 0.0f, 179.0f, val -> {
             light.outerAngle = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackDistance = new CLUITrackpad(CALKeys.PROP_DISTANCE.get(), light.distance, 0.1f, 1000.0f, val -> {
+        this.trackDistance = new CLUITrackpad(CALKeys.PROP_DISTANCE.get(), light.distance, 0.1f, 128.0f, val -> {
             light.distance = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
 
         // Volumetric fog adjustments
-        this.trackFogDispersion = new CLUITrackpad(CALKeys.PANEL_FOG_DISPERSION.get(), light.fogDispersion, 0.0f, 10.0f, val -> {
+        this.trackFogDispersion = new CLUITrackpad(CALKeys.PANEL_FOG_DISPERSION.get(), light.fogDispersion, 0.0f, 5.0f, val -> {
             light.fogDispersion = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
-        this.trackFogDensity = new CLUITrackpad(CALKeys.PANEL_FOG_DENSITY.get(), light.fogDensity, 0.0f, 10.0f, val -> {
+        this.trackFogDensity = new CLUITrackpad(CALKeys.PANEL_FOG_DENSITY.get(), light.fogDensity, 0.005f, 0.5f, val -> {
             light.fogDensity = val;
             if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-        this.trackFogAnisotropy = new CLUITrackpad(CALKeys.PANEL_FOG_ANISOTROPY.get(), light.fogAnisotropy, -10.0f, 10.0f, val -> {
+        }).setArrowStep(0.005f);
+        this.trackFogAnisotropy = new CLUITrackpad(CALKeys.PANEL_FOG_ANISOTROPY.get(), light.fogAnisotropy, -0.95f, 0.95f, val -> {
             light.fogAnisotropy = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
 
         // Shadow adjustments
-        this.trackShadowSoftness = new CLUITrackpad(CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get(), light.shadowSoftness, 0.0f, 5.0f, val -> {
+        this.trackShadowSoftness = new CLUITrackpad(CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get(), light.shadowSoftness, 0.0f, 2.0f, val -> {
             light.shadowSoftness = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.1f);
@@ -211,7 +211,7 @@ public class LightInspectorPanel extends CLUIElement {
             light.goboRotation = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackCookieScale = new CLUITrackpad(CALKeys.PROP_COOKIE_SCALE.get(), light.cookieScale, 0.05f, 10.0f, val -> {
+        this.trackCookieScale = new CLUITrackpad(CALKeys.PROP_COOKIE_SCALE.get(), light.cookieScale, 0.1f, 4.0f, val -> {
             light.cookieScale = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);

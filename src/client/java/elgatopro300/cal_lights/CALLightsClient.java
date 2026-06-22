@@ -32,9 +32,16 @@ public class CALLightsClient implements ClientModInitializer {
     public static KeyBinding editorKeyBinding;
     public static KeyBinding createLightKeyBinding;
 
+    private static final int AUTO_SHADOW_RAMP_STEP = 2;
+    private static int autoShadowRamp = 0;
+
     @Override
     public void onInitializeClient() {
         LOGGER.info("CAL Lights mod initialized on Client!");
+
+        // Install the patcher host so the shared irl-core patcher can reach the game
+        // dir / Iris shaderpacks dir / bundled .irlights patches.
+        org.qualet.irl.patcher.Patcher.install(new elgatopro300.cal_lights.patcher.CALPatcherHost());
 
         editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cal.editor",
@@ -66,6 +73,11 @@ public class CALLightsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             LightSaveManager.tick(client);
             LightManager.INSTANCE.tick();
+
+            if (client.world != null && client.player != null) {
+                elgatopro300.cal_lights.light.auto.AutoLightManager.tick(client.world,
+                    client.player.getX(), client.player.getEyeY(), client.player.getZ());
+            }
             
             while (editorKeyBinding.wasPressed()) {
                 if (client.player != null) {
@@ -151,6 +163,53 @@ public class CALLightsClient implements ClientModInitializer {
                     (long) l.id
                 );
             }
+        }
+
+        // 3. Auto block-lights
+        if (elgatopro300.cal_lights.light.LightConfig.autoLights()) {
+            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            if (mc.player != null && mc.world != null) {
+                Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
+
+                int headroom = Math.max(0, org.qualet.irl.light.LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
+                int feedMax = Math.min(elgatopro300.cal_lights.light.LightConfig.autoLightMax(), headroom);
+
+                int manualShadowPoints = 0;
+                for (LightInstance l : LightManager.INSTANCE.getPointLights()) {
+                    if (l.visible && l.shadowEnabled) {
+                        manualShadowPoints++;
+                    }
+                }
+
+                autoShadowRamp = Math.min(16, autoShadowRamp + AUTO_SHADOW_RAMP_STEP);
+                int shadowBudget = elgatopro300.cal_lights.light.LightConfig.autoLightShadows()
+                    ? Math.min(autoShadowRamp, Math.max(0, 16 - manualShadowPoints))
+                    : 0;
+
+                java.util.List<elgatopro300.cal_lights.light.PlacedLight> autos =
+                    elgatopro300.cal_lights.light.auto.AutoLightManager.nearest(cameraPos, feedMax);
+
+                int granted = 0;
+                for (elgatopro300.cal_lights.light.PlacedLight l : autos) {
+                    if (l == null) continue;
+                    boolean wantShadow = l.autoShadowEligible && granted < shadowBudget;
+                    l.shadows = wantShadow;
+                    if (wantShadow) {
+                        granted++;
+                    }
+
+                    LightRegistry.registerPoint(
+                        (float) l.x, (float) l.y, (float) l.z,
+                        l.r, l.g, l.b,
+                        l.intensity, l.radius,
+                        l.entitiesOnly, l.blocksOnly,
+                        l.anisotropy, l.vlDensity, l.beamStrength, l.bulbSize,
+                        l.shadows, l.id
+                    );
+                }
+            }
+        } else {
+            autoShadowRamp = 0;
         }
 
         LightRegistry.flush();

@@ -55,13 +55,25 @@ public class CALEditorPanel extends CLUIElement {
 
     // Animated popup scales for zoom animations
     private float settingsPopupScale = 0.0f;
+    private float patcherPopupScale = 0.0f;
 
     // Settings Popup State
     public boolean showSettingsPopup = false;
+    public boolean showPatcherPopup = false;
     private boolean draggingGizmoSlider = false;
-    private int selectedSettingsCategory = 0; // 0 = General, 1 = Interfaz, 2 = Teclas
+    private int selectedSettingsCategory = 0; // 0 = General, 1 = Interfaz, 2 = Teclas, 3 = Motor
     private boolean showLanguageDropdown = false;
     public static int activeRebindingKeyIndex = -1;
+
+    // Patcher Panel
+    private CALShaderPatcherPanel patcherPanel = null;
+
+    // Motor Settings Trackpads
+    private final CLUITrackpad trackShadowBlockRadius;
+    private final CLUITrackpad trackAutoLightIntensity;
+    private final CLUITrackpad trackAutoLightReach;
+    private final CLUITrackpad trackAutoLightRadius;
+    private final CLUITrackpad trackAutoLightMax;
 
     public static final IKey[] KEY_NAMES = {
         CALKeys.KEY_PLAY_PAUSE, CALKeys.KEY_ADD_KEYFRAME, CALKeys.KEY_DELETE_KEYFRAME,
@@ -125,6 +137,26 @@ public class CALEditorPanel extends CLUIElement {
     public boolean searchFocused = false;
 
     public CALEditorPanel() {
+        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius, 4f, 96f, val -> {
+            elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius = Math.round(val);
+        }).setArrowStep(1f);
+        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), elgatopro300.cal_lights.light.LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
+            elgatopro300.cal_lights.light.LightConfig.autoLightIntensity = val;
+        }).setArrowStep(0.05f);
+        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH.get(), elgatopro300.cal_lights.light.LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
+            elgatopro300.cal_lights.light.LightConfig.autoLightReach = val;
+        }).setArrowStep(0.05f);
+        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS.get(), elgatopro300.cal_lights.light.LightConfig.autoLightRadius, 8f, 96f, val -> {
+            elgatopro300.cal_lights.light.LightConfig.autoLightRadius = Math.round(val);
+        }).setArrowStep(1f);
+        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX.get(), elgatopro300.cal_lights.light.LightConfig.autoLightMax, 0f, 2000f, val -> {
+            elgatopro300.cal_lights.light.LightConfig.autoLightMax = Math.round(val);
+        }).setArrowStep(10f);
+
+        this.patcherPanel = new CALShaderPatcherPanel(() -> {
+            showPatcherPopup = false;
+        });
+
         rebuildSettings();
     }
 
@@ -181,11 +213,14 @@ public class CALEditorPanel extends CLUIElement {
         float targetStatusBarY = closing ? h : (h - statusBarH);
 
         float targetSettingsScale = showSettingsPopup ? 1.0f : 0.0f;
+        float targetPatcherScale = showPatcherPopup ? 1.0f : 0.0f;
 
         if (CalSettings.INSTANCE.simplifyAnimations) {
             settingsPopupScale = targetSettingsScale;
+            patcherPopupScale = targetPatcherScale;
         } else {
             settingsPopupScale += (targetSettingsScale - settingsPopupScale) * 0.25f;
+            patcherPopupScale += (targetPatcherScale - patcherPopupScale) * 0.25f;
         }
 
         if (currentLeftPanelW < 0) {
@@ -530,27 +565,32 @@ public class CALEditorPanel extends CLUIElement {
         if (activeMenuDropdown == 1) {
             int dropX = 80;
             int dropY = topMenuH;
-            int dropW = 110;
+            int dropW = 120;
             int itemH = 18;
-            int dropH = itemH * 3;
+            int dropH = itemH * 4;
 
             ctx.batcher.box(dropX, dropY, dropX + dropW, dropY + dropH, 0xFF141418);
             ctx.batcher.outline(dropX, dropY, dropX + dropW, dropY + dropH, 0xFFFFAA00, 1);
 
-            // Item 1: Guardar
+            // Item 1: Ajustes
             boolean hover1 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY && ctx.mouseY < dropY + itemH;
             ctx.batcher.box(dropX + 1, dropY + 1, dropX + dropW - 1, dropY + itemH - 1, hover1 ? 0xFF2A2A35 : 0xFF141418);
-            ctx.batcher.text(CALKeys.SAVE.get(), dropX + 8, dropY + 5, hover1 ? 0xFFFFAA00 : 0xFFE0E0E0);
+            ctx.batcher.text(CALKeys.SETTINGS.get(), dropX + 8, dropY + 5, hover1 ? 0xFFFFAA00 : 0xFFE0E0E0);
 
-            // Item 2: Ajustes
+            // Item 2: Guardar
             boolean hover2 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH && ctx.mouseY < dropY + itemH * 2;
             ctx.batcher.box(dropX + 1, dropY + itemH + 1, dropX + dropW - 1, dropY + itemH * 2 - 1, hover2 ? 0xFF2A2A35 : 0xFF141418);
-            ctx.batcher.text(CALKeys.SETTINGS.get(), dropX + 8, dropY + itemH + 5, hover2 ? 0xFFFFAA00 : 0xFFE0E0E0);
+            ctx.batcher.text(CALKeys.SAVE.get(), dropX + 8, dropY + itemH + 5, hover2 ? 0xFFFFAA00 : 0xFFE0E0E0);
 
-            // Item 3: Salir
-            boolean hover3 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 2 && ctx.mouseY < dropY + dropH;
-            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + dropH - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
-            ctx.batcher.text(CALKeys.EXIT.get(), dropX + 8, dropY + itemH * 2 + 5, hover3 ? 0xFFEF5350 : 0xFFE0E0E0);
+            // Item 3: Parchar Shaders
+            boolean hover3 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 2 && ctx.mouseY < dropY + itemH * 3;
+            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + itemH * 3 - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
+            ctx.batcher.text(CALKeys.PATCH_MENU.get(), dropX + 8, dropY + itemH * 2 + 5, hover3 ? 0xFFFFAA00 : 0xFFE0E0E0);
+
+            // Item 4: Salir
+            boolean hover4 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 3 && ctx.mouseY < dropY + dropH;
+            ctx.batcher.box(dropX + 1, dropY + itemH * 3 + 1, dropX + dropW - 1, dropY + dropH - 1, hover4 ? 0xFF2A2A35 : 0xFF141418);
+            ctx.batcher.text(CALKeys.EXIT.get(), dropX + 8, dropY + itemH * 3 + 5, hover4 ? 0xFFEF5350 : 0xFFE0E0E0);
         } else if (activeMenuDropdown == 2) {
             int dropX = 135;
             int dropY = topMenuH;
@@ -642,6 +682,15 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.text(CALKeys.KEYBINDS.get(), pX + 10, pY + headerH + 55, (selectedSettingsCategory == 2) ? 0xFFFFAA00 : 0xFFCCCCCC);
             if (selectedSettingsCategory == 2) {
                 ctx.batcher.box(pX + 2, pY + headerH + 50, pX + 5, pY + headerH + 68, 0xFF1976D2);
+            }
+
+            // Category 4: Motor
+            boolean hoverCat3 = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= pY + headerH + 72 && ctx.mouseY < pY + headerH + 90;
+            int cat3Bg = (selectedSettingsCategory == 3) ? 0xFF1D1D26 : (hoverCat3 ? 0xFF181820 : 0xFF111115);
+            ctx.batcher.box(pX + 2, pY + headerH + 72, pX + sideW - 2, pY + headerH + 90, cat3Bg);
+            ctx.batcher.text(CALKeys.MOTOR.get(), pX + 10, pY + headerH + 77, (selectedSettingsCategory == 3) ? 0xFFFFAA00 : 0xFFCCCCCC);
+            if (selectedSettingsCategory == 3) {
+                ctx.batcher.box(pX + 2, pY + headerH + 72, pX + 5, pY + headerH + 90, 0xFF1976D2);
             }
 
             // Content Area Rendering
@@ -804,6 +853,163 @@ public class CALEditorPanel extends CLUIElement {
                     int keyTextW = MinecraftClient.getInstance().textRenderer.getWidth(keyLabel);
                     ctx.batcher.text(keyLabel, btnX + (btnW3 - keyTextW) / 2, rowY + 3, isRebindable ? 0xFFFFFFFF : 0xFF888899);
                 }
+            } else if (selectedSettingsCategory == 3) {
+                // MOTOR SETTINGS CONTENTS (Two-column layout)
+                int colW = 200;
+                int leftColX = contentX;
+                int rightColX = contentX + 215;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+
+                // --- COLUMNA IZQUIERDA: SOMBRAS & GENERAL ---
+                int curY = startY;
+                ctx.batcher.text(CALKeys.SHADOW_QUALITY.get(), leftColX, curY, 0xFFCCCCCC);
+                curY += 12;
+
+                // Segmented button for shadow quality: LOW, MED, HIGH, ULTRA
+                String[] qLabels = {"LOW", "MED", "HIGH", "ULTRA"};
+                int segW = (colW - 9) / 4;
+                for (int i = 0; i < qLabels.length; i++) {
+                    int btnX = leftColX + i * (segW + 3);
+                    boolean hoverQ = ctx.mouseX >= btnX && ctx.mouseX < btnX + segW && ctx.mouseY >= curY && ctx.mouseY < curY + 14;
+                    boolean isCurrentQ = (elgatopro300.cal_lights.light.LightConfig.shadowQuality == i);
+                    int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
+                    ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, qBg);
+                    ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentQ ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
+                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(qLabels[i]);
+                    ctx.batcher.text(qLabels[i], btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
+                }
+                curY += 20;
+
+                // Shadow Cache
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (elgatopro300.cal_lights.light.LightConfig.shadowCache) {
+                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text(CALKeys.SHADOW_CACHE.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Shadow Blocks
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (elgatopro300.cal_lights.light.LightConfig.shadowBlocks) {
+                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text(CALKeys.SHADOW_BLOCKS.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Shadow Block Radius Trackpad
+                trackShadowBlockRadius.resize(leftColX, curY, colW, 14);
+                trackShadowBlockRadius.setValue(elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius);
+                trackShadowBlockRadius.render(ctx);
+                curY += itemSpacing;
+
+                // Show Guides
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (elgatopro300.cal_lights.light.LightConfig.showGuides) {
+                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text(CALKeys.SHOW_GUIDES.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+
+                // --- COLUMNA DERECHA: AUTO-LUCES ---
+                curY = startY;
+
+                // Auto Lights Enable Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (elgatopro300.cal_lights.light.LightConfig.autoLights) {
+                        ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text(CALKeys.AUTO_LIGHTS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Auto Lights Shadows Checkbox (Only enabled / clickable if autoLights is true)
+                boolean autoLightsOn = elgatopro300.cal_lights.light.LightConfig.autoLights;
+                {
+                    int boxSize = 10;
+                    if (!autoLightsOn) {
+                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF111115);
+                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF282830, 1);
+                        if (elgatopro300.cal_lights.light.LightConfig.autoLightShadows) {
+                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFF555555);
+                        }
+                        ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFF666666);
+                    } else {
+                        boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                        if (elgatopro300.cal_lights.light.LightConfig.autoLightShadows) {
+                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                        }
+                        ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    }
+                }
+                curY += itemSpacing;
+
+                // Trackpads for Auto Lights (Disabled if autoLights is false)
+                if (!autoLightsOn) {
+                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
+                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_INTENSITY.get() + ": " + String.format("%.2f", elgatopro300.cal_lights.light.LightConfig.autoLightIntensity), rightColX + 6, curY + 3, 0xFF666666);
+                    curY += itemSpacing;
+
+                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
+                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_REACH.get() + ": " + String.format("%.2f", elgatopro300.cal_lights.light.LightConfig.autoLightReach), rightColX + 6, curY + 3, 0xFF666666);
+                    curY += itemSpacing;
+
+                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
+                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_RADIUS.get() + ": " + elgatopro300.cal_lights.light.LightConfig.autoLightRadius, rightColX + 6, curY + 3, 0xFF666666);
+                    curY += itemSpacing;
+
+                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
+                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_MAX.get() + ": " + elgatopro300.cal_lights.light.LightConfig.autoLightMax, rightColX + 6, curY + 3, 0xFF666666);
+                    curY += itemSpacing;
+                } else {
+                    trackAutoLightIntensity.resize(rightColX, curY, colW, 14);
+                    trackAutoLightIntensity.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightIntensity);
+                    trackAutoLightIntensity.render(ctx);
+                    curY += itemSpacing;
+
+                    trackAutoLightReach.resize(rightColX, curY, colW, 14);
+                    trackAutoLightReach.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightReach);
+                    trackAutoLightReach.render(ctx);
+                    curY += itemSpacing;
+
+                    trackAutoLightRadius.resize(rightColX, curY, colW, 14);
+                    trackAutoLightRadius.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightRadius);
+                    trackAutoLightRadius.render(ctx);
+                    curY += itemSpacing;
+
+                    trackAutoLightMax.resize(rightColX, curY, colW, 14);
+                    trackAutoLightMax.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightMax);
+                    trackAutoLightMax.render(ctx);
+                    curY += itemSpacing;
+                }
+
+                // Active lights diagnostics string
+                int activeCount = elgatopro300.cal_lights.light.auto.AutoLightManager.count();
+                ctx.batcher.text(CALKeys.AUTO_LIGHT_ACTIVE.get(activeCount), rightColX, curY, 0xFF888899);
             }
 
             // Footer row - Cerrar button
@@ -838,7 +1044,31 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.getCtx().getMatrices().pop();
         }
 
+        // --- RENDER PATCHER POPUP ---
+        if (patcherPopupScale > 0.01f) {
+            // Dark Backdrop Focus overlay with fading opacity
+            int alpha = (int) (0x90 * patcherPopupScale);
+            ctx.batcher.box(0, 0, w, h, (alpha << 24) | 0x0B0B0E);
 
+            // Apply scaling matrix for the popup contents
+            ctx.batcher.getCtx().getMatrices().push();
+            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f, 0.0f);
+            ctx.batcher.getCtx().getMatrices().scale(patcherPopupScale, patcherPopupScale, 1.0f);
+            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f, 0.0f);
+
+            // Patcher Box Dimensions (BBS size: 450x300 or similar)
+            int pW = 450;
+            int pH = 300;
+            int pX = (w - pW) / 2;
+            int pY = (h - pH) / 2;
+
+            if (patcherPanel != null) {
+                patcherPanel.resize(pX, pY, pW, pH);
+                patcherPanel.render(ctx);
+            }
+
+            ctx.batcher.getCtx().getMatrices().pop();
+        }
 
         // --- RENDER VIEWPORT RIGHT-CLICK CONTEXT POPUP ---
         if (showRightClickPopup) {
@@ -951,6 +1181,12 @@ public class CALEditorPanel extends CLUIElement {
 
     @Override
     public boolean scroll(int mx, int my, double amount) {
+        if (showPatcherPopup) {
+            if (patcherPanel != null) {
+                patcherPanel.scroll(mx, my, amount);
+            }
+            return true;
+        }
         if (showSettingsPopup) return true;
 
         
@@ -1003,6 +1239,12 @@ public class CALEditorPanel extends CLUIElement {
 
     @Override
     public boolean mouseClicked(int mx, int my, int btn) {
+        if (showPatcherPopup) {
+            if (patcherPanel != null) {
+                patcherPanel.mouseClicked(mx, my, btn);
+            }
+            return true;
+        }
         if (CLUITrackpad.activeEditingTrackpad != null) {
             if (!CLUITrackpad.activeEditingTrackpad.isHovered(mx, my)) {
                 CLUITrackpad.activeEditingTrackpad.commitEdit();
@@ -1234,6 +1476,11 @@ public class CALEditorPanel extends CLUIElement {
                     activeRebindingKeyIndex = -1;
                     return true;
                 }
+                if (my >= pY + headerH + 72 && my < pY + headerH + 90) {
+                    selectedSettingsCategory = 3;
+                    activeRebindingKeyIndex = -1;
+                    return true;
+                }
             }
 
             // Category Content Clicks
@@ -1330,6 +1577,83 @@ public class CALEditorPanel extends CLUIElement {
                         return true;
                     }
                 }
+            } else if (selectedSettingsCategory == 3) {
+                int colW = 200;
+                int leftColX = contentX;
+                int rightColX = contentX + 215;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+
+                // --- COLUMNA IZQUIERDA CLICKS ---
+                int curY = startY;
+                curY += 12; // Title label offset
+
+                // Shadow Quality segmented buttons
+                String[] qLabels = {"LOW", "MED", "HIGH", "ULTRA"};
+                int segW = (colW - 9) / 4;
+                for (int i = 0; i < qLabels.length; i++) {
+                    int qBtnX = leftColX + i * (segW + 3);
+                    if (mx >= qBtnX && mx < qBtnX + segW && my >= curY && my < curY + 14) {
+                        elgatopro300.cal_lights.light.LightConfig.shadowQuality = i;
+                        return true;
+                    }
+                }
+                curY += 20;
+
+                // Shadow Cache Checkbox click
+                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
+                    elgatopro300.cal_lights.light.LightConfig.shadowCache = !elgatopro300.cal_lights.light.LightConfig.shadowCache;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Shadow Blocks Checkbox click
+                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
+                    elgatopro300.cal_lights.light.LightConfig.shadowBlocks = !elgatopro300.cal_lights.light.LightConfig.shadowBlocks;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Shadow Block Radius Trackpad click
+                if (trackShadowBlockRadius.mouseClicked(mx, my, btn)) {
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Show Guides Checkbox click
+                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
+                    elgatopro300.cal_lights.light.LightConfig.showGuides = !elgatopro300.cal_lights.light.LightConfig.showGuides;
+                    return true;
+                }
+
+                // --- COLUMNA DERECHA CLICKS ---
+                curY = startY;
+
+                // Auto Lights Enable Checkbox click
+                if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                    elgatopro300.cal_lights.light.LightConfig.autoLights = !elgatopro300.cal_lights.light.LightConfig.autoLights;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Auto Lights Shadows Checkbox click
+                boolean autoLightsOn = elgatopro300.cal_lights.light.LightConfig.autoLights;
+                if (autoLightsOn) {
+                    if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                        elgatopro300.cal_lights.light.LightConfig.autoLightShadows = !elgatopro300.cal_lights.light.LightConfig.autoLightShadows;
+                        return true;
+                    }
+                }
+                curY += itemSpacing;
+
+                if (autoLightsOn) {
+                    if (trackAutoLightIntensity.mouseClicked(mx, my, btn) ||
+                        trackAutoLightReach.mouseClicked(mx, my, btn) ||
+                        trackAutoLightRadius.mouseClicked(mx, my, btn) ||
+                        trackAutoLightMax.mouseClicked(mx, my, btn)) {
+                        return true;
+                    }
+                }
             }
 
             // Absorb any click inside modal bounding box to prevent clicks leaking through
@@ -1350,19 +1674,24 @@ public class CALEditorPanel extends CLUIElement {
             if (activeMenuDropdown == 1) {
                 int dropX = 80;
                 int dropY = topMenuH;
-                int dropW = 110;
+                int dropW = 120;
                 int itemH = 18;
-                if (mx >= dropX && mx < dropX + dropW && my >= dropY && my < dropY + itemH * 3) {
+                if (mx >= dropX && mx < dropX + dropW && my >= dropY && my < dropY + itemH * 4) {
                     int clickedIdx = (my - dropY) / itemH;
                     if (clickedIdx == 0) {
+                        showSettingsPopup = true;
+                    } else if (clickedIdx == 1) {
                         LightSaveManager.forceSaveCurrent();
                         MinecraftClient mc = MinecraftClient.getInstance();
                         if (mc.player != null) {
                             mc.player.sendMessage(Text.literal(CALKeys.SAVED_SUCCESS.get()), false);
                         }
-                    } else if (clickedIdx == 1) {
-                        showSettingsPopup = true;
                     } else if (clickedIdx == 2) {
+                        showPatcherPopup = true;
+                        if (patcherPanel != null) {
+                            patcherPanel.reload();
+                        }
+                    } else if (clickedIdx == 3) {
                         MinecraftClient mc = MinecraftClient.getInstance();
                         if (mc.currentScreen != null) {
                             mc.currentScreen.close();
@@ -1525,6 +1854,7 @@ public class CALEditorPanel extends CLUIElement {
 
     @Override
     public boolean mouseReleased(int mx, int my, int btn) {
+        if (showPatcherPopup) return true;
         if (btn == 0) {
             draggingGizmoSlider = false;
             if (draggingLeftBorder || draggingRightBorder || draggingTimelineBorder) {
@@ -1534,7 +1864,16 @@ public class CALEditorPanel extends CLUIElement {
                 return true;
             }
         }
-        if (showSettingsPopup) return true;
+        if (showSettingsPopup) {
+            if (selectedSettingsCategory == 3) {
+                return trackShadowBlockRadius.mouseReleased(mx, my, btn) ||
+                       trackAutoLightIntensity.mouseReleased(mx, my, btn) ||
+                       trackAutoLightReach.mouseReleased(mx, my, btn) ||
+                       trackAutoLightRadius.mouseReleased(mx, my, btn) ||
+                       trackAutoLightMax.mouseReleased(mx, my, btn);
+            }
+            return true;
+        }
 
         float targetTimelineH = (showTimeline && LightGizmo.INSTANCE.getSelectedLight() != null) ? timelineHeight : 0;
         int animTimelineH = (int) (CalSettings.INSTANCE.simplifyAnimations ? targetTimelineH : (currentTimelineH < 0 ? targetTimelineH : currentTimelineH));
@@ -1567,6 +1906,7 @@ public class CALEditorPanel extends CLUIElement {
             rebuildSettings();
             return true;
         }
+        if (showPatcherPopup) return true;
         if (showSettingsPopup) {
             if (btn == 0 && selectedSettingsCategory == 1 && draggingGizmoSlider) {
                 int pW = 520;
@@ -1577,6 +1917,12 @@ public class CALEditorPanel extends CLUIElement {
                 t = Math.max(0.0f, Math.min(1.0f, t));
                 CalSettings.INSTANCE.gizmoSize = t * 10.0f;
                 CalSettings.INSTANCE.save();
+            } else if (selectedSettingsCategory == 3) {
+                return trackShadowBlockRadius.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackAutoLightIntensity.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackAutoLightReach.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackAutoLightRadius.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackAutoLightMax.mouseDragged(mx, my, btn, dx, dy);
             }
             return true;
         }
@@ -1599,6 +1945,13 @@ public class CALEditorPanel extends CLUIElement {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (showPatcherPopup) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                showPatcherPopup = false;
+                return true;
+            }
+            return true;
+        }
         boolean ctrl = Screen.hasControlDown();
         if (ctrl && keyCode == GLFW.GLFW_KEY_Z) {
             CALUndoManager.undo();
@@ -1739,6 +2092,7 @@ public class CALEditorPanel extends CLUIElement {
 
     @Override
     public boolean charTyped(char chr, int modifiers) {
+        if (showPatcherPopup) return true;
         if (showSettingsPopup) return true;
         if (showLeftSidebar && searchFocused) {
             if (chr >= 32 && chr < 127) {

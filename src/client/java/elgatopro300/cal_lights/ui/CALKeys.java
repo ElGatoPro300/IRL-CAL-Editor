@@ -44,15 +44,16 @@ public class CALKeys {
     // Shader Patcher UI Keys
     public static final IKey PATCH_MENU = IKey.lang("cal.ui.patch_menu");
     public static final IKey PATCHER_TITLE = IKey.lang("cal.ui.patcher_title");
-    public static final IKey PATCHER_DESC = IKey.lang("cal.ui.patcher_desc");
-    public static final IKey PATCHER_ORIGINAL = IKey.lang("cal.ui.patcher_original");
-    public static final IKey PATCHER_MODIFIED = IKey.lang("cal.ui.patcher_modified");
-    public static final IKey PATCHER_FILE = IKey.lang("cal.ui.patcher_file");
-    public static final IKey PATCHER_APPLY = IKey.lang("cal.ui.patcher_apply");
-    public static final IKey PATCHER_CREATE = IKey.lang("cal.ui.patcher_create");
-    public static final IKey PATCHER_STATUS = IKey.lang("cal.ui.patcher_status");
-    public static final IKey PATCHER_SUCCESS = IKey.lang("cal.ui.patcher_success");
-    public static final IKey PATCHER_ERROR = IKey.lang("cal.ui.patcher_error");
+    public static final IKey PATCHER_SHADERPACKS = IKey.lang("cal.ui.patcher_shaderpacks");
+    public static final IKey PATCHER_PATCHES = IKey.lang("cal.ui.patcher_patches");
+    public static final IKey PATCHER_NEWPACK = IKey.lang("cal.ui.patcher_newpack");
+    public static final IKey PATCHER_VALIDATE = IKey.lang("cal.ui.patcher_validate");
+    public static final IKey PATCHER_PATCH = IKey.lang("cal.ui.patcher_patch");
+    public static final IKey PATCHER_EMPTYPACKS = IKey.lang("cal.ui.patcher_emptypacks");
+    public static final IKey PATCHER_EMPTYPATCHES = IKey.lang("cal.ui.patcher_emptypatches");
+    public static final IKey PATCHER_STATUS_SELECTBOTH = IKey.lang("cal.ui.patcher_status_selectboth");
+    public static final IKey PATCHER_STATUS_SELECTPACK = IKey.lang("cal.ui.patcher_status_selectpack");
+    public static final IKey PATCHER_STATUS_SELECTPATCH = IKey.lang("cal.ui.patcher_status_selectpatch");
 
     // Inspector UI Keys
     public static final IKey PANEL_POINT_TITLE = IKey.lang("cal.panel.point_title");
@@ -215,4 +216,20 @@ public class CALKeys {
     public static final IKey PROP_BLOCKS_ONLY = IKey.lang("cal.prop.blocks_only");
     public static final IKey PROP_COOKIE_SCALE = IKey.lang("cal.prop.cookie_scale");
     public static final IKey PROP_COOKIE_INVERT = IKey.lang("cal.prop.cookie_invert");
+
+    // Engine / Motor Settings
+    public static final IKey MOTOR = IKey.lang("cal.ui.motor");
+    public static final IKey SHADOW_QUALITY = IKey.lang("cal.ui.shadow_quality");
+    public static final IKey SHADOW_CACHE = IKey.lang("cal.ui.shadow_cache");
+    public static final IKey SHADOW_BLOCKS = IKey.lang("cal.ui.shadow_blocks");
+    public static final IKey SHADOW_BLOCK_RADIUS = IKey.lang("cal.ui.shadow_block_radius");
+    public static final IKey SHOW_GUIDES = IKey.lang("cal.ui.show_guides");
+    public static final IKey AUTO_LIGHTS = IKey.lang("cal.ui.auto_lights");
+    public static final IKey AUTO_LIGHTS_SUB = IKey.lang("cal.ui.auto_lights_sub");
+    public static final IKey AUTO_LIGHT_SHADOWS = IKey.lang("cal.ui.auto_light_shadows");
+    public static final IKey AUTO_LIGHT_INTENSITY = IKey.lang("cal.ui.auto_light_intensity");
+    public static final IKey AUTO_LIGHT_REACH = IKey.lang("cal.ui.auto_light_reach");
+    public static final IKey AUTO_LIGHT_RADIUS = IKey.lang("cal.ui.auto_light_radius");
+    public static final IKey AUTO_LIGHT_MAX = IKey.lang("cal.ui.auto_light_max");
+    public static final IKey AUTO_LIGHT_ACTIVE = IKey.lang("cal.ui.auto_light_active");
 }
