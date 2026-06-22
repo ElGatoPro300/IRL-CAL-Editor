@@ -58,15 +58,15 @@ public class LightAnimation {
         baseRy           = light.ry;
         baseRz           = light.rz;
         baseRadius       = light.radius;
-        baseInnerAngle   = light.innerAngle;
-        baseOuterAngle   = light.outerAngle;
+        baseInnerAngle   = light.angle;
+        baseOuterAngle   = light.soft;
         baseDistance     = light.distance;
         baseFogEnabled    = light.fogEnabled ? 1f : 0f;
-        baseFogDispersion = light.fogDispersion;
-        baseFogDensity   = light.fogDensity;
-        baseFogAnisotropy = light.fogAnisotropy;
+        baseFogDispersion = light.beamStrength;
+        baseFogDensity   = light.vlDensity;
+        baseFogAnisotropy = light.anisotropy;
         baseShadowEnabled = light.shadowEnabled ? 1f : 0f;
-        baseShadowSoftness = light.shadowSoftness;
+        baseShadowSoftness = light.bulbSize;
         baseCaptured = true;
     }
 
@@ -126,15 +126,15 @@ public class LightAnimation {
                 switch (track.property) {
                     case "intensity"       -> light.intensity       = Math.max(0f, val);
                     case "radius"          -> light.radius          = Math.max(0.1f, val);
-                    case "innerAngle"      -> light.innerAngle      = Math.max(0f, val);
-                    case "outerAngle"      -> light.outerAngle      = Math.max(0f, val);
+                    case "angle"           -> light.angle           = Math.max(1f, val);
+                    case "soft"            -> light.soft            = Math.max(0f, val);
                     case "distance"        -> light.distance        = Math.max(0f, val);
                     case "fogEnabled"      -> light.fogEnabled      = val >= 0.5f;
-                    case "fogDispersion"   -> light.fogDispersion   = Math.max(0f, val);
-                    case "fogDensity"      -> light.fogDensity      = Math.max(0f, val);
-                    case "fogAnisotropy"   -> light.fogAnisotropy   = val;
+                    case "beamStrength"    -> light.beamStrength    = Math.max(0f, val);
+                    case "vlDensity"       -> light.vlDensity       = Math.max(0f, val);
+                    case "anisotropy"      -> light.anisotropy      = val;
                     case "shadowEnabled"   -> light.shadowEnabled   = val >= 0.5f;
-                    case "shadowSoftness"  -> light.shadowSoftness  = Math.max(0f, val);
+                    case "bulbSize"        -> light.bulbSize        = Math.max(0f, val);
                 }
             }
         }
@@ -158,15 +158,15 @@ public class LightAnimation {
             case "ry"              -> baseRy;
             case "rz"              -> baseRz;
             case "radius"          -> baseRadius;
-            case "innerAngle"      -> baseInnerAngle;
-            case "outerAngle"      -> baseOuterAngle;
+            case "angle"           -> baseInnerAngle;
+            case "soft"            -> baseOuterAngle;
             case "distance"        -> baseDistance;
             case "fogEnabled"      -> baseFogEnabled;
-            case "fogDispersion"   -> baseFogDispersion;
-            case "fogDensity"      -> baseFogDensity;
-            case "fogAnisotropy"   -> baseFogAnisotropy;
+            case "beamStrength"    -> baseFogDispersion;
+            case "vlDensity"       -> baseFogDensity;
+            case "anisotropy"      -> baseFogAnisotropy;
             case "shadowEnabled"   -> baseShadowEnabled;
-            case "shadowSoftness"  -> baseShadowSoftness;
+            case "bulbSize"        -> baseShadowSoftness;
             default                -> 0f;
         };
     }
@@ -192,9 +192,9 @@ public class LightAnimation {
     public void synchronizeTracks(boolean isSpot) {
         String[] fixedProps;
         if (isSpot) {
-            fixedProps = new String[]{ "transform", "rotation", "color", "intensity", "innerAngle", "outerAngle", "distance", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness" };
+            fixedProps = new String[]{ "transform", "rotation", "color", "intensity", "angle", "soft", "distance", "fogEnabled", "beamStrength", "vlDensity", "anisotropy", "shadowEnabled", "bulbSize" };
         } else {
-            fixedProps = new String[]{ "transform", "color", "intensity", "radius", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness" };
+            fixedProps = new String[]{ "transform", "color", "intensity", "radius", "fogEnabled", "beamStrength", "vlDensity", "anisotropy", "shadowEnabled", "bulbSize" };
         }
 
         List<LightAnimationTrack> newTracks = new ArrayList<>();

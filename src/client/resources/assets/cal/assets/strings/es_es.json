@@ -17,6 +17,7 @@
   "cal.prop.inner_angle": "Ángulo Int",
   "cal.prop.outer_angle": "Ángulo Ext",
   "cal.prop.distance": "Distancia",
+  "cal.prop.soft": "Suavidad",
   "cal.ui.title": "CAL Lights",
   "cal.ui.files": "Archivos",
   "cal.ui.windows": "Ventanas",
@@ -310,5 +311,10 @@
   "cal.ui.auto_light_reach": "Escala Alcance Auto-Luces",
   "cal.ui.auto_light_radius": "Radio Escaneo Auto-Luces",
   "cal.ui.auto_light_max": "Cantidad Máx Auto-Luces",
-  "cal.ui.auto_light_active": "Auto-Luces Activas: %d"
+  "cal.ui.auto_light_active": "Auto-Luces Activas: %d",
+  "cal.prop.place_here": "Colocar Aquí",
+  "cal.prop.aim_look": "Apuntar a la Vista",
+  "cal.prop.direction": "Dirección: %s / %s / %s",
+  "cal.prop.gobo_refresh": "Actualizar Gobos",
+  "cal.prop.gobo_folder": "Abrir Carpeta de Gobos"
 }

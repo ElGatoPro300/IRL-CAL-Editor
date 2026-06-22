@@ -351,8 +351,8 @@ public class LightGizmo {
         float vz = ndx * uy - ndy * ux;
 
         float dist = light.distance;
-        float outerRad = (float) (dist * Math.tan(Math.toRadians(light.outerAngle)));
-        float innerRad = (float) (dist * Math.tan(Math.toRadians(light.innerAngle)));
+        float outerRad = (float) (dist * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
+        float innerRad = (float) (dist * Math.tan(Math.toRadians(light.getInnerAngleDeg() * 0.5f)));
 
         float cx = ndx * dist;
         float cy = ndy * dist;
@@ -384,7 +384,7 @@ public class LightGizmo {
         }
 
         // 2. Draw Inner Base Circle (if distinct from outer circle)
-        if (Math.abs(light.innerAngle - light.outerAngle) > 0.1f) {
+        if (light.soft > 0.1f) {
             float innerA = a * 0.4f; // slightly lower opacity for inner angle boundary
             for (int i = 0; i < segments; i++) {
                 float angle1 = (float) (2.0 * Math.PI * i / segments);

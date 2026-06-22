@@ -66,8 +66,6 @@ public class CALLightsClient implements ClientModInitializer {
 
             LOGGER.info("Initializing CAL Lights Gobo Manager...");
             GoboManager.INSTANCE.init();
-
-            // VoxelShadowSSBO is deleted
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -91,11 +89,12 @@ public class CALLightsClient implements ClientModInitializer {
                     int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                     boolean isSpot = ThreadLocalRandom.current().nextBoolean();
                     if (isSpot) {
-                        LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f);
+                        // angle=35, soft=10, distance=12 (IRL defaults)
+                        LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f);
                         light.persistent = true;
                         client.player.sendMessage(Text.literal("Created Spot Light: " + id), true);
                     } else {
-                        LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 10.0f);
+                        LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 6.0f);
                         light.persistent = true;
                         client.player.sendMessage(Text.literal("Created Point Light: " + id), true);
                     }
@@ -109,19 +108,36 @@ public class CALLightsClient implements ClientModInitializer {
         });
     }
 
+    /**
+     * Feeds all managed lights (manual + auto) into the IRL Core LightRegistry
+     * each frame. The parameter mapping matches the original IRL editor's
+     * LightDriver exactly:
+     *
+     * Point: registerPoint(x, y, z, r, g, b, intensity, radius,
+     *            entitiesOnly, blocksOnly, anisotropy, vlDensity,
+     *            beamStrength, bulbSize, shadows, id)
+     *
+     * Spot:  registerSpot(x, y, z, dx, dy, dz, r, g, b, intensity,
+     *            range, cosOuter, cosInner, entitiesOnly, blocksOnly,
+     *            anisotropy, vlDensity, beamStrength, bulbSize, shadows,
+     *            cookieLayer, cookieRot, cookieScale, cookieFlags, id)
+     */
     private static void registerLightsToIrlCore() {
         LightRegistry.clear();
 
         // 1. Point lights
         for (LightInstance l : LightManager.INSTANCE.getPointLights()) {
             if (l.visible) {
+                // beamStrength is 0 when volumetrics are disabled
+                float bm = l.fogEnabled ? l.beamStrength : 0.0f;
+
                 LightRegistry.registerPoint(
                     l.x, l.y, l.z,
                     l.r, l.g, l.b,
                     l.intensity, l.radius,
                     l.entitiesOnly, l.blocksOnly,
-                    l.fogAnisotropy, l.fogDensity, l.fogEnabled ? l.fogDispersion : 0.0f,
-                    l.shadowSoftness, l.shadowEnabled, (long) l.id
+                    l.anisotropy, l.vlDensity, bm, l.bulbSize,
+                    l.shadowEnabled, (long) l.id
                 );
             }
         }
@@ -129,36 +145,42 @@ public class CALLightsClient implements ClientModInitializer {
         // 2. Spot lights
         for (LightInstance l : LightManager.INSTANCE.getSpotLights()) {
             if (l.visible) {
-                float dx = l.dx, dy = l.dy, dz = l.dz;
-                float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                float sdx = l.dx, sdy = l.dy, sdz = l.dz;
+                float len = (float) Math.sqrt(sdx * sdx + sdy * sdy + sdz * sdz);
                 if (len > 1e-4f) {
-                    dx /= len;
-                    dy /= len;
-                    dz /= len;
+                    sdx /= len;
+                    sdy /= len;
+                    sdz /= len;
                 } else {
-                    dx = 0f;
-                    dy = -1f;
-                    dz = 0f;
+                    sdx = 0f;
+                    sdy = -1f;
+                    sdz = 0f;
                 }
 
-                float outer = l.outerAngle;
-                float inner = Math.min(l.innerAngle, outer);
+                // Derive inner/outer from angle + soft, exactly as the original:
+                // outer = angle, inner = clamp(angle - soft, 1, angle)
+                float outer = l.getOuterAngleDeg();
+                float inner = l.getInnerAngleDeg();
                 float cosOuter = (float) Math.cos(Math.toRadians(outer * 0.5f));
                 float cosInner = (float) Math.cos(Math.toRadians(inner * 0.5f));
 
                 int cookieLayer = GoboManager.INSTANCE.getGoboIndex(l.goboName);
+                // Cookie rotation: stored in degrees in UI, passed in radians to API
                 float cookieRot = (float) Math.toRadians(l.goboRotation);
                 float cookieScale = l.cookieScale;
                 float cookieFlags = l.cookieInvert ? 1.0f : 0.0f;
 
+                // beamStrength is 0 when volumetrics are disabled
+                float bm = l.fogEnabled ? l.beamStrength : 0.0f;
+
                 LightRegistry.registerSpot(
                     l.x, l.y, l.z,
-                    dx, dy, dz,
+                    sdx, sdy, sdz,
                     l.r, l.g, l.b,
                     l.intensity, l.distance, cosOuter, cosInner,
                     l.entitiesOnly, l.blocksOnly,
-                    l.fogAnisotropy, l.fogDensity, l.fogEnabled ? l.fogDispersion : 0.0f,
-                    l.shadowSoftness, l.shadowEnabled,
+                    l.anisotropy, l.vlDensity, bm, l.bulbSize,
+                    l.shadowEnabled,
                     (float) cookieLayer, cookieRot, cookieScale, cookieFlags,
                     (long) l.id
                 );

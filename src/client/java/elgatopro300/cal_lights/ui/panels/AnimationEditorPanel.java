@@ -243,10 +243,10 @@ public class AnimationEditorPanel extends CLUIElement {
             case "color" -> CalLightsIcons.COLOR;
             case "intensity" -> CalLightsIcons.LIGHT;
             case "radius" -> CalLightsIcons.SPHERE;
-            case "innerAngle", "outerAngle" -> CalLightsIcons.ARC;
+            case "angle", "soft" -> CalLightsIcons.ARC;
             case "distance" -> CalLightsIcons.LINE;
-            case "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy" -> CalLightsIcons.FADING;
-            case "shadowEnabled", "shadowSoftness", "shadowIntensity" -> CalLightsIcons.FADING;
+            case "fogEnabled", "beamStrength", "vlDensity", "anisotropy" -> CalLightsIcons.FADING;
+            case "shadowEnabled", "bulbSize" -> CalLightsIcons.FADING;
             default -> CalLightsIcons.HELP;
         };
     }
@@ -259,16 +259,15 @@ public class AnimationEditorPanel extends CLUIElement {
             case "color" -> CALKeys.COLOR.get();
             case "intensity" -> CALKeys.PROP_INTENSITY_LABEL.get();
             case "radius" -> CALKeys.PROP_RADIUS_LABEL.get();
-            case "innerAngle" -> CALKeys.PROP_INNER_ANGLE_LABEL.get();
-            case "outerAngle" -> CALKeys.PROP_OUTER_ANGLE_LABEL.get();
+            case "angle" -> CALKeys.PROP_OUTER_ANGLE_LABEL.get();
+            case "soft" -> CALKeys.PROP_SOFT.get();
             case "distance" -> CALKeys.PROP_DISTANCE_LABEL.get();
             case "shadowEnabled" -> CALKeys.PANEL_SHADOW_ENABLED.get();
-            case "shadowSoftness" -> CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get();
-            case "shadowIntensity" -> CALKeys.PROP_SHADOW_INTENSITY_LABEL.get();
+            case "bulbSize" -> CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get();
             case "fogEnabled" -> CALKeys.PANEL_FOG_ENABLED.get();
-            case "fogDensity" -> CALKeys.PROP_FOG_DENSITY_LABEL.get();
-            case "fogDispersion" -> CALKeys.PROP_FOG_DISPERSION_LABEL.get();
-            case "fogAnisotropy" -> CALKeys.PROP_FOG_ANISOTROPY_LABEL.get();
+            case "vlDensity" -> CALKeys.PROP_FOG_DENSITY_LABEL.get();
+            case "beamStrength" -> CALKeys.PROP_FOG_DISPERSION_LABEL.get();
+            case "anisotropy" -> CALKeys.PROP_FOG_ANISOTROPY_LABEL.get();
             default -> property;
         };
     }
@@ -634,16 +633,15 @@ public class AnimationEditorPanel extends CLUIElement {
 
                     label = getPropertyLabel(selectedTrackObj.property);
                     switch (selectedTrackObj.property) {
-                        case "intensity" -> { minVal = 0.0f; maxVal = 10.0f; }
-                        case "radius" -> { minVal = 0.1f; maxVal = 50.0f; }
-                        case "innerAngle" -> { minVal = 0.0f; maxVal = 90.0f; }
-                        case "outerAngle" -> { minVal = 0.0f; maxVal = 90.0f; }
-                        case "distance" -> { minVal = 0.1f; maxVal = 100.0f; }
-                        case "shadowSoftness" -> { minVal = 0.0f; maxVal = 5.0f; }
-                        case "shadowIntensity" -> { minVal = 0.0f; maxVal = 1.0f; }
-                        case "fogDensity" -> { minVal = 0.0f; maxVal = 10.0f; }
-                        case "fogDispersion" -> { minVal = 0.0f; maxVal = 100.0f; }
-                        case "fogAnisotropy" -> { minVal = -0.99f; maxVal = 0.99f; }
+                        case "intensity" -> { minVal = 0.0f; maxVal = 20.0f; }
+                        case "radius" -> { minVal = 0.1f; maxVal = 64.0f; }
+                        case "angle" -> { minVal = 1.0f; maxVal = 179.0f; }
+                        case "soft" -> { minVal = 0.0f; maxVal = 60.0f; }
+                        case "distance" -> { minVal = 0.1f; maxVal = 128.0f; }
+                        case "bulbSize" -> { minVal = 0.0f; maxVal = 2.0f; }
+                        case "vlDensity" -> { minVal = 0.005f; maxVal = 0.5f; }
+                        case "beamStrength" -> { minVal = 0.0f; maxVal = 5.0f; }
+                        case "anisotropy" -> { minVal = -0.95f; maxVal = 0.95f; }
                     }
 
                     kfValuePad.updateConfig(label, minVal, maxVal);

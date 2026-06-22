@@ -63,6 +63,7 @@ public class CALKeys {
     public static final IKey PROP_INNER_ANGLE = IKey.lang("cal.prop.inner_angle");
     public static final IKey PROP_OUTER_ANGLE = IKey.lang("cal.prop.outer_angle");
     public static final IKey PROP_DISTANCE = IKey.lang("cal.prop.distance");
+    public static final IKey PROP_SOFT = IKey.lang("cal.prop.soft");
     public static final IKey PANEL_FOG_DISPERSION = IKey.lang("cal.panel.fog_dispersion");
     public static final IKey PANEL_FOG_DENSITY = IKey.lang("cal.panel.fog_density");
     public static final IKey PANEL_FOG_ANISOTROPY = IKey.lang("cal.panel.fog_anisotropy");
@@ -232,4 +233,9 @@ public class CALKeys {
     public static final IKey AUTO_LIGHT_RADIUS = IKey.lang("cal.ui.auto_light_radius");
     public static final IKey AUTO_LIGHT_MAX = IKey.lang("cal.ui.auto_light_max");
     public static final IKey AUTO_LIGHT_ACTIVE = IKey.lang("cal.ui.auto_light_active");
+    public static final IKey PROP_PLACE_HERE = IKey.lang("cal.prop.place_here");
+    public static final IKey PROP_AIM_LOOK = IKey.lang("cal.prop.aim_look");
+    public static final IKey PROP_DIRECTION = IKey.lang("cal.prop.direction");
+    public static final IKey PROP_GOBO_REFRESH = IKey.lang("cal.prop.gobo_refresh");
+    public static final IKey PROP_GOBO_FOLDER = IKey.lang("cal.prop.gobo_folder");
 }

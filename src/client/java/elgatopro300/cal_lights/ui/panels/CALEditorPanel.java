@@ -2046,11 +2046,11 @@ public class CALEditorPanel extends CLUIElement {
                 newLight.visible = copiedLight.visible;
                 newLight.fogEnabled = copiedLight.fogEnabled;
                 newLight.name = (copiedLight.name == null ? "" : copiedLight.name) + " (Copy)";
-                newLight.fogDispersion = copiedLight.fogDispersion;
-                newLight.fogDensity = copiedLight.fogDensity;
-                newLight.fogAnisotropy = copiedLight.fogAnisotropy;
+                newLight.beamStrength = copiedLight.fogDispersion;
+                newLight.vlDensity = copiedLight.fogDensity;
+                newLight.anisotropy = copiedLight.fogAnisotropy;
                 newLight.shadowEnabled = copiedLight.shadowEnabled;
-                newLight.shadowSoftness = copiedLight.shadowSoftness;
+                newLight.bulbSize = copiedLight.shadowSoftness;
                 newLight.entitiesOnly = copiedLight.entitiesOnly;
                 newLight.blocksOnly = copiedLight.blocksOnly;
                 newLight.goboName = copiedLight.goboName;

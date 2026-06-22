@@ -62,28 +62,43 @@ public class GoboManager {
         goboNames.add("Noise");
         goboNameToIndex.put("Noise", 3);
 
-        // 2. Scan config/cal_lights/gobos/ directory
+        // 2. Scan config/cal_lights/gobos/ and config/irl-redactor/cookies/ directories
         Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
         Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
+        Path cookiesDir = runDir.resolve("config").resolve("irl-redactor").resolve("cookies");
 
         try {
             if (!Files.exists(gobosDir)) {
                 Files.createDirectories(gobosDir);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(gobosDir)) {
-                for (Path entry : stream) {
-                    String name = entry.getFileName().toString();
-                    if (name.toLowerCase().endsWith(".png")) {
-                        String goboName = name.substring(0, name.length() - 4);
-                        if (!goboNameToIndex.containsKey(goboName)) {
-                            byte[] data = loadAndResizePng(entry);
-                            if (data != null) {
-                                int nextIndex = layersData.size();
-                                layersData.add(data);
-                                goboNames.add(goboName);
-                                goboNameToIndex.put(goboName, nextIndex);
-                            }
+        scanDirectory(gobosDir, layersData);
+        scanDirectory(cookiesDir, layersData);
+    }
+
+    private void scanDirectory(Path dir, List<byte[]> layersData) {
+        if (!Files.exists(dir)) return;
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path entry : stream) {
+                if (Files.isDirectory(entry)) continue;
+                String name = entry.getFileName().toString();
+                String lower = name.toLowerCase();
+                if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+                    String goboName = name;
+                    int lastDot = name.lastIndexOf('.');
+                    if (lastDot > 0) {
+                        goboName = name.substring(0, lastDot);
+                    }
+                    if (!goboNameToIndex.containsKey(goboName)) {
+                        byte[] data = loadAndResizePng(entry);
+                        if (data != null) {
+                            int nextIndex = layersData.size();
+                            layersData.add(data);
+                            goboNames.add(goboName);
+                            goboNameToIndex.put(goboName, nextIndex);
                         }
                     }
                 }

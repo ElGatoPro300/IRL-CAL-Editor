@@ -17,6 +17,7 @@
   "cal.prop.inner_angle": "Inner Ang",
   "cal.prop.outer_angle": "Outer Ang",
   "cal.prop.distance": "Distance",
+  "cal.prop.soft": "Softness",
   "cal.ui.title": "CAL Lights",
   "cal.ui.files": "Files",
   "cal.ui.windows": "Windows",
@@ -310,5 +311,10 @@
   "cal.ui.auto_light_reach": "Auto-Lights Reach Scale",
   "cal.ui.auto_light_radius": "Auto-Lights Scan Radius",
   "cal.ui.auto_light_max": "Auto-Lights Max Count",
-  "cal.ui.auto_light_active": "Active Auto-Lights: %d"
+  "cal.ui.auto_light_active": "Active Auto-Lights: %d",
+  "cal.prop.place_here": "Place Here",
+  "cal.prop.aim_look": "Aim at view",
+  "cal.prop.direction": "Direction: %s / %s / %s",
+  "cal.prop.gobo_refresh": "Refresh Gobos",
+  "cal.prop.gobo_folder": "Open Gobos Folder"
 }
