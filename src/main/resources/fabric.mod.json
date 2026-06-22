@@ -1,0 +1,43 @@
+{
+    "schemaVersion": 1,
+    "id": "cal_lights",
+    "version": "${version}",
+    "name": "CAL Lights",
+    "description": "a lighting graphics engine created specifically for animation",
+    "authors": [
+        "ElGatoPro300"
+    ],
+    "contact": {
+        "homepage": "https://discord.gg/MAHVQBSce6"
+    },
+    "license": "ARR",
+    "icon": "assets/cal/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "elgatopro300.cal_lights.CALLights"
+        ],
+        "client": [
+            "elgatopro300.cal_lights.CALLightsClient"
+        ],
+        "bbs-addon": [
+            "elgatopro300.cal_lights.integration.bbs.BbsAddon"
+        ],
+        "bbs-addon-client": [
+            "elgatopro300.cal_lights.integration.bbs.BbsClientAddon"
+        ]
+    },
+    "mixins": [
+        "cal.mixins.json",
+        {
+            "config": "cal.client.mixins.json",
+            "environment": "client"
+        }
+    ],
+    "depends": {
+        "fabricloader": ">=0.16.14",
+        "minecraft": "~1.21.1",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
+}

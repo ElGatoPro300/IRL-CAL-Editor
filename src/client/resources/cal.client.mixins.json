@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "elgatopro300.cal_lights.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "client-cal-lights-refmap.json",
+  "mixins": [
+    "EntityMixin",
+    "ClientPlayerEntityMixin",
+    "InGameOverlayRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
