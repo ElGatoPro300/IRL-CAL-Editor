@@ -55,7 +55,6 @@ public class CALEditorPanel extends CLUIElement {
 
     // Animated popup scales for zoom animations
     private float settingsPopupScale = 0.0f;
-    private float patcherPopupScale = 0.0f;
 
     // Settings Popup State
     public boolean showSettingsPopup = false;
@@ -88,10 +87,6 @@ public class CALEditorPanel extends CLUIElement {
         }
         CalSettings.INSTANCE.save();
     }
-
-    // Shader Patcher State
-    public boolean showPatcherPopup = false;
-    private CALShaderPatcherPanel patcherPanel = null;
 
     // Right-Click Context Popup State
     private boolean showRightClickPopup = false;
@@ -186,14 +181,11 @@ public class CALEditorPanel extends CLUIElement {
         float targetStatusBarY = closing ? h : (h - statusBarH);
 
         float targetSettingsScale = showSettingsPopup ? 1.0f : 0.0f;
-        float targetPatcherScale = showPatcherPopup ? 1.0f : 0.0f;
 
         if (CalSettings.INSTANCE.simplifyAnimations) {
             settingsPopupScale = targetSettingsScale;
-            patcherPopupScale = targetPatcherScale;
         } else {
             settingsPopupScale += (targetSettingsScale - settingsPopupScale) * 0.25f;
-            patcherPopupScale += (targetPatcherScale - patcherPopupScale) * 0.25f;
         }
 
         if (currentLeftPanelW < 0) {
@@ -540,7 +532,7 @@ public class CALEditorPanel extends CLUIElement {
             int dropY = topMenuH;
             int dropW = 110;
             int itemH = 18;
-            int dropH = itemH * 4;
+            int dropH = itemH * 3;
 
             ctx.batcher.box(dropX, dropY, dropX + dropW, dropY + dropH, 0xFF141418);
             ctx.batcher.outline(dropX, dropY, dropX + dropW, dropY + dropH, 0xFFFFAA00, 1);
@@ -555,15 +547,10 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(dropX + 1, dropY + itemH + 1, dropX + dropW - 1, dropY + itemH * 2 - 1, hover2 ? 0xFF2A2A35 : 0xFF141418);
             ctx.batcher.text(CALKeys.SETTINGS.get(), dropX + 8, dropY + itemH + 5, hover2 ? 0xFFFFAA00 : 0xFFE0E0E0);
 
-            // Item 3: Parchar Shaders
-            boolean hover3 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 2 && ctx.mouseY < dropY + itemH * 3;
-            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + itemH * 3 - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
-            ctx.batcher.text(CALKeys.PATCH_MENU.get(), dropX + 8, dropY + itemH * 2 + 5, hover3 ? 0xFFFFAA00 : 0xFFE0E0E0);
-
-            // Item 4: Salir
-            boolean hover4 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 3 && ctx.mouseY < dropY + dropH;
-            ctx.batcher.box(dropX + 1, dropY + itemH * 3 + 1, dropX + dropW - 1, dropY + dropH - 1, hover4 ? 0xFF2A2A35 : 0xFF141418);
-            ctx.batcher.text(CALKeys.EXIT.get(), dropX + 8, dropY + itemH * 3 + 5, hover4 ? 0xFFEF5350 : 0xFFE0E0E0);
+            // Item 3: Salir
+            boolean hover3 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 2 && ctx.mouseY < dropY + dropH;
+            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + dropH - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
+            ctx.batcher.text(CALKeys.EXIT.get(), dropX + 8, dropY + itemH * 2 + 5, hover3 ? 0xFFEF5350 : 0xFFE0E0E0);
         } else if (activeMenuDropdown == 2) {
             int dropX = 135;
             int dropY = topMenuH;
@@ -851,17 +838,7 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.getCtx().getMatrices().pop();
         }
 
-        if (patcherPopupScale > 0.01f && patcherPanel != null) {
-            ctx.batcher.getCtx().getMatrices().push();
-            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f, 0.0f);
-            ctx.batcher.getCtx().getMatrices().scale(patcherPopupScale, patcherPopupScale, 1.0f);
-            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f, 0.0f);
 
-            patcherPanel.resize(x, y, w, h);
-            patcherPanel.render(ctx);
-
-            ctx.batcher.getCtx().getMatrices().pop();
-        }
 
         // --- RENDER VIEWPORT RIGHT-CLICK CONTEXT POPUP ---
         if (showRightClickPopup) {
@@ -975,10 +952,7 @@ public class CALEditorPanel extends CLUIElement {
     @Override
     public boolean scroll(int mx, int my, double amount) {
         if (showSettingsPopup) return true;
-        if (showPatcherPopup && patcherPanel != null) {
-            patcherPanel.resize(x, y, w, h);
-            return patcherPanel.scroll(mx, my, amount);
-        }
+
         
         float targetLeftPanelW = showLeftSidebar ? leftSidebarW : 0;
         int animLeftPanelW = (int) (CalSettings.INSTANCE.simplifyAnimations ? targetLeftPanelW : (currentLeftPanelW < 0 ? targetLeftPanelW : currentLeftPanelW));
@@ -1042,7 +1016,7 @@ public class CALEditorPanel extends CLUIElement {
         int animRightPanelW = (int) (CalSettings.INSTANCE.simplifyAnimations ? (showRightSidebar ? rightSidebarW : 0) : (currentRightPanelW < 0 ? (showRightSidebar ? rightSidebarW : 0) : currentRightPanelW));
 
         int contentH = h - statusBarH - animTimelineH;
-        if (!showSettingsPopup && !showPatcherPopup && activeMenuDropdown == 0) {
+        if (!showSettingsPopup && activeMenuDropdown == 0) {
             if (timelinePanel != null && timelinePanel.isShowEasingDropdown()) {
                 timelinePanel.mouseClicked(mx, my, btn);
                 return true;
@@ -1119,7 +1093,7 @@ public class CALEditorPanel extends CLUIElement {
         }
 
         // Viewport right click detection
-        if (btn == 1 && !showSettingsPopup && !showPatcherPopup && activeMenuDropdown == 0) {
+        if (btn == 1 && !showSettingsPopup && activeMenuDropdown == 0) {
             if (mx >= leftPanelW && mx < w - animRightPanelW && my >= topMenuH + tabsH && my < h - statusBarH - animTimelineH) {
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client.world != null) {
@@ -1161,7 +1135,7 @@ public class CALEditorPanel extends CLUIElement {
         }
 
         // Border dragging start detection
-        if (btn == 0 && !showSettingsPopup && !showPatcherPopup && activeMenuDropdown == 0) {
+        if (btn == 0 && !showSettingsPopup && activeMenuDropdown == 0) {
             boolean hoverLeftBorder = showLeftSidebar && mx >= leftPanelW - 3 && mx <= leftPanelW + 3 && my >= topMenuH && my < contentH;
             boolean hoverRightBorder = showRightSidebar && mx >= w - animRightPanelW - 3 && mx <= w - animRightPanelW + 3 && my >= topMenuH && my < contentH;
 
@@ -1369,13 +1343,7 @@ public class CALEditorPanel extends CLUIElement {
             return true;
         }
 
-        // --- SHADER PATCHER POPUP CLICKS HANDLING ---
-        if (showPatcherPopup && patcherPanel != null) {
-            patcherPanel.resize(x, y, w, h);
-            if (patcherPanel.mouseClicked(mx, my, btn)) {
-                return true;
-            }
-        }
+
 
         // --- DROPDOWN OVERLAY CLICKS ---
         if (activeMenuDropdown != 0) {
@@ -1384,7 +1352,7 @@ public class CALEditorPanel extends CLUIElement {
                 int dropY = topMenuH;
                 int dropW = 110;
                 int itemH = 18;
-                if (mx >= dropX && mx < dropX + dropW && my >= dropY && my < dropY + itemH * 4) {
+                if (mx >= dropX && mx < dropX + dropW && my >= dropY && my < dropY + itemH * 3) {
                     int clickedIdx = (my - dropY) / itemH;
                     if (clickedIdx == 0) {
                         LightSaveManager.forceSaveCurrent();
@@ -1395,9 +1363,6 @@ public class CALEditorPanel extends CLUIElement {
                     } else if (clickedIdx == 1) {
                         showSettingsPopup = true;
                     } else if (clickedIdx == 2) {
-                        showPatcherPopup = true;
-                        patcherPanel = new CALShaderPatcherPanel(() -> showPatcherPopup = false);
-                    } else if (clickedIdx == 3) {
                         MinecraftClient mc = MinecraftClient.getInstance();
                         if (mc.currentScreen != null) {
                             mc.currentScreen.close();
@@ -1570,9 +1535,7 @@ public class CALEditorPanel extends CLUIElement {
             }
         }
         if (showSettingsPopup) return true;
-        if (showPatcherPopup && patcherPanel != null) {
-            return patcherPanel.mouseReleased(mx, my, btn);
-        }
+
         float targetTimelineH = (showTimeline && LightGizmo.INSTANCE.getSelectedLight() != null) ? timelineHeight : 0;
         int animTimelineH = (int) (CalSettings.INSTANCE.simplifyAnimations ? targetTimelineH : (currentTimelineH < 0 ? targetTimelineH : currentTimelineH));
         int animRightPanelW = (int) (CalSettings.INSTANCE.simplifyAnimations ? (showRightSidebar ? rightSidebarW : 0) : (currentRightPanelW < 0 ? (showRightSidebar ? rightSidebarW : 0) : currentRightPanelW));
@@ -1617,10 +1580,6 @@ public class CALEditorPanel extends CLUIElement {
             }
             return true;
         }
-        if (showPatcherPopup && patcherPanel != null) {
-            return patcherPanel.mouseDragged(mx, my, btn, dx, dy);
-        }
-        
         float targetTimelineH = (showTimeline && LightGizmo.INSTANCE.getSelectedLight() != null) ? timelineHeight : 0;
         int animTimelineH = (int) (CalSettings.INSTANCE.simplifyAnimations ? targetTimelineH : (currentTimelineH < 0 ? targetTimelineH : currentTimelineH));
         int animRightPanelW = (int) (CalSettings.INSTANCE.simplifyAnimations ? (showRightSidebar ? rightSidebarW : 0) : (currentRightPanelW < 0 ? (showRightSidebar ? rightSidebarW : 0) : currentRightPanelW));
@@ -1677,13 +1636,6 @@ public class CALEditorPanel extends CLUIElement {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 showSettingsPopup = false;
                 activeRebindingKeyIndex = -1;
-                return true;
-            }
-            return true;
-        }
-        if (showPatcherPopup) {
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                showPatcherPopup = false;
                 return true;
             }
             return true;
@@ -1746,20 +1698,12 @@ public class CALEditorPanel extends CLUIElement {
                 newLight.fogAnisotropy = copiedLight.fogAnisotropy;
                 newLight.shadowEnabled = copiedLight.shadowEnabled;
                 newLight.shadowSoftness = copiedLight.shadowSoftness;
-                newLight.shadowIntensity = copiedLight.shadowIntensity;
-                newLight.flareEnabled = copiedLight.flareEnabled;
-                newLight.flareSize = copiedLight.flareSize;
-                newLight.flareGlowSize = copiedLight.flareGlowSize;
-                newLight.flareGlowIntensity = copiedLight.flareGlowIntensity;
-                newLight.flareRayLength = copiedLight.flareRayLength;
-                newLight.flareRayThickness = copiedLight.flareRayThickness;
-                newLight.flareRayLength2 = copiedLight.flareRayLength2;
-                newLight.flareRayThickness2 = copiedLight.flareRayThickness2;
-                newLight.flareRayLength3 = copiedLight.flareRayLength3;
-                newLight.flareRayThickness3 = copiedLight.flareRayThickness3;
-                newLight.flareRotation = copiedLight.flareRotation;
-                newLight.flareStartAngle = copiedLight.flareStartAngle;
-                newLight.flareEndAngle = copiedLight.flareEndAngle;
+                newLight.entitiesOnly = copiedLight.entitiesOnly;
+                newLight.blocksOnly = copiedLight.blocksOnly;
+                newLight.goboName = copiedLight.goboName;
+                newLight.goboRotation = copiedLight.goboRotation;
+                newLight.cookieScale = copiedLight.cookieScale;
+                newLight.cookieInvert = copiedLight.cookieInvert;
 
                 if (copiedLight.animation != null) {
                     Gson gson = new Gson();
@@ -1796,7 +1740,6 @@ public class CALEditorPanel extends CLUIElement {
     @Override
     public boolean charTyped(char chr, int modifiers) {
         if (showSettingsPopup) return true;
-        if (showPatcherPopup) return true;
         if (showLeftSidebar && searchFocused) {
             if (chr >= 32 && chr < 127) {
                 searchQuery += chr;

@@ -53,35 +53,17 @@ public class LightInspectorPanel extends CLUIElement {
 
     // Shadow properties
     private final CLUITrackpad trackShadowSoftness;
-    private final CLUITrackpad trackShadowIntensity;
 
-    // Rim light properties
-    private final CLUITrackpad trackRimIntensity;
-    private final CLUITrackpad trackRimPower;
-    private final CLUITrackpad trackRimHardness;
-
-    // Outline properties
-    private final CLUITrackpad trackOutlineIntensity;
-    private final CLUITrackpad trackOutlineThickness;
-    private boolean outlineExpanded = false;
-    private float outlineAnimH = -1f;
-    private final CLUISwitch outlineSwitch;
-
-    // Flare properties
-    private final CLUITrackpad trackFlareGlowSize;
-    private final CLUITrackpad trackFlareGlowIntensity;
-    private final CLUITrackpad trackFlareRayLength;
-    private final CLUITrackpad trackFlareRayThickness;
-    private final CLUITrackpad trackFlareRayLength2;
-    private final CLUITrackpad trackFlareRayThickness2;
-    private final CLUITrackpad trackFlareRayLength3;
-    private final CLUITrackpad trackFlareRayThickness3;
-    private final CLUITrackpad trackFlareRotation;
-    private final CLUITrackpad trackFlareStartAngle;
-    private final CLUITrackpad trackFlareEndAngle;
+    // Exclusions properties
+    private boolean exclusionsExpanded = false;
+    private float exclusionsAnimH = -1f;
+    private final CLUISwitch entitiesOnlySwitch;
+    private final CLUISwitch blocksOnlySwitch;
 
     // Gobo properties
     private final CLUITrackpad trackGoboRotation;
+    private final CLUITrackpad trackCookieScale;
+    private final CLUISwitch cookieInvertSwitch;
     private boolean goboExpanded = false;
     private boolean goboSelectorExpanded = false;
     private float goboAnimH = -1f;
@@ -96,8 +78,6 @@ public class LightInspectorPanel extends CLUIElement {
     private boolean specificExpanded = true;
     private boolean fogExpanded = true;
     private boolean shadowExpanded = true;
-    private boolean rimExpanded = false;
-    private boolean flareExpanded = false;
     private boolean animationExpanded = false;
     private boolean nameFocused = false;
     private int renameCursorIdx = 0;
@@ -108,15 +88,11 @@ public class LightInspectorPanel extends CLUIElement {
     private float specificAnimH = -1f;
     private float fogAnimH = -1f;
     private float shadowAnimH = -1f;
-    private float rimAnimH = -1f;
-    private float flareAnimH = -1f;
     private float animationAnimH = -1f;
 
     // Inline Switches
     private final CLUISwitch fogSwitch;
     private final CLUISwitch shadowSwitch;
-    private final CLUISwitch rimSwitch;
-    private final CLUISwitch flareSwitch;
     private final CLUISwitch animationSwitch;
 
     // Scrolling vertical offset (Y coordinate offset)
@@ -215,99 +191,34 @@ public class LightInspectorPanel extends CLUIElement {
         }).setArrowStep(0.05f);
 
         // Shadow adjustments
-        this.trackShadowSoftness = new CLUITrackpad(CALKeys.PANEL_SHADOW_SOFTNESS.get(), light.shadowSoftness, 0.0f, 5.0f, val -> {
+        this.trackShadowSoftness = new CLUITrackpad(CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get(), light.shadowSoftness, 0.0f, 5.0f, val -> {
             light.shadowSoftness = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.1f);
-        this.trackShadowIntensity = new CLUITrackpad(CALKeys.PANEL_SHADOW_INTENSITY.get(), light.shadowIntensity, 0.0f, 1.0f, val -> {
-            light.shadowIntensity = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
 
-        // Rim light adjustments
-        this.trackRimIntensity = new CLUITrackpad(CALKeys.PROP_RIM_INTENSITY_LABEL.get(), light.rimIntensity, 0.0f, 20.0f, val -> {
-            light.rimIntensity = val;
+        // Exclusions adjustments
+        this.entitiesOnlySwitch = new CLUISwitch(CALKeys.PROP_ENTITIES_ONLY, light.entitiesOnly, val -> {
+            light.entitiesOnly = val;
             if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-        this.trackRimPower = new CLUITrackpad(CALKeys.PROP_RIM_POWER_LABEL.get(), light.rimPower, 0.5f, 16.0f, val -> {
-            light.rimPower = val;
+        });
+        this.blocksOnlySwitch = new CLUISwitch(CALKeys.PROP_BLOCKS_ONLY, light.blocksOnly, val -> {
+            light.blocksOnly = val;
             if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.25f);
-        // 0-1: Fresnel→Cel silhouette | 1-2: Cel→Aristas geométricas (dFdx/dFdy)
-        this.trackRimHardness = new CLUITrackpad(CALKeys.PROP_RIM_HARDNESS_LABEL.get(), light.rimHardness, 0.0f, 2.0f, val -> {
-            light.rimHardness = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
+        });
 
-        // Outline adjustments
-        this.trackOutlineIntensity = new CLUITrackpad(CALKeys.PROP_OUTLINE_INTENSITY_LABEL.get(), light.outlineIntensity, 0.0f, 20.0f, val -> {
-            light.outlineIntensity = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-        this.trackOutlineThickness = new CLUITrackpad(CALKeys.PROP_OUTLINE_THICKNESS.get(), light.outlineThickness, 0.0f, 16.0f, val -> {
-            light.outlineThickness = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-
-        this.trackFlareGlowSize = new CLUITrackpad(CALKeys.PROP_FLARE_GLOW_SIZE_LABEL.get(), light.flareGlowSize, 0.0f, 100.0f, val -> {
-            light.flareGlowSize = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-
-        this.trackFlareGlowIntensity = new CLUITrackpad(CALKeys.PROP_FLARE_GLOW_INTENSITY_LABEL.get(), light.flareGlowIntensity, 0.0f, 10.0f, val -> {
-            light.flareGlowIntensity = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-
-        this.trackFlareRayLength = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_LENGTH_LABEL.get(), light.flareRayLength, 0.0f, 100.0f, val -> {
-            light.flareRayLength = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-
-        this.trackFlareRayThickness = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_THICKNESS_LABEL.get(), light.flareRayThickness, 0.0f, 20.0f, val -> {
-            light.flareRayThickness = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-
-        this.trackFlareRayLength2 = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_LENGTH2_LABEL.get(), light.flareRayLength2, 0.0f, 100.0f, val -> {
-            light.flareRayLength2 = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-
-        this.trackFlareRayThickness2 = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_THICKNESS2_LABEL.get(), light.flareRayThickness2, 0.0f, 20.0f, val -> {
-            light.flareRayThickness2 = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-
-        this.trackFlareRayLength3 = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_LENGTH3_LABEL.get(), light.flareRayLength3, 0.0f, 100.0f, val -> {
-            light.flareRayLength3 = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.1f);
-
-        this.trackFlareRayThickness3 = new CLUITrackpad(CALKeys.PROP_FLARE_RAY_THICKNESS3_LABEL.get(), light.flareRayThickness3, 0.0f, 20.0f, val -> {
-            light.flareRayThickness3 = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.05f);
-
-        this.trackFlareRotation = new CLUITrackpad(CALKeys.PROP_FLARE_ROTATION_LABEL.get(), light.flareRotation, -360.0f, 360.0f, val -> {
-            light.flareRotation = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(1.0f);
-
-        this.trackFlareStartAngle = new CLUITrackpad(CALKeys.PROP_FLARE_START_ANGLE_LABEL.get(), light.flareStartAngle, 0.0f, 180.0f, val -> {
-            light.flareStartAngle = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.5f);
-
-        this.trackFlareEndAngle = new CLUITrackpad(CALKeys.PROP_FLARE_END_ANGLE_LABEL.get(), light.flareEndAngle, 0.0f, 180.0f, val -> {
-            light.flareEndAngle = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setArrowStep(0.5f);
-
+        // Gobo/Cookie adjustments
         this.trackGoboRotation = new CLUITrackpad(CALKeys.PROP_GOBO_ROTATION_LABEL.get(), light.goboRotation, 0.0f, 360.0f, val -> {
             light.goboRotation = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
+        this.trackCookieScale = new CLUITrackpad(CALKeys.PROP_COOKIE_SCALE.get(), light.cookieScale, 0.05f, 10.0f, val -> {
+            light.cookieScale = val;
+            if (onUpdate != null) onUpdate.run();
+        }).setArrowStep(0.05f);
+        this.cookieInvertSwitch = new CLUISwitch(CALKeys.PROP_COOKIE_INVERT, light.cookieInvert, val -> {
+            light.cookieInvert = val;
+            if (onUpdate != null) onUpdate.run();
+        });
 
         // Animation panel
         this.animationPanel = new AnimationEditorPanel(light, onUpdate);
@@ -321,18 +232,6 @@ public class LightInspectorPanel extends CLUIElement {
             light.shadowEnabled = val;
             if (onUpdate != null) onUpdate.run();
         }).setColors(0xFF5C6BC0, 0xFF7986CB, 0xFF283593);
-        this.rimSwitch = new CLUISwitch(CALKeys.PANEL_SHADOW_ENABLED, light.rimEnabled, val -> {
-            light.rimEnabled = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setColors(0xFFE65100, 0xFFFF8F00, 0xFF7B1FA2); // naranja → morado para diferenciarlo
-        this.outlineSwitch = new CLUISwitch(CALKeys.PANEL_OUTLINE_ENABLED, light.outlineEnabled, val -> {
-            light.outlineEnabled = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setColors(0xFF4A148C, 0xFF7B1FA2, 0xFF311B92); // purple theme
-        this.flareSwitch = new CLUISwitch(CALKeys.PANEL_FLARE_ENABLED, light.flareEnabled, val -> {
-            light.flareEnabled = val;
-            if (onUpdate != null) onUpdate.run();
-        }).setColors(0xFF00ACC1, 0xFF26C6DA, 0xFF006064);
         this.animationSwitch = new CLUISwitch(CALKeys.PANEL_FOG_ENABLED, light.animation != null && light.animation.enabled, val -> {
             if (light.animation == null) {
                 light.animation = new LightAnimation();
@@ -369,31 +268,27 @@ public class LightInspectorPanel extends CLUIElement {
         float targetSpecificH = specificExpanded ? (!light.isSpot ? (16 + 3) : (16 + 3 + 16 + 3 + 16 + 3 + 16 + 3)) : 0;
         float targetFogH = fogExpanded ? (light.fogEnabled ? (16 + 3 + 16 + 3 + 16 + 3 + 16 + 3) : (16 + 3)) : 0;
         float targetShadowH = shadowExpanded ? (light.shadowEnabled ? (16 + 3 + 16 + 3) : (16 + 3)) : 0;
-        float targetRimH = rimExpanded ? (light.rimEnabled ? (16 + 3 + 16 + 3 + 16 + 3 + 16 + 3 + 16 + 3) : (16 + 3)) : 0;
-        float targetOutlineH = outlineExpanded ? (light.outlineEnabled ? (16 + 3 + 16 + 3 + 16 + 3) : (16 + 3)) : 0;
-        float targetFlareH = flareExpanded ? (light.flareEnabled ? (16 + 3 + 11 * (16 + 3)) : (16 + 3)) : 0;
+        float targetExclusionsH = exclusionsExpanded ? (16 + 3 + 16 + 3) : 0;
         float targetAnimationH = animationExpanded ? (16 + 3) : 0;
 
         boolean showGobo = light.isSpot;
         int numGobos = 1 + GoboManager.INSTANCE.getGoboNames().size();
-        float targetGoboH = showGobo ? (goboExpanded ? ((16 + 3) + (goboSelectorExpanded ? numGobos * (16 + 3) : 0) + (16 + 3)) : 0) : 0;
+        float targetGoboH = showGobo ? (goboExpanded ? ((16 + 3) + (goboSelectorExpanded ? numGobos * (16 + 3) : 0) + (16 + 3) + (16 + 3) + (16 + 3)) : 0) : 0;
 
         if (transformAnimH < 0) transformAnimH = targetTransformH;
         if (lightAnimH < 0) lightAnimH = targetLightH;
         if (specificAnimH < 0) specificAnimH = targetSpecificH;
         if (fogAnimH < 0) fogAnimH = targetFogH;
         if (shadowAnimH < 0) shadowAnimH = targetShadowH;
-        if (rimAnimH < 0) rimAnimH = targetRimH;
-        if (outlineAnimH < 0) outlineAnimH = targetOutlineH;
-        if (flareAnimH < 0) flareAnimH = targetFlareH;
+        if (exclusionsAnimH < 0) exclusionsAnimH = targetExclusionsH;
         if (animationAnimH < 0) animationAnimH = targetAnimationH;
         if (goboAnimH < 0) goboAnimH = targetGoboH;
 
         fogSwitch.setValue(light.fogEnabled);
         shadowSwitch.setValue(light.shadowEnabled);
-        rimSwitch.setValue(light.rimEnabled);
-        outlineSwitch.setValue(light.outlineEnabled);
-        flareSwitch.setValue(light.flareEnabled);
+        entitiesOnlySwitch.setValue(light.entitiesOnly);
+        blocksOnlySwitch.setValue(light.blocksOnly);
+        cookieInvertSwitch.setValue(light.cookieInvert);
         animationSwitch.setValue(light.animation != null && light.animation.enabled);
 
         if (CalSettings.INSTANCE.simplifyAnimations) {
@@ -402,9 +297,7 @@ public class LightInspectorPanel extends CLUIElement {
             specificAnimH = targetSpecificH;
             fogAnimH = targetFogH;
             shadowAnimH = targetShadowH;
-            rimAnimH = targetRimH;
-            outlineAnimH = targetOutlineH;
-            flareAnimH = targetFlareH;
+            exclusionsAnimH = targetExclusionsH;
             animationAnimH = targetAnimationH;
             goboAnimH = targetGoboH;
         } else {
@@ -413,9 +306,7 @@ public class LightInspectorPanel extends CLUIElement {
             specificAnimH += (targetSpecificH - specificAnimH) * 0.25f;
             fogAnimH += (targetFogH - fogAnimH) * 0.25f;
             shadowAnimH += (targetShadowH - shadowAnimH) * 0.25f;
-            rimAnimH += (targetRimH - rimAnimH) * 0.25f;
-            outlineAnimH += (targetOutlineH - outlineAnimH) * 0.25f;
-            flareAnimH += (targetFlareH - flareAnimH) * 0.25f;
+            exclusionsAnimH += (targetExclusionsH - exclusionsAnimH) * 0.25f;
             animationAnimH += (targetAnimationH - animationAnimH) * 0.25f;
             goboAnimH += (targetGoboH - goboAnimH) * 0.25f;
         }
@@ -705,12 +596,6 @@ public class LightInspectorPanel extends CLUIElement {
                 trackShadowSoftness.resize(x + 10, drawY, w - 20, elementH);
                 trackShadowSoftness.setValue(light.shadowSoftness);
                 trackShadowSoftness.render(ctx);
-                drawY += elementH + gap;
-
-                // Intensity
-                trackShadowIntensity.resize(x + 10, drawY, w - 20, elementH);
-                trackShadowIntensity.setValue(light.shadowIntensity);
-                trackShadowIntensity.render(ctx);
             }
 
             ctx.batcher.unclip();
@@ -718,199 +603,29 @@ public class LightInspectorPanel extends CLUIElement {
         }
 
         // ==========================================
-        // 6. RIM LIGHT (CONTORNO FRESNEL)
+        // 5.5. EXCLUSIONES (EXCLUSIONS)
         // ==========================================
-        boolean hoverRim = ctx.mouseX >= x + 8 && ctx.mouseX < x + w - 8 && ctx.mouseY >= currentY && ctx.mouseY < currentY + headerH;
-        int rimBg = hoverRim ? 0xFFBF360C : 0xFF8D3200;
-        ctx.batcher.box(x + 8, currentY, x + w - 8, currentY + headerH, rimBg);
-        ctx.batcher.icon(rimExpanded ? CalLightsIcons.ARROW_DOWN : CalLightsIcons.ARROW_RIGHT, x + 12, currentY + 1, 0xFFFFFFFF);
-        ctx.batcher.icon(CalLightsIcons.FADING, x + 28, currentY + 1, 0xFFFF8C00);
-        ctx.batcher.text(CALKeys.PANEL_RIM_LIGHT.get(), x + 46, currentY + 5, 0xFFFFFFFF);
+        boolean hoverExcl = ctx.mouseX >= x + 8 && ctx.mouseX < x + w - 8 && ctx.mouseY >= currentY && ctx.mouseY < currentY + headerH;
+        int exclBg = hoverExcl ? 0xFF00796B : 0xFF004D40; // teal theme
+        ctx.batcher.box(x + 8, currentY, x + w - 8, currentY + headerH, exclBg);
+        ctx.batcher.icon(exclusionsExpanded ? CalLightsIcons.ARROW_DOWN : CalLightsIcons.ARROW_RIGHT, x + 12, currentY + 1, 0xFFFFFFFF);
+        ctx.batcher.icon(CalLightsIcons.INVISIBLE, x + 28, currentY + 1, 0xFFFFFFFF);
+        ctx.batcher.text(CALKeys.PANEL_EXCLUSIONS.get(), x + 46, currentY + 5, 0xFFFFFFFF);
         currentY += headerH + gap;
 
-        int animH_rim = (int) rimAnimH;
-        if (animH_rim > 0) {
-            ctx.batcher.clip(x + 2, currentY, w - 4, animH_rim);
+        int animH_excl = (int) exclusionsAnimH;
+        if (animH_excl > 0) {
+            ctx.batcher.clip(x + 2, currentY, w - 4, animH_excl);
 
-            rimSwitch.resize(x, currentY, w, elementH);
-            rimSwitch.render(ctx);
-
-            int drawY = currentY + elementH + gap;
-            if (light.rimEnabled) {
-                trackRimIntensity.resize(x + 10, drawY, w - 20, elementH);
-                trackRimIntensity.setValue(light.rimIntensity);
-                trackRimIntensity.render(ctx);
-                drawY += elementH + gap;
-
-                trackRimPower.resize(x + 10, drawY, w - 20, elementH);
-                trackRimPower.setValue(light.rimPower);
-                trackRimPower.render(ctx);
-                drawY += elementH + gap;
-
-                trackRimHardness.resize(x + 10, drawY, w - 20, elementH);
-                trackRimHardness.setValue(light.rimHardness);
-                trackRimHardness.render(ctx);
-                drawY += elementH + gap;
-
-                // Direction selector button row [ Atras ] [ Frente ] [ Ambos ]
-                int btnW = (w - 24) / 3;
-
-                // BACK Button
-                boolean hoverBack = ctx.mouseX >= x + 10 && ctx.mouseX < x + 10 + btnW && ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
-                int backBg = (light.rimDirection == 0.0f) ? 0xFF00796B : (hoverBack ? 0xFF2A2A35 : 0xFF1C1C22);
-                int backBorder = (light.rimDirection == 0.0f) ? 0xFF00F0FF : 0xFF2D2D38;
-                ctx.batcher.box(x + 10, drawY, x + 10 + btnW, drawY + elementH, backBg);
-                ctx.batcher.outline(x + 10, drawY, x + 10 + btnW, drawY + elementH, backBorder, 1);
-                int bTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_RIM_DIR_BACK.get());
-                ctx.batcher.text(CALKeys.PROP_RIM_DIR_BACK.get(), x + 10 + (btnW - bTextW) / 2, drawY + 4, 0xFFFFFFFF);
-
-                // FRONT Button
-                boolean hoverFront = ctx.mouseX >= x + 10 + btnW + 2 && ctx.mouseX < x + 10 + (btnW * 2) + 2 && ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
-                int frontBg = (light.rimDirection == 1.0f) ? 0xFF00796B : (hoverFront ? 0xFF2A2A35 : 0xFF1C1C22);
-                int frontBorder = (light.rimDirection == 1.0f) ? 0xFF00F0FF : 0xFF2D2D38;
-                ctx.batcher.box(x + 10 + btnW + 2, drawY, x + 10 + (btnW * 2) + 2, drawY + elementH, frontBg);
-                ctx.batcher.outline(x + 10 + btnW + 2, drawY, x + 10 + (btnW * 2) + 2, drawY + elementH, frontBorder, 1);
-                int fTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_RIM_DIR_FRONT.get());
-                ctx.batcher.text(CALKeys.PROP_RIM_DIR_FRONT.get(), x + 10 + btnW + 2 + (btnW - fTextW) / 2, drawY + 4, 0xFFFFFFFF);
-
-                // BOTH Button
-                boolean hoverBoth = ctx.mouseX >= x + 10 + (btnW * 2) + 4 && ctx.mouseX < x + w - 10 && ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
-                int bothBg = (light.rimDirection == 2.0f) ? 0xFF00796B : (hoverBoth ? 0xFF2A2A35 : 0xFF1C1C22);
-                int bothBorder = (light.rimDirection == 2.0f) ? 0xFF00F0FF : 0xFF2D2D38;
-                ctx.batcher.box(x + 10 + (btnW * 2) + 4, drawY, x + w - 10, drawY + elementH, bothBg);
-                ctx.batcher.outline(x + 10 + (btnW * 2) + 4, drawY, x + w - 10, drawY + elementH, bothBorder, 1);
-                int boTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_RIM_DIR_BOTH.get());
-                ctx.batcher.text(CALKeys.PROP_RIM_DIR_BOTH.get(), x + 10 + (btnW * 2) + 4 + (btnW - boTextW) / 2, drawY + 4, 0xFFFFFFFF);
-            }
-
-            ctx.batcher.unclip();
-            currentY += animH_rim;
-        }
-
-        // ==========================================
-        // 6.5. OUTLINE (CONTOUR)
-        // ==========================================
-        boolean hoverOutline = ctx.mouseX >= x + 8 && ctx.mouseX < x + w - 8 && ctx.mouseY >= currentY && ctx.mouseY < currentY + headerH;
-        int outlineBg = hoverOutline ? 0xFF5E35B1 : 0xFF311B92; // Deep purple theme
-        ctx.batcher.box(x + 8, currentY, x + w - 8, currentY + headerH, outlineBg);
-        ctx.batcher.icon(outlineExpanded ? CalLightsIcons.ARROW_DOWN : CalLightsIcons.ARROW_RIGHT, x + 12, currentY + 1, 0xFFFFFFFF);
-        ctx.batcher.icon(CalLightsIcons.OUTLINE, x + 28, currentY + 1, 0xFFE040FB);
-        ctx.batcher.text(CALKeys.PANEL_OUTLINE.get(), x + 46, currentY + 5, 0xFFFFFFFF);
-        currentY += headerH + gap;
-
-        int animH_outline = (int) outlineAnimH;
-        if (animH_outline > 0) {
-            ctx.batcher.clip(x + 2, currentY, w - 4, animH_outline);
-
-            outlineSwitch.resize(x, currentY, w, elementH);
-            outlineSwitch.render(ctx);
-
-            int drawY = currentY + elementH + gap;
-            if (light.outlineEnabled) {
-                trackOutlineIntensity.resize(x + 10, drawY, w - 20, elementH);
-                trackOutlineIntensity.setValue(light.outlineIntensity);
-                trackOutlineIntensity.render(ctx);
-                drawY += elementH + gap;
-
-                trackOutlineThickness.resize(x + 10, drawY, w - 20, elementH);
-                trackOutlineThickness.setValue(light.outlineThickness);
-                trackOutlineThickness.render(ctx);
-            }
-
-            ctx.batcher.unclip();
-            currentY += animH_outline;
-        }
-
-        // ==========================================
-        // 7. DESTELLO (LENS FLARE)
-        // ==========================================
-        boolean hoverFlare = ctx.mouseX >= x + 8 && ctx.mouseX < x + w - 8 && ctx.mouseY >= currentY && ctx.mouseY < currentY + headerH;
-        int flareBg = hoverFlare ? 0xFF00ACC1 : 0xFF00838F;
-        ctx.batcher.box(x + 8, currentY, x + w - 8, currentY + headerH, flareBg);
-        ctx.batcher.icon(flareExpanded ? CalLightsIcons.ARROW_DOWN : CalLightsIcons.ARROW_RIGHT, x + 12, currentY + 1, 0xFFFFFFFF);
-        ctx.batcher.icon(CalLightsIcons.PARTICLE, x + 28, currentY + 1, 0xFFFFFFFF);
-        ctx.batcher.text(CALKeys.PANEL_FLARE.get(), x + 46, currentY + 5, 0xFFFFFFFF);
-        currentY += headerH + gap;
-
-        int animH_flare = (int) flareAnimH;
-        if (animH_flare > 0) {
-            ctx.batcher.clip(x + 2, currentY, w - 4, animH_flare);
-
-            // Toggle switch for Flare Enabled
-            flareSwitch.resize(x, currentY, w, elementH);
-            flareSwitch.render(ctx);
-            
+            entitiesOnlySwitch.resize(x, currentY, w, elementH);
+            entitiesOnlySwitch.render(ctx);
             int drawY = currentY + elementH + gap;
 
-            if (light.flareEnabled) {
-                // Glow Size
-                trackFlareGlowSize.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareGlowSize.setValue(light.flareGlowSize);
-                trackFlareGlowSize.render(ctx);
-                drawY += elementH + gap;
-
-                // Glow Intensity
-                trackFlareGlowIntensity.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareGlowIntensity.setValue(light.flareGlowIntensity);
-                trackFlareGlowIntensity.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 1 Length
-                trackFlareRayLength.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayLength.setValue(light.flareRayLength);
-                trackFlareRayLength.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 1 Thickness
-                trackFlareRayThickness.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayThickness.setValue(light.flareRayThickness);
-                trackFlareRayThickness.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 2 Length
-                trackFlareRayLength2.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayLength2.setValue(light.flareRayLength2);
-                trackFlareRayLength2.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 2 Thickness
-                trackFlareRayThickness2.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayThickness2.setValue(light.flareRayThickness2);
-                trackFlareRayThickness2.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 3 Length
-                trackFlareRayLength3.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayLength3.setValue(light.flareRayLength3);
-                trackFlareRayLength3.render(ctx);
-                drawY += elementH + gap;
-
-                // Ray 3 Thickness
-                trackFlareRayThickness3.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRayThickness3.setValue(light.flareRayThickness3);
-                trackFlareRayThickness3.render(ctx);
-                drawY += elementH + gap;
-
-                // Rotation
-                trackFlareRotation.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareRotation.setValue(light.flareRotation);
-                trackFlareRotation.render(ctx);
-                drawY += elementH + gap;
-
-                // Start Angle
-                trackFlareStartAngle.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareStartAngle.setValue(light.flareStartAngle);
-                trackFlareStartAngle.render(ctx);
-                drawY += elementH + gap;
-
-                // End Angle
-                trackFlareEndAngle.resize(x + 10, drawY, w - 20, elementH);
-                trackFlareEndAngle.setValue(light.flareEndAngle);
-                trackFlareEndAngle.render(ctx);
-            }
+            blocksOnlySwitch.resize(x, drawY, w, elementH);
+            blocksOnlySwitch.render(ctx);
 
             ctx.batcher.unclip();
-            currentY += animH_flare;
+            currentY += animH_excl;
         }
 
         // ==========================================
@@ -964,6 +679,17 @@ public class LightInspectorPanel extends CLUIElement {
                 trackGoboRotation.resize(x + 10, drawY, w - 20, elementH);
                 trackGoboRotation.setValue(light.goboRotation);
                 trackGoboRotation.render(ctx);
+                drawY += elementH + gap;
+
+                // 4. Cookie Scale Trackpad
+                trackCookieScale.resize(x + 10, drawY, w - 20, elementH);
+                trackCookieScale.setValue(light.cookieScale);
+                trackCookieScale.render(ctx);
+                drawY += elementH + gap;
+
+                // 5. Cookie Invert Switch
+                cookieInvertSwitch.resize(x, drawY, w, elementH);
+                cookieInvertSwitch.render(ctx);
 
                 ctx.batcher.unclip();
                 currentY += animH_gobo;
@@ -1121,110 +847,23 @@ public class LightInspectorPanel extends CLUIElement {
 
             if (light.shadowEnabled) {
                 if (trackShadowSoftness.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-
-                if (trackShadowIntensity.mouseClicked(mx, my, btn)) return true;
             }
         }
         currentY += (int) shadowAnimH;
 
-        // 6. Rim light expanded toggle click
+        // 5.5. Exclusiones expanded toggle click
         if (mx >= x + 8 && mx < x + w - 8 && relativeMy >= currentY && relativeMy < currentY + headerH) {
-            rimExpanded = !rimExpanded;
+            exclusionsExpanded = !exclusionsExpanded;
             return true;
         }
         currentY += headerH + gap;
-        if (rimExpanded) {
-            if (rimSwitch.mouseClicked(mx, my, btn)) return true;
-
-            if (light.rimEnabled) {
-                if (trackRimIntensity.mouseClicked(mx, my, btn)) return true;
-                if (trackRimPower.mouseClicked(mx, my, btn)) return true;
-                if (trackRimHardness.mouseClicked(mx, my, btn)) return true;
-
-                int drawY = relativeMy - (currentY + elementH + gap);
-                // Check if clicking in the fifth element row
-                int clickY = currentY + elementH + gap + elementH + gap + elementH + gap + elementH + gap;
-                if (relativeMy >= clickY && relativeMy < clickY + elementH) {
-                    int btnW = (w - 24) / 3;
-                    // BACK Button Click
-                    if (mx >= x + 10 && mx < x + 10 + btnW) {
-                        CALUndoManager.pushState();
-                        light.rimDirection = 0.0f;
-                        if (onUpdate != null) onUpdate.run();
-                        return true;
-                    }
-                    // FRONT Button Click
-                    if (mx >= x + 10 + btnW + 2 && mx < x + 10 + (btnW * 2) + 2) {
-                        CALUndoManager.pushState();
-                        light.rimDirection = 1.0f;
-                        if (onUpdate != null) onUpdate.run();
-                        return true;
-                    }
-                    // BOTH Button Click
-                    if (mx >= x + 10 + (btnW * 2) + 4 && mx < x + w - 10) {
-                        CALUndoManager.pushState();
-                        light.rimDirection = 2.0f;
-                        if (onUpdate != null) onUpdate.run();
-                        return true;
-                    }
-                }
+        if (exclusionsExpanded) {
+            if (entitiesOnlySwitch.mouseClicked(mx, my, btn) ||
+                blocksOnlySwitch.mouseClicked(mx, my, btn)) {
+                return true;
             }
         }
-        currentY += (int) rimAnimH;
-
-        // 6.5. Outline expanded toggle click
-        if (mx >= x + 8 && mx < x + w - 8 && relativeMy >= currentY && relativeMy < currentY + headerH) {
-            outlineExpanded = !outlineExpanded;
-            return true;
-        }
-        currentY += headerH + gap;
-        if (outlineExpanded) {
-            if (outlineSwitch.mouseClicked(mx, my, btn)) return true;
-
-            if (light.outlineEnabled) {
-                if (trackOutlineIntensity.mouseClicked(mx, my, btn)) return true;
-                if (trackOutlineThickness.mouseClicked(mx, my, btn)) return true;
-            }
-        }
-        currentY += (int) outlineAnimH;
-
-        // 7. Flare expanded toggle click
-        if (mx >= x + 8 && mx < x + w - 8 && relativeMy >= currentY && relativeMy < currentY + headerH) {
-            flareExpanded = !flareExpanded;
-            return true;
-        }
-        currentY += headerH + gap;
-        if (flareExpanded) {
-            // Flare enabled toggle click
-            if (flareSwitch.mouseClicked(mx, my, btn)) return true;
-            int drawY = currentY + elementH + gap;
-
-            if (light.flareEnabled) {
-                if (trackFlareGlowSize.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareGlowIntensity.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayLength.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayThickness.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayLength2.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayThickness2.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayLength3.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRayThickness3.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareRotation.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareStartAngle.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-                if (trackFlareEndAngle.mouseClicked(mx, my, btn)) return true;
-            }
-        }
-        currentY += (int) flareAnimH;
+        currentY += (int) exclusionsAnimH;
 
         // 7. Gobo expanded toggle click
         if (light.isSpot) {
@@ -1262,6 +901,14 @@ public class LightInspectorPanel extends CLUIElement {
 
                 // Click rotation trackpad
                 if (trackGoboRotation.mouseClicked(mx, my, btn)) return true;
+                drawY += elementH + gap;
+
+                // Click cookie scale trackpad
+                if (trackCookieScale.mouseClicked(mx, my, btn)) return true;
+                drawY += elementH + gap;
+
+                // Click cookie invert switch
+                if (cookieInvertSwitch.mouseClicked(mx, my, btn)) return true;
             }
             currentY += (int) goboAnimH;
         }
@@ -1287,24 +934,8 @@ public class LightInspectorPanel extends CLUIElement {
                trackFogDensity.mouseReleased(mx, my, btn) ||
                trackFogAnisotropy.mouseReleased(mx, my, btn) ||
                trackShadowSoftness.mouseReleased(mx, my, btn) ||
-               trackShadowIntensity.mouseReleased(mx, my, btn) ||
-               trackRimIntensity.mouseReleased(mx, my, btn) ||
-               trackRimPower.mouseReleased(mx, my, btn) ||
-               trackRimHardness.mouseReleased(mx, my, btn) ||
-               trackOutlineIntensity.mouseReleased(mx, my, btn) ||
-               trackOutlineThickness.mouseReleased(mx, my, btn) ||
-               trackFlareGlowSize.mouseReleased(mx, my, btn) ||
-               trackFlareGlowIntensity.mouseReleased(mx, my, btn) ||
-               trackFlareRayLength.mouseReleased(mx, my, btn) ||
-               trackFlareRayThickness.mouseReleased(mx, my, btn) ||
-               trackFlareRayLength2.mouseReleased(mx, my, btn) ||
-               trackFlareRayThickness2.mouseReleased(mx, my, btn) ||
-               trackFlareRayLength3.mouseReleased(mx, my, btn) ||
-               trackFlareRayThickness3.mouseReleased(mx, my, btn) ||
-               trackFlareRotation.mouseReleased(mx, my, btn) ||
-               trackFlareStartAngle.mouseReleased(mx, my, btn) ||
-               trackFlareEndAngle.mouseReleased(mx, my, btn) ||
                trackGoboRotation.mouseReleased(mx, my, btn) ||
+               trackCookieScale.mouseReleased(mx, my, btn) ||
                animationPanel.mouseReleased(mx, my, btn);
     }
 
@@ -1326,24 +957,8 @@ public class LightInspectorPanel extends CLUIElement {
                trackFogDensity.mouseDragged(mx, my, btn, dx, dy) ||
                trackFogAnisotropy.mouseDragged(mx, my, btn, dx, dy) ||
                trackShadowSoftness.mouseDragged(mx, my, btn, dx, dy) ||
-               trackShadowIntensity.mouseDragged(mx, my, btn, dx, dy) ||
-               trackRimIntensity.mouseDragged(mx, my, btn, dx, dy) ||
-               trackRimPower.mouseDragged(mx, my, btn, dx, dy) ||
-               trackRimHardness.mouseDragged(mx, my, btn, dx, dy) ||
-               trackOutlineIntensity.mouseDragged(mx, my, btn, dx, dy) ||
-               trackOutlineThickness.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareGlowSize.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareGlowIntensity.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayLength.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayThickness.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayLength2.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayThickness2.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayLength3.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRayThickness3.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareRotation.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareStartAngle.mouseDragged(mx, my, btn, dx, dy) ||
-               trackFlareEndAngle.mouseDragged(mx, my, btn, dx, dy) ||
                trackGoboRotation.mouseDragged(mx, my, btn, dx, dy) ||
+               trackCookieScale.mouseDragged(mx, my, btn, dx, dy) ||
                animationPanel.mouseDragged(mx, my, btn, dx, dy);
     }
 

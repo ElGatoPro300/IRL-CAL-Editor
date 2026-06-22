@@ -19,12 +19,6 @@
         ],
         "client": [
             "elgatopro300.cal_lights.CALLightsClient"
-        ],
-        "bbs-addon": [
-            "elgatopro300.cal_lights.integration.bbs.BbsAddon"
-        ],
-        "bbs-addon-client": [
-            "elgatopro300.cal_lights.integration.bbs.BbsClientAddon"
         ]
     },
     "mixins": [

@@ -44,38 +44,16 @@ public class LightInstance {
     // Shadow properties
     public boolean shadowEnabled = false;         // Enable shadow casting
     public float shadowSoftness = 1.0f;          // Penumbra blur (0 = hard, 5 = very soft)
-    public float shadowIntensity = 0.8f;         // Shadow darkness (0 = no shadow, 1 = full black)
 
-    // Rim lighting (Fresnel/contour glow on entity edges)
-    public boolean rimEnabled = false;
-    public float rimIntensity = 2.0f;   // Brightness multiplier for the rim glow
-    public float rimPower = 3.0f;       // Sharpness: higher = tighter rim at silhouette edge
-    public float rimHardness = 0.0f;    // 0 = smooth Fresnel, 1 = hard cel-shading line
-    public float rimDirection = 0.0f;   // 0 = back (opposite), 1 = front (facing), 2 = both (uniform)
-    
-    // Outline (sharp white silhouette/geometric borders)
-    public boolean outlineEnabled = false;
-    public float outlineIntensity = 4.0f;
-    public float outlineThickness = 3.0f;
-    
-    // Flare properties
-    public boolean flareEnabled = false;
-    public float flareSize = 1.0f;
-    public float flareGlowSize = 1.5f;
-    public float flareGlowIntensity = 1.0f;
-    public float flareRayLength = 5.0f;
-    public float flareRayThickness = 0.3f;
-    public float flareRayLength2 = 5.0f;
-    public float flareRayThickness2 = 0.3f;
-    public float flareRayLength3 = 2.5f;
-    public float flareRayThickness3 = 0.2f;
-    public float flareRotation = 0.0f;
-    public float flareStartAngle = 20.0f;
-    public float flareEndAngle = 45.0f;
+    // Exclusions
+    public boolean entitiesOnly = false;
+    public boolean blocksOnly = false;
 
     // Gobo properties
     public String goboName = "None";
     public float goboRotation = 0.0f;
+    public float cookieScale = 1.0f;
+    public boolean cookieInvert = false;
     
     // Coordinates specialized for shaders (replays/model blocks)
     public Float shaderX = null;

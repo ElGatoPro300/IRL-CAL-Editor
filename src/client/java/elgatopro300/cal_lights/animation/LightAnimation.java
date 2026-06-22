@@ -41,7 +41,7 @@ public class LightAnimation {
     private transient float baseFogEnabled;
     private transient float baseFogDispersion, baseFogDensity, baseFogAnisotropy;
     private transient float baseShadowEnabled;
-    private transient float baseShadowSoftness, baseShadowIntensity;
+    private transient float baseShadowSoftness;
 
     public LightAnimation() {}
 
@@ -67,7 +67,6 @@ public class LightAnimation {
         baseFogAnisotropy = light.fogAnisotropy;
         baseShadowEnabled = light.shadowEnabled ? 1f : 0f;
         baseShadowSoftness = light.shadowSoftness;
-        baseShadowIntensity = light.shadowIntensity;
         baseCaptured = true;
     }
 
@@ -136,7 +135,6 @@ public class LightAnimation {
                     case "fogAnisotropy"   -> light.fogAnisotropy   = val;
                     case "shadowEnabled"   -> light.shadowEnabled   = val >= 0.5f;
                     case "shadowSoftness"  -> light.shadowSoftness  = Math.max(0f, val);
-                    case "shadowIntensity" -> light.shadowIntensity = Math.max(0f, Math.min(1f, val));
                 }
             }
         }
@@ -169,7 +167,6 @@ public class LightAnimation {
             case "fogAnisotropy"   -> baseFogAnisotropy;
             case "shadowEnabled"   -> baseShadowEnabled;
             case "shadowSoftness"  -> baseShadowSoftness;
-            case "shadowIntensity" -> baseShadowIntensity;
             default                -> 0f;
         };
     }
@@ -195,9 +192,9 @@ public class LightAnimation {
     public void synchronizeTracks(boolean isSpot) {
         String[] fixedProps;
         if (isSpot) {
-            fixedProps = new String[]{ "transform", "rotation", "color", "intensity", "innerAngle", "outerAngle", "distance", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness", "shadowIntensity" };
+            fixedProps = new String[]{ "transform", "rotation", "color", "intensity", "innerAngle", "outerAngle", "distance", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness" };
         } else {
-            fixedProps = new String[]{ "transform", "color", "intensity", "radius", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness", "shadowIntensity" };
+            fixedProps = new String[]{ "transform", "color", "intensity", "radius", "fogEnabled", "fogDispersion", "fogDensity", "fogAnisotropy", "shadowEnabled", "shadowSoftness" };
         }
 
         List<LightAnimationTrack> newTracks = new ArrayList<>();

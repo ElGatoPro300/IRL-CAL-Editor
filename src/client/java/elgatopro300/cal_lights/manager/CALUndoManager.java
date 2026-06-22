@@ -138,7 +138,12 @@ public class CALUndoManager {
                     light.fogAnisotropy = dto.fogAnisotropy;
                     light.shadowEnabled = dto.shadowEnabled;
                     light.shadowSoftness = dto.shadowSoftness;
-                    light.shadowIntensity = dto.shadowIntensity;
+                    light.entitiesOnly = dto.entitiesOnly;
+                    light.blocksOnly = dto.blocksOnly;
+                    light.goboName = dto.goboName == null ? "None" : dto.goboName;
+                    light.goboRotation = dto.goboRotation;
+                    light.cookieScale = dto.cookieScale == 0.0f ? 1.0f : dto.cookieScale;
+                    light.cookieInvert = dto.cookieInvert;
                     light.rx = dto.rx;
                     light.ry = dto.ry;
                     light.rz = dto.rz;
@@ -156,7 +161,8 @@ public class CALUndoManager {
                     light.fogAnisotropy = dto.fogAnisotropy;
                     light.shadowEnabled = dto.shadowEnabled;
                     light.shadowSoftness = dto.shadowSoftness;
-                    light.shadowIntensity = dto.shadowIntensity;
+                    light.entitiesOnly = dto.entitiesOnly;
+                    light.blocksOnly = dto.blocksOnly;
                     light.animation = dto.animation;
                 }
             }

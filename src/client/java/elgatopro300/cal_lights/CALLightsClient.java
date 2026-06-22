@@ -2,16 +2,12 @@ package elgatopro300.cal_lights;
 
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
-import elgatopro300.cal_lights.integration.bbs.CALLightsBbsIntegration;
 import elgatopro300.cal_lights.manager.GoboManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.manager.LightSaveManager;
-import elgatopro300.cal_lights.shaders.LightSSBO;
-import elgatopro300.cal_lights.shaders.VoxelShadowSSBO;
+import org.qualet.irl.light.LightRegistry;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
-
-import mchorse.bbs_mod.BBS;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -64,8 +60,7 @@ public class CALLightsClient implements ClientModInitializer {
             LOGGER.info("Initializing CAL Lights Gobo Manager...");
             GoboManager.INSTANCE.init();
 
-            LOGGER.info("Initializing CAL Lights Voxel Shadow SSBO...");
-            VoxelShadowSSBO.init();
+            // VoxelShadowSSBO is deleted
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -98,16 +93,66 @@ public class CALLightsClient implements ClientModInitializer {
 
         WorldRenderEvents.BEFORE_ENTITIES.register(context -> {
             GoboManager.INSTANCE.bind();
-            LightSSBO.upload();
-            VoxelShadowSSBO.upload();
+            registerLightsToIrlCore();
         });
+    }
 
-        try {
-            Class.forName("mchorse.bbs_mod.BBS");
-            CALLightsBbsIntegration.initialize();
-            LOGGER.info("Successfully registered BBS CML Edition integration!");
-        } catch (ClassNotFoundException ignored) {
-            LOGGER.info("BBS CML Edition not detected, continuing standalone.");
+    private static void registerLightsToIrlCore() {
+        LightRegistry.clear();
+
+        // 1. Point lights
+        for (LightInstance l : LightManager.INSTANCE.getPointLights()) {
+            if (l.visible) {
+                LightRegistry.registerPoint(
+                    l.x, l.y, l.z,
+                    l.r, l.g, l.b,
+                    l.intensity, l.radius,
+                    l.entitiesOnly, l.blocksOnly,
+                    l.fogAnisotropy, l.fogDensity, l.fogEnabled ? l.fogDispersion : 0.0f,
+                    l.shadowSoftness, l.shadowEnabled, (long) l.id
+                );
+            }
         }
+
+        // 2. Spot lights
+        for (LightInstance l : LightManager.INSTANCE.getSpotLights()) {
+            if (l.visible) {
+                float dx = l.dx, dy = l.dy, dz = l.dz;
+                float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (len > 1e-4f) {
+                    dx /= len;
+                    dy /= len;
+                    dz /= len;
+                } else {
+                    dx = 0f;
+                    dy = -1f;
+                    dz = 0f;
+                }
+
+                float outer = l.outerAngle;
+                float inner = Math.min(l.innerAngle, outer);
+                float cosOuter = (float) Math.cos(Math.toRadians(outer * 0.5f));
+                float cosInner = (float) Math.cos(Math.toRadians(inner * 0.5f));
+
+                int cookieLayer = GoboManager.INSTANCE.getGoboIndex(l.goboName);
+                float cookieRot = (float) Math.toRadians(l.goboRotation);
+                float cookieScale = l.cookieScale;
+                float cookieFlags = l.cookieInvert ? 1.0f : 0.0f;
+
+                LightRegistry.registerSpot(
+                    l.x, l.y, l.z,
+                    dx, dy, dz,
+                    l.r, l.g, l.b,
+                    l.intensity, l.distance, cosOuter, cosInner,
+                    l.entitiesOnly, l.blocksOnly,
+                    l.fogAnisotropy, l.fogDensity, l.fogEnabled ? l.fogDispersion : 0.0f,
+                    l.shadowSoftness, l.shadowEnabled,
+                    (float) cookieLayer, cookieRot, cookieScale, cookieFlags,
+                    (long) l.id
+                );
+            }
+        }
+
+        LightRegistry.flush();
     }
 }

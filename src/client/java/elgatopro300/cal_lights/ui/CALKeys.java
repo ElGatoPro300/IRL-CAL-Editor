@@ -208,4 +208,11 @@ public class CALKeys {
     public static final IKey PROP_RIM_POWER_LABEL = IKey.lang("cal.prop.rim_power_label");
     public static final IKey PROP_RIM_HARDNESS = IKey.lang("cal.prop.rim_hardness");
     public static final IKey PROP_RIM_HARDNESS_LABEL = IKey.lang("cal.prop.rim_hardness_label");
+
+    // Exclusions & Cookie Keys
+    public static final IKey PANEL_EXCLUSIONS = IKey.lang("cal.panel.exclusions");
+    public static final IKey PROP_ENTITIES_ONLY = IKey.lang("cal.prop.entities_only");
+    public static final IKey PROP_BLOCKS_ONLY = IKey.lang("cal.prop.blocks_only");
+    public static final IKey PROP_COOKIE_SCALE = IKey.lang("cal.prop.cookie_scale");
+    public static final IKey PROP_COOKIE_INVERT = IKey.lang("cal.prop.cookie_invert");
 }
