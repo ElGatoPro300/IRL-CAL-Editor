@@ -1,15 +1,18 @@
 package elgatopro300.cal_lights.patcher;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.irisshaders.iris.Iris;
-import net.minecraft.util.Util;
 import org.qualet.irl.patcher.PatcherHost;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import net.fabricmc.loader.api.FabricLoader;
+
+import net.minecraft.util.Util;
 
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
+
+import net.irisshaders.iris.Iris;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CALPatcherHost implements PatcherHost {
     private static final Logger LOG = LoggerFactory.getLogger("IRL CAL Editor Patcher");

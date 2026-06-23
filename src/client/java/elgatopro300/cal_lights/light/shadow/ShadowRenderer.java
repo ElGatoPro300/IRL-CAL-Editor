@@ -1,11 +1,5 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.VertexBuffer;
@@ -23,13 +17,26 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.util.shape.VoxelShapes;
+
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryStack;
 
+import java.nio.IntBuffer;
 import java.util.List;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 /**
  * Bakes spotlight shadow depth maps. Phase 1: perspective depth tile per spot,
@@ -759,7 +766,7 @@ public final class ShadowRenderer
      * block; the shape's box coords are local (0..1). Winding is irrelevant —
      * culling is disabled, so both faces of each quad write depth.
      */
-    private static final class QuadBoxConsumer implements net.minecraft.util.shape.VoxelShapes.BoxConsumer
+    private static final class QuadBoxConsumer implements VoxelShapes.BoxConsumer
     {
         final BufferBuilder buf;
         int ox, oy, oz;
@@ -864,9 +871,9 @@ public final class ShadowRenderer
         savedProj = RenderSystem.getProjectionMatrix();
         savedSorter = RenderSystem.getVertexSorting();
 
-        try (org.lwjgl.system.MemoryStack stack = org.lwjgl.system.MemoryStack.stackPush())
+        try (MemoryStack stack = MemoryStack.stackPush())
         {
-            java.nio.IntBuffer maskBuf = stack.mallocInt(4);
+            IntBuffer maskBuf = stack.mallocInt(4);
             GL11.glGetIntegerv(GL11.GL_COLOR_WRITEMASK, maskBuf);
             savedMaskR = maskBuf.get(0) != 0;
             savedMaskG = maskBuf.get(1) != 0;

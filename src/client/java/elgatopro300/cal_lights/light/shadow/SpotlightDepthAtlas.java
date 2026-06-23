@@ -1,6 +1,7 @@
 package elgatopro300.cal_lights.light.shadow;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;

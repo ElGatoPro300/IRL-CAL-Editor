@@ -2,12 +2,19 @@ package elgatopro300.cal_lights;
 
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
+import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.PlacedLight;
+import elgatopro300.cal_lights.light.auto.AutoLightManager;
 import elgatopro300.cal_lights.manager.GoboManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.manager.LightSaveManager;
-import org.qualet.irl.light.LightRegistry;
+import elgatopro300.cal_lights.patcher.CALPatcherHost;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
+
+import org.qualet.irl.light.LightBuffer;
+import org.qualet.irl.light.LightRegistry;
+import org.qualet.irl.patcher.Patcher;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -15,6 +22,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
@@ -22,6 +30,7 @@ import net.minecraft.util.math.Vec3d;
 
 import org.lwjgl.glfw.GLFW;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
@@ -45,7 +54,7 @@ public class CALLightsClient implements ClientModInitializer {
 
         // Install the patcher host so the shared irl-core patcher can reach the game
         // dir / Iris shaderpacks dir / bundled .irlights patches.
-        org.qualet.irl.patcher.Patcher.install(new elgatopro300.cal_lights.patcher.CALPatcherHost());
+        Patcher.install(new CALPatcherHost());
 
         editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cal.editor",
@@ -77,7 +86,7 @@ public class CALLightsClient implements ClientModInitializer {
             LightManager.INSTANCE.tick();
 
             if (client.world != null && client.player != null) {
-                elgatopro300.cal_lights.light.auto.AutoLightManager.tick(client.world,
+                AutoLightManager.tick(client.world,
                     client.player.getX(), client.player.getEyeY(), client.player.getZ());
             }
             
@@ -189,13 +198,13 @@ public class CALLightsClient implements ClientModInitializer {
         }
 
         // 3. Auto block-lights
-        if (elgatopro300.cal_lights.light.LightConfig.autoLights()) {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        if (LightConfig.autoLights()) {
+            MinecraftClient mc = MinecraftClient.getInstance();
             if (mc.player != null && mc.world != null) {
                 Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
 
-                int headroom = Math.max(0, org.qualet.irl.light.LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
-                int feedMax = Math.min(elgatopro300.cal_lights.light.LightConfig.autoLightMax(), headroom);
+                int headroom = Math.max(0, LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
+                int feedMax = Math.min(LightConfig.autoLightMax(), headroom);
 
                 int manualShadowPoints = 0;
                 for (LightInstance l : LightManager.INSTANCE.getPointLights()) {
@@ -205,15 +214,15 @@ public class CALLightsClient implements ClientModInitializer {
                 }
 
                 autoShadowRamp = Math.min(16, autoShadowRamp + AUTO_SHADOW_RAMP_STEP);
-                int shadowBudget = elgatopro300.cal_lights.light.LightConfig.autoLightShadows()
+                int shadowBudget = LightConfig.autoLightShadows()
                     ? Math.min(autoShadowRamp, Math.max(0, 16 - manualShadowPoints))
                     : 0;
 
-                java.util.List<elgatopro300.cal_lights.light.PlacedLight> autos =
-                    elgatopro300.cal_lights.light.auto.AutoLightManager.nearest(cameraPos, feedMax);
+                List<PlacedLight> autos =
+                    AutoLightManager.nearest(cameraPos, feedMax);
 
                 int granted = 0;
-                for (elgatopro300.cal_lights.light.PlacedLight l : autos) {
+                for (PlacedLight l : autos) {
                     if (l == null) continue;
                     boolean wantShadow = l.autoShadowEligible && granted < shadowBudget;
                     l.shadows = wantShadow;

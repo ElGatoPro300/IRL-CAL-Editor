@@ -1,22 +1,24 @@
 package elgatopro300.cal_lights.light.auto;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import elgatopro300.cal_lights.light.IrisShadersState;
+import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.PlacedLight;
+
 import net.minecraft.block.BlockState;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.WorldChunk;
-import elgatopro300.cal_lights.light.IrisShadersState;
-import elgatopro300.cal_lights.light.LightConfig;
-import elgatopro300.cal_lights.light.PlacedLight;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public final class AutoLightManager {
     private static final Predicate<BlockState> EMISSIVE = BlockLightDefs::paletteCandidate;

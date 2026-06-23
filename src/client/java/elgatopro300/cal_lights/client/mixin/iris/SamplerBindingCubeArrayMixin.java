@@ -1,19 +1,21 @@
 package elgatopro300.cal_lights.client.mixin.iris;
 
-import net.irisshaders.iris.gl.IrisRenderSystem;
-import net.irisshaders.iris.gl.sampler.SamplerBinding;
+import elgatopro300.cal_lights.light.shadow.PointShadowArray;
+import elgatopro300.cal_lights.manager.GoboManager;
+
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
+
+import java.util.function.IntSupplier;
+
+import net.irisshaders.iris.gl.IrisRenderSystem;
+import net.irisshaders.iris.gl.sampler.SamplerBinding;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import elgatopro300.cal_lights.manager.GoboManager;
-import elgatopro300.cal_lights.light.shadow.PointShadowArray;
-
-import java.util.function.IntSupplier;
 
 @Mixin(value = SamplerBinding.class, remap = false)
 public abstract class SamplerBindingCubeArrayMixin {

@@ -5,10 +5,10 @@ import elgatopro300.cal_lights.ui.CALKeys;
 import elgatopro300.cal_lights.ui.CLUIContext;
 import elgatopro300.cal_lights.ui.CLUIElement;
 import elgatopro300.cal_lights.ui.L10n;
-import net.minecraft.client.MinecraftClient;
+
 import org.qualet.irl.patcher.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import net.minecraft.client.MinecraftClient;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,6 +16,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CALShaderPatcherPanel extends CLUIElement {
     private static final Logger LOG = LoggerFactory.getLogger("IRL CAL Editor Patcher");

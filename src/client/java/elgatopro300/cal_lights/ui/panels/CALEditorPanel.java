@@ -4,6 +4,8 @@ import elgatopro300.cal_lights.CALLightsClient;
 import elgatopro300.cal_lights.animation.LightAnimation;
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
+import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.auto.AutoLightManager;
 import elgatopro300.cal_lights.manager.CALUndoManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
@@ -137,20 +139,20 @@ public class CALEditorPanel extends CLUIElement {
     public boolean searchFocused = false;
 
     public CALEditorPanel() {
-        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius, 4f, 96f, val -> {
-            elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius = Math.round(val);
+        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), LightConfig.shadowBlockRadius, 4f, 96f, val -> {
+            LightConfig.shadowBlockRadius = Math.round(val);
         }).setArrowStep(1f);
-        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), elgatopro300.cal_lights.light.LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
-            elgatopro300.cal_lights.light.LightConfig.autoLightIntensity = val;
+        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
+            LightConfig.autoLightIntensity = val;
         }).setArrowStep(0.05f);
-        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH.get(), elgatopro300.cal_lights.light.LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
-            elgatopro300.cal_lights.light.LightConfig.autoLightReach = val;
+        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH.get(), LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
+            LightConfig.autoLightReach = val;
         }).setArrowStep(0.05f);
-        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS.get(), elgatopro300.cal_lights.light.LightConfig.autoLightRadius, 8f, 96f, val -> {
-            elgatopro300.cal_lights.light.LightConfig.autoLightRadius = Math.round(val);
+        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS.get(), LightConfig.autoLightRadius, 8f, 96f, val -> {
+            LightConfig.autoLightRadius = Math.round(val);
         }).setArrowStep(1f);
-        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX.get(), elgatopro300.cal_lights.light.LightConfig.autoLightMax, 0f, 2000f, val -> {
-            elgatopro300.cal_lights.light.LightConfig.autoLightMax = Math.round(val);
+        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX.get(), LightConfig.autoLightMax, 0f, 2000f, val -> {
+            LightConfig.autoLightMax = Math.round(val);
         }).setArrowStep(10f);
 
         this.patcherPanel = new CALShaderPatcherPanel(() -> {
@@ -872,7 +874,7 @@ public class CALEditorPanel extends CLUIElement {
                 for (int i = 0; i < qLabels.length; i++) {
                     int btnX = leftColX + i * (segW + 3);
                     boolean hoverQ = ctx.mouseX >= btnX && ctx.mouseX < btnX + segW && ctx.mouseY >= curY && ctx.mouseY < curY + 14;
-                    boolean isCurrentQ = (elgatopro300.cal_lights.light.LightConfig.shadowQuality == i);
+                    boolean isCurrentQ = (LightConfig.shadowQuality == i);
                     int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
                     ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, qBg);
                     ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentQ ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
@@ -887,7 +889,7 @@ public class CALEditorPanel extends CLUIElement {
                     boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
                     ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
                     ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                    if (elgatopro300.cal_lights.light.LightConfig.shadowCache) {
+                    if (LightConfig.shadowCache) {
                         ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
                     ctx.batcher.text(CALKeys.SHADOW_CACHE.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
@@ -900,7 +902,7 @@ public class CALEditorPanel extends CLUIElement {
                     boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
                     ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
                     ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                    if (elgatopro300.cal_lights.light.LightConfig.shadowBlocks) {
+                    if (LightConfig.shadowBlocks) {
                         ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
                     ctx.batcher.text(CALKeys.SHADOW_BLOCKS.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
@@ -909,7 +911,7 @@ public class CALEditorPanel extends CLUIElement {
 
                 // Shadow Block Radius Trackpad
                 trackShadowBlockRadius.resize(leftColX, curY, colW, 14);
-                trackShadowBlockRadius.setValue(elgatopro300.cal_lights.light.LightConfig.shadowBlockRadius);
+                trackShadowBlockRadius.setValue(LightConfig.shadowBlockRadius);
                 trackShadowBlockRadius.render(ctx);
                 curY += itemSpacing;
 
@@ -923,7 +925,7 @@ public class CALEditorPanel extends CLUIElement {
                     boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
                     ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
                     ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                    if (elgatopro300.cal_lights.light.LightConfig.autoLights) {
+                    if (LightConfig.autoLights) {
                         ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
                     ctx.batcher.text(CALKeys.AUTO_LIGHTS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
@@ -931,13 +933,13 @@ public class CALEditorPanel extends CLUIElement {
                 curY += itemSpacing;
 
                 // Auto Lights Shadows Checkbox (Only enabled / clickable if autoLights is true)
-                boolean autoLightsOn = elgatopro300.cal_lights.light.LightConfig.autoLights;
+                boolean autoLightsOn = LightConfig.autoLights;
                 {
                     int boxSize = 10;
                     if (!autoLightsOn) {
                         ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF111115);
                         ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF282830, 1);
-                        if (elgatopro300.cal_lights.light.LightConfig.autoLightShadows) {
+                        if (LightConfig.autoLightShadows) {
                             ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFF555555);
                         }
                         ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFF666666);
@@ -945,7 +947,7 @@ public class CALEditorPanel extends CLUIElement {
                         boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
                         ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
                         ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                        if (elgatopro300.cal_lights.light.LightConfig.autoLightShadows) {
+                        if (LightConfig.autoLightShadows) {
                             ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                         }
                         ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
@@ -957,47 +959,47 @@ public class CALEditorPanel extends CLUIElement {
                 if (!autoLightsOn) {
                     ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
                     ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_INTENSITY.get() + ": " + String.format("%.2f", elgatopro300.cal_lights.light.LightConfig.autoLightIntensity), rightColX + 6, curY + 3, 0xFF666666);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_INTENSITY.get() + ": " + String.format("%.2f", LightConfig.autoLightIntensity), rightColX + 6, curY + 3, 0xFF666666);
                     curY += itemSpacing;
 
                     ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
                     ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_REACH.get() + ": " + String.format("%.2f", elgatopro300.cal_lights.light.LightConfig.autoLightReach), rightColX + 6, curY + 3, 0xFF666666);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_REACH.get() + ": " + String.format("%.2f", LightConfig.autoLightReach), rightColX + 6, curY + 3, 0xFF666666);
                     curY += itemSpacing;
 
                     ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
                     ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_RADIUS.get() + ": " + elgatopro300.cal_lights.light.LightConfig.autoLightRadius, rightColX + 6, curY + 3, 0xFF666666);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_RADIUS.get() + ": " + LightConfig.autoLightRadius, rightColX + 6, curY + 3, 0xFF666666);
                     curY += itemSpacing;
 
                     ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
                     ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_MAX.get() + ": " + elgatopro300.cal_lights.light.LightConfig.autoLightMax, rightColX + 6, curY + 3, 0xFF666666);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_MAX.get() + ": " + LightConfig.autoLightMax, rightColX + 6, curY + 3, 0xFF666666);
                     curY += itemSpacing;
                 } else {
                     trackAutoLightIntensity.resize(rightColX, curY, colW, 14);
-                    trackAutoLightIntensity.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightIntensity);
+                    trackAutoLightIntensity.setValue(LightConfig.autoLightIntensity);
                     trackAutoLightIntensity.render(ctx);
                     curY += itemSpacing;
 
                     trackAutoLightReach.resize(rightColX, curY, colW, 14);
-                    trackAutoLightReach.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightReach);
+                    trackAutoLightReach.setValue(LightConfig.autoLightReach);
                     trackAutoLightReach.render(ctx);
                     curY += itemSpacing;
 
                     trackAutoLightRadius.resize(rightColX, curY, colW, 14);
-                    trackAutoLightRadius.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightRadius);
+                    trackAutoLightRadius.setValue(LightConfig.autoLightRadius);
                     trackAutoLightRadius.render(ctx);
                     curY += itemSpacing;
 
                     trackAutoLightMax.resize(rightColX, curY, colW, 14);
-                    trackAutoLightMax.setValue(elgatopro300.cal_lights.light.LightConfig.autoLightMax);
+                    trackAutoLightMax.setValue(LightConfig.autoLightMax);
                     trackAutoLightMax.render(ctx);
                     curY += itemSpacing;
                 }
 
                 // Active lights diagnostics string
-                int activeCount = elgatopro300.cal_lights.light.auto.AutoLightManager.count();
+                int activeCount = AutoLightManager.count();
                 ctx.batcher.text(CALKeys.AUTO_LIGHT_ACTIVE.get(activeCount), rightColX, curY, 0xFF888899);
             }
 
@@ -1583,7 +1585,7 @@ public class CALEditorPanel extends CLUIElement {
                 for (int i = 0; i < qLabels.length; i++) {
                     int qBtnX = leftColX + i * (segW + 3);
                     if (mx >= qBtnX && mx < qBtnX + segW && my >= curY && my < curY + 14) {
-                        elgatopro300.cal_lights.light.LightConfig.shadowQuality = i;
+                        LightConfig.shadowQuality = i;
                         return true;
                     }
                 }
@@ -1591,14 +1593,14 @@ public class CALEditorPanel extends CLUIElement {
 
                 // Shadow Cache Checkbox click
                 if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
-                    elgatopro300.cal_lights.light.LightConfig.shadowCache = !elgatopro300.cal_lights.light.LightConfig.shadowCache;
+                    LightConfig.shadowCache = !LightConfig.shadowCache;
                     return true;
                 }
                 curY += itemSpacing;
 
                 // Shadow Blocks Checkbox click
                 if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
-                    elgatopro300.cal_lights.light.LightConfig.shadowBlocks = !elgatopro300.cal_lights.light.LightConfig.shadowBlocks;
+                    LightConfig.shadowBlocks = !LightConfig.shadowBlocks;
                     return true;
                 }
                 curY += itemSpacing;
@@ -1614,16 +1616,16 @@ public class CALEditorPanel extends CLUIElement {
 
                 // Auto Lights Enable Checkbox click
                 if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
-                    elgatopro300.cal_lights.light.LightConfig.autoLights = !elgatopro300.cal_lights.light.LightConfig.autoLights;
+                    LightConfig.autoLights = !LightConfig.autoLights;
                     return true;
                 }
                 curY += itemSpacing;
 
                 // Auto Lights Shadows Checkbox click
-                boolean autoLightsOn = elgatopro300.cal_lights.light.LightConfig.autoLights;
+                boolean autoLightsOn = LightConfig.autoLights;
                 if (autoLightsOn) {
                     if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
-                        elgatopro300.cal_lights.light.LightConfig.autoLightShadows = !elgatopro300.cal_lights.light.LightConfig.autoLightShadows;
+                        LightConfig.autoLightShadows = !LightConfig.autoLightShadows;
                         return true;
                     }
                 }

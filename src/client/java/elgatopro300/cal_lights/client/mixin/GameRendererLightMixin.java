@@ -1,21 +1,24 @@
 package elgatopro300.cal_lights.client.mixin;
 
+import elgatopro300.cal_lights.CALLightsClient;
+import elgatopro300.cal_lights.light.IrisShadersState;
+import elgatopro300.cal_lights.light.shadow.ShadowBaker;
+
+import org.qualet.irl.light.LightBuffer;
+import org.qualet.irl.light.LightRegistry;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.Vec3d;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import elgatopro300.cal_lights.light.IrisShadersState;
-import elgatopro300.cal_lights.CALLightsClient;
-import org.qualet.irl.light.LightBuffer;
-import org.qualet.irl.light.LightRegistry;
-import elgatopro300.cal_lights.light.shadow.ShadowBaker;
 
 @Mixin(GameRenderer.class)
 public class GameRendererLightMixin {

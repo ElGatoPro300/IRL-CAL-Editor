@@ -2,11 +2,11 @@ package elgatopro300.cal_lights.ui.panels;
 
 import elgatopro300.cal_lights.animation.LightAnimation;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
+import elgatopro300.cal_lights.light.LightConfig;
 import elgatopro300.cal_lights.manager.CALUndoManager;
 import elgatopro300.cal_lights.manager.GoboManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
-import elgatopro300.cal_lights.light.LightConfig;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.CALKeys;
 import elgatopro300.cal_lights.ui.CLUIContext;
@@ -18,11 +18,16 @@ import elgatopro300.cal_lights.ui.elements.CLUISwitch;
 import elgatopro300.cal_lights.ui.elements.CLUITrackpad;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Util;
+import net.minecraft.util.math.Vec3d;
 
 import org.lwjgl.glfw.GLFW;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class LightInspectorPanel extends CLUIElement {
     private final LightInstance light;
@@ -537,7 +542,7 @@ public class LightInspectorPanel extends CLUIElement {
                 drawY += elementH + gap;
 
                 // Direction label: Direction: dx / dy / dz
-                String dirText = String.format(java.util.Locale.ROOT, CALKeys.PROP_DIRECTION.get(), fmt(light.dx), fmt(light.dy), fmt(light.dz));
+                String dirText = String.format(Locale.ROOT, CALKeys.PROP_DIRECTION.get(), fmt(light.dx), fmt(light.dy), fmt(light.dz));
                 ctx.batcher.text(dirText, x + 10, drawY + 4, 0xFF888888);
                 drawY += elementH + gap;
 
@@ -877,7 +882,7 @@ public class LightInspectorPanel extends CLUIElement {
                     MinecraftClient mc = MinecraftClient.getInstance();
                     if (mc.player != null) {
                         CALUndoManager.pushState();
-                        net.minecraft.util.math.Vec3d look = mc.player.getRotationVector();
+                        Vec3d look = mc.player.getRotationVector();
                         light.dx = (float) look.x;
                         light.dy = (float) look.y;
                         light.dz = (float) look.z;
@@ -1013,12 +1018,12 @@ public class LightInspectorPanel extends CLUIElement {
                 // Click Folder button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
                     try {
-                        java.nio.file.Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
-                        java.nio.file.Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
-                        if (!java.nio.file.Files.exists(gobosDir)) {
-                            java.nio.file.Files.createDirectories(gobosDir);
+                        Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
+                        Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
+                        if (!Files.exists(gobosDir)) {
+                            Files.createDirectories(gobosDir);
                         }
-                        net.minecraft.util.Util.getOperatingSystem().open(gobosDir.toFile());
+                        Util.getOperatingSystem().open(gobosDir.toFile());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1192,6 +1197,6 @@ public class LightInspectorPanel extends CLUIElement {
     }
 
     private static String fmt(float v) {
-        return String.format(java.util.Locale.ROOT, "%.2f", v);
+        return String.format(Locale.ROOT, "%.2f", v);
     }
 }

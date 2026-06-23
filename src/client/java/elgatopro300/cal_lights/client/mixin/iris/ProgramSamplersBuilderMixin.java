@@ -1,13 +1,14 @@
 package elgatopro300.cal_lights.client.mixin.iris;
 
+import elgatopro300.cal_lights.light.shadow.PointShadowArray;
+import elgatopro300.cal_lights.light.shadow.SpotlightDepthAtlas;
+import elgatopro300.cal_lights.manager.GoboManager;
+
 import net.irisshaders.iris.gl.program.ProgramSamplers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import elgatopro300.cal_lights.manager.GoboManager;
-import elgatopro300.cal_lights.light.shadow.PointShadowArray;
-import elgatopro300.cal_lights.light.shadow.SpotlightDepthAtlas;
 
 @Mixin(value = ProgramSamplers.Builder.class, remap = false)
 public class ProgramSamplersBuilderMixin {
