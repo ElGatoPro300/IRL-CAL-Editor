@@ -1,7 +1,7 @@
 package elgatopro300.cal_lights.light;
 
 public final class LightConfig {
-    public static boolean showGuides = false;
+
     public static int shadowQuality = 1;
     public static boolean shadowCache = true;
     public static boolean shadowBlocks = true;
@@ -18,9 +18,6 @@ public final class LightConfig {
 
     private LightConfig() {}
 
-    public static boolean showGuides() {
-        return showGuides;
-    }
 
     public static boolean shadowCache() {
         return shadowCache;

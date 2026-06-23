@@ -6,7 +6,12 @@
   "mixins": [
     "EntityMixin",
     "ClientPlayerEntityMixin",
-    "InGameOverlayRendererMixin"
+    "InGameOverlayRendererMixin",
+    "GameRendererLightMixin",
+    "WorldBlockChangeMixin",
+    "WorldBlockEntityTickersAccessor",
+    "iris.ProgramSamplersBuilderMixin",
+    "iris.SamplerBindingCubeArrayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 
 public class CALLights implements ModInitializer {
     public static final String MOD_ID = "cal";
-    public static final Logger LOGGER = LoggerFactory.getLogger("CAL Lights");
+    public static final Logger LOGGER = LoggerFactory.getLogger("IRL CAL Editor");
 
     @Override
     public void onInitialize() {
-        LOGGER.info("CAL Lights mod initialized on Server/Common!");
+        LOGGER.info("IRL CAL Editor mod initialized on Server/Common!");
     }
 }

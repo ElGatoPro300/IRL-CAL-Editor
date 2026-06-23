@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class CALShaderPatcherPanel extends CLUIElement {
-    private static final Logger LOG = LoggerFactory.getLogger("CAL Lights Patcher");
+    private static final Logger LOG = LoggerFactory.getLogger("IRL CAL Editor Patcher");
 
     private List<String> packs = List.of();
     private List<Path> patches = List.of();

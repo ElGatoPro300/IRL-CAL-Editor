@@ -1,8 +1,8 @@
 {
     "schemaVersion": 1,
-    "id": "cal_lights",
+    "id": "irlcal_editor",
     "version": "${version}",
-    "name": "CAL Lights",
+    "name": "IRL CAL Editor",
     "description": "a lighting graphics engine created specifically for animation",
     "authors": [
         "ElGatoPro300"

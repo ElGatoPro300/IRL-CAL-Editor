@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 public final class CALPatcherHost implements PatcherHost {
-    private static final Logger LOG = LoggerFactory.getLogger("CAL Lights Patcher");
+    private static final Logger LOG = LoggerFactory.getLogger("IRL CAL Editor Patcher");
 
     private static final List<String> BUNDLED = List.of(
         "bliss.irlights",

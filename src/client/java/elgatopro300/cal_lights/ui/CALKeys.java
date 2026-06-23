@@ -224,7 +224,6 @@ public class CALKeys {
     public static final IKey SHADOW_CACHE = IKey.lang("cal.ui.shadow_cache");
     public static final IKey SHADOW_BLOCKS = IKey.lang("cal.ui.shadow_blocks");
     public static final IKey SHADOW_BLOCK_RADIUS = IKey.lang("cal.ui.shadow_block_radius");
-    public static final IKey SHOW_GUIDES = IKey.lang("cal.ui.show_guides");
     public static final IKey AUTO_LIGHTS = IKey.lang("cal.ui.auto_lights");
     public static final IKey AUTO_LIGHTS_SUB = IKey.lang("cal.ui.auto_lights_sub");
     public static final IKey AUTO_LIGHT_SHADOWS = IKey.lang("cal.ui.auto_light_shadows");

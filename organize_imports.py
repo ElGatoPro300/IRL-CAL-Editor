@@ -14,6 +14,7 @@ JAVA_SRC_DIR = os.path.join(PROJECT_ROOT, "src")
 # Import groups order
 IMPORT_GROUPS = [
     "elgatopro300.cal_lights",
+    "org.qualet.irl",
     "mchorse.bbs_mod",
     "net.fabricmc",
     "net.minecraft",
@@ -43,7 +44,7 @@ WHITELIST = [
 ]
 
 # Regex for finding fully qualified names (FQNs)
-FQN_REGEX = r'\b((?:elgatopro300|mchorse|net|com|org|java|javax)\.(?:[a-z0-9_]+\.)+[A-Z][a-zA-Z0-9_]*)\b'
+FQN_REGEX = r'\b((?:elgatopro300|org.qualet.irl|mchorse|net|com|org|java|javax)\.(?:[a-z0-9_]+\.)+[A-Z][a-zA-Z0-9_]*)\b'
 
 def get_all_java_files():
     """Get all Java files in the project's src directory."""

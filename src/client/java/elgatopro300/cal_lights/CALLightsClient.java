@@ -28,16 +28,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CALLightsClient implements ClientModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger("CAL Lights Client");
+    public static final Logger LOGGER = LoggerFactory.getLogger("IRL CAL Editor Client");
     public static KeyBinding editorKeyBinding;
     public static KeyBinding createLightKeyBinding;
 
     private static final int AUTO_SHADOW_RAMP_STEP = 2;
     private static int autoShadowRamp = 0;
 
+    public static void resetAutoShadowRamp() {
+        autoShadowRamp = 0;
+    }
+
     @Override
     public void onInitializeClient() {
-        LOGGER.info("CAL Lights mod initialized on Client!");
+        LOGGER.info("IRL CAL Editor mod initialized on Client!");
 
         // Install the patcher host so the shared irl-core patcher can reach the game
         // dir / Iris shaderpacks dir / bundled .irlights patches.
@@ -58,13 +62,13 @@ public class CALLightsClient implements ClientModInitializer {
         ));
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            LOGGER.info("Initializing CAL Lights Icons...");
+            LOGGER.info("Initializing IRL CAL Editor Icons...");
             CalLightsIcons.init();
 
-            LOGGER.info("Initializing CAL Lights 3D Gizmo...");
+            LOGGER.info("Initializing IRL CAL Editor 3D Gizmo...");
             LightGizmo.INSTANCE.init();
 
-            LOGGER.info("Initializing CAL Lights Gobo Manager...");
+            LOGGER.info("Initializing IRL CAL Editor Gobo Manager...");
             GoboManager.INSTANCE.init();
         });
 
@@ -102,10 +106,7 @@ public class CALLightsClient implements ClientModInitializer {
             }
         });
 
-        WorldRenderEvents.BEFORE_ENTITIES.register(context -> {
-            GoboManager.INSTANCE.bind();
-            registerLightsToIrlCore();
-        });
+        // Note: Light registration and shadow baking are now handled in GameRendererLightMixin at renderWorld HEAD.
     }
 
     /**
@@ -122,7 +123,7 @@ public class CALLightsClient implements ClientModInitializer {
      *            anisotropy, vlDensity, beamStrength, bulbSize, shadows,
      *            cookieLayer, cookieRot, cookieScale, cookieFlags, id)
      */
-    private static void registerLightsToIrlCore() {
+    public static void registerLightsToIrlCore() {
         LightRegistry.clear();
 
         // 1. Point lights
@@ -233,7 +234,5 @@ public class CALLightsClient implements ClientModInitializer {
         } else {
             autoShadowRamp = 0;
         }
-
-        LightRegistry.flush();
     }
 }

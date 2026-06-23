@@ -343,4 +343,8 @@ public class GoboManager {
             return null;
         }
     }
+
+    public int getTextureArrayId() {
+        return textureArrayId == -1 ? 0 : textureArrayId;
+    }
 }

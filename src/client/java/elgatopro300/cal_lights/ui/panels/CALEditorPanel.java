@@ -330,14 +330,14 @@ public class CALEditorPanel extends CLUIElement {
         ctx.batcher.text(CALKeys.TITLE.get(), 8, topY + 6, 0xFFFFAA00);
 
         // Files Tab
-        boolean hoverFiles = ctx.mouseX >= 80 && ctx.mouseX < 135 && ctx.mouseY >= 0 && ctx.mouseY < topMenuH;
+        boolean hoverFiles = ctx.mouseX >= 110 && ctx.mouseX < 165 && ctx.mouseY >= 0 && ctx.mouseY < topMenuH;
         int filesCol = (activeMenuDropdown == 1) ? 0xFFFFAA00 : (hoverFiles ? 0xFFFFFFFF : 0xFFCCCCCC);
-        ctx.batcher.text(CALKeys.FILES.get(), 85, topY + 6, filesCol);
+        ctx.batcher.text(CALKeys.FILES.get(), 115, topY + 6, filesCol);
 
         // Windows Tab
-        boolean hoverWindows = ctx.mouseX >= 135 && ctx.mouseX < 210 && ctx.mouseY >= 0 && ctx.mouseY < topMenuH;
+        boolean hoverWindows = ctx.mouseX >= 165 && ctx.mouseX < 240 && ctx.mouseY >= 0 && ctx.mouseY < topMenuH;
         int windowsCol = (activeMenuDropdown == 2) ? 0xFFFFAA00 : (hoverWindows ? 0xFFFFFFFF : 0xFFCCCCCC);
-        ctx.batcher.text(CALKeys.WINDOWS.get(), 140, topY + 6, windowsCol);
+        ctx.batcher.text(CALKeys.WINDOWS.get(), 170, topY + 6, windowsCol);
 
         // --- RENDER TAB HEADERS ---
         // Solid background and outline for the central tab row space so the light icons button is beautifully covered
@@ -563,7 +563,7 @@ public class CALEditorPanel extends CLUIElement {
 
         // --- RENDER DROPDOWN OVERLAYS (ALWAYS ON TOP) ---
         if (activeMenuDropdown == 1) {
-            int dropX = 80;
+            int dropX = 110;
             int dropY = topMenuH;
             int dropW = 120;
             int itemH = 18;
@@ -584,7 +584,7 @@ public class CALEditorPanel extends CLUIElement {
 
             // Item 3: Parchar Shaders
             boolean hover3 = ctx.mouseX >= dropX && ctx.mouseX < dropX + dropW && ctx.mouseY >= dropY + itemH * 2 && ctx.mouseY < dropY + itemH * 3;
-            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + itemH * 3 - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
+            ctx.batcher.box(dropX + 1, dropY + itemH * 2 + 1, dropX + dropW - 1, dropY + itemH * 2 - 1, hover3 ? 0xFF2A2A35 : 0xFF141418);
             ctx.batcher.text(CALKeys.PATCH_MENU.get(), dropX + 8, dropY + itemH * 2 + 5, hover3 ? 0xFFFFAA00 : 0xFFE0E0E0);
 
             // Item 4: Salir
@@ -592,7 +592,7 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(dropX + 1, dropY + itemH * 3 + 1, dropX + dropW - 1, dropY + dropH - 1, hover4 ? 0xFF2A2A35 : 0xFF141418);
             ctx.batcher.text(CALKeys.EXIT.get(), dropX + 8, dropY + itemH * 3 + 5, hover4 ? 0xFFEF5350 : 0xFFE0E0E0);
         } else if (activeMenuDropdown == 2) {
-            int dropX = 135;
+            int dropX = 165;
             int dropY = topMenuH;
             int dropW = 110;
             int itemH = 18;
@@ -913,17 +913,6 @@ public class CALEditorPanel extends CLUIElement {
                 trackShadowBlockRadius.render(ctx);
                 curY += itemSpacing;
 
-                // Show Guides
-                {
-                    int boxSize = 10;
-                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                    if (elgatopro300.cal_lights.light.LightConfig.showGuides) {
-                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
-                    }
-                    ctx.batcher.text(CALKeys.SHOW_GUIDES.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
-                }
 
                 // --- COLUMNA DERECHA: AUTO-LUCES ---
                 curY = startY;
@@ -1618,13 +1607,7 @@ public class CALEditorPanel extends CLUIElement {
                 if (trackShadowBlockRadius.mouseClicked(mx, my, btn)) {
                     return true;
                 }
-                curY += itemSpacing;
 
-                // Show Guides Checkbox click
-                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
-                    elgatopro300.cal_lights.light.LightConfig.showGuides = !elgatopro300.cal_lights.light.LightConfig.showGuides;
-                    return true;
-                }
 
                 // --- COLUMNA DERECHA CLICKS ---
                 curY = startY;
@@ -1672,7 +1655,7 @@ public class CALEditorPanel extends CLUIElement {
         // --- DROPDOWN OVERLAY CLICKS ---
         if (activeMenuDropdown != 0) {
             if (activeMenuDropdown == 1) {
-                int dropX = 80;
+                int dropX = 110;
                 int dropY = topMenuH;
                 int dropW = 120;
                 int itemH = 18;
@@ -1703,7 +1686,7 @@ public class CALEditorPanel extends CLUIElement {
                     return true;
                 }
             } else if (activeMenuDropdown == 2) {
-                int dropX = 135;
+                int dropX = 165;
                 int dropY = topMenuH;
                 int dropW = 110;
                 int itemH = 18;
@@ -1733,10 +1716,10 @@ public class CALEditorPanel extends CLUIElement {
 
         // --- TOP MENU TABS CLICKS ---
         if (my >= 0 && my < topMenuH) {
-            if (mx >= 80 && mx < 135) {
+            if (mx >= 110 && mx < 165) {
                 activeMenuDropdown = 1;
                 return true;
-            } else if (mx >= 135 && mx < 210) {
+            } else if (mx >= 165 && mx < 240) {
                 activeMenuDropdown = 2;
                 return true;
             }
