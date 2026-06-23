@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ProgramSamplersBuilderMixin {
     @Inject(method = "build", at = @At("HEAD"))
     private void irlite$bindShadowSamplers(CallbackInfoReturnable<ProgramSamplers> cir) {
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
         ProgramSamplers.Builder self = (ProgramSamplers.Builder) (Object) this;
         self.addDynamicSampler(SpotlightDepthAtlas::getGlTextureId, "irl_spotShadowAtlas");
         self.addDynamicSampler(PointShadowArray::getGlTextureId, "irl_pointShadowArray");

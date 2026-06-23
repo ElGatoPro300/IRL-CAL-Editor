@@ -20,6 +20,9 @@ public class WorldBlockChangeMixin {
     private void irlite$invalidateBlockShadows(
         BlockPos pos, BlockState state, int flags, int maxUpdateDepth,
         CallbackInfoReturnable<Boolean> cir) {
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
         World self = (World) (Object) this;
         if (self.isClient()) {
             BlockShadowCache.invalidateAt(pos);

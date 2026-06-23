@@ -29,6 +29,9 @@ public abstract class SamplerBindingCubeArrayMixin {
 
     @Inject(method = "updateSampler", at = @At("HEAD"), cancellable = true)
     private void irlite$bindCubeArrayInsteadOf2D(CallbackInfo ci) {
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
         int id = this.texture.getAsInt();
         if (id == 0) {
             return;
