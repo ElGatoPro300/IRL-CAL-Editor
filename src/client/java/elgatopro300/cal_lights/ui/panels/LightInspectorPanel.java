@@ -69,19 +69,7 @@ public class LightInspectorPanel extends CLUIElement {
     private boolean goboSelectorExpanded = false;
     private float goboAnimH = -1f;
 
-    // Engine Settings (Motor)
-    private boolean engineExpanded = false;
-    private float engineAnimH = -1f;
-    private final CLUITrackpad trackShadowBlockRadius;
-    private final CLUISwitch shadowCacheSwitch;
-    private final CLUISwitch shadowBlocksSwitch;
-    private final CLUISwitch autoLightsSwitch;
-    private final CLUISwitch autoLightShadowsSwitch;
-    private final CLUITrackpad trackAutoLightIntensity;
-    private final CLUITrackpad trackAutoLightReach;
-    private final CLUITrackpad trackAutoLightRadius;
-    private final CLUITrackpad trackAutoLightMax;
-    private int shadowQualitySelected = 1; // 0=LOW, 1=MED, 2=HIGH, 3=ULTRA
+
 
     // Animation
     private final AnimationEditorPanel animationPanel;
@@ -235,44 +223,7 @@ public class LightInspectorPanel extends CLUIElement {
             if (onUpdate != null) onUpdate.run();
         });
 
-        // Engine Settings (Motor) trackpads and switches
-        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), (float) LightConfig.shadowBlockRadius, 4.0f, 96.0f, val -> {
-            LightConfig.shadowBlockRadius = Math.round(val);
-        }).setArrowStep(1.0f);
-        
-        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
-            LightConfig.autoLightIntensity = val;
-        }).setArrowStep(0.05f);
-        
-        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH.get(), LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
-            LightConfig.autoLightReach = val;
-        }).setArrowStep(0.05f);
-        
-        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS.get(), (float) LightConfig.autoLightRadius, 8.0f, 96.0f, val -> {
-            LightConfig.autoLightRadius = Math.round(val);
-        }).setArrowStep(1.0f);
-        
-        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX.get(), (float) LightConfig.autoLightMax, 0.0f, 2000.0f, val -> {
-            LightConfig.autoLightMax = Math.round(val);
-        }).setArrowStep(10.0f);
 
-        this.shadowCacheSwitch = new CLUISwitch(CALKeys.SHADOW_CACHE, LightConfig.shadowCache, val -> {
-            LightConfig.shadowCache = val;
-        });
-        
-        this.shadowBlocksSwitch = new CLUISwitch(CALKeys.SHADOW_BLOCKS, LightConfig.shadowBlocks, val -> {
-            LightConfig.shadowBlocks = val;
-        });
-        
-        this.autoLightsSwitch = new CLUISwitch(CALKeys.AUTO_LIGHTS, LightConfig.autoLights, val -> {
-            LightConfig.autoLights = val;
-        });
-        
-        this.autoLightShadowsSwitch = new CLUISwitch(CALKeys.AUTO_LIGHT_SHADOWS, LightConfig.autoLightShadows, val -> {
-            LightConfig.autoLightShadows = val;
-        });
-
-        this.shadowQualitySelected = LightConfig.shadowQuality;
 
         // Animation panel
         this.animationPanel = new AnimationEditorPanel(light, onUpdate);
@@ -344,10 +295,7 @@ public class LightInspectorPanel extends CLUIElement {
         blocksOnlySwitch.setValue(light.blocksOnly);
         cookieInvertSwitch.setValue(light.cookieInvert);
         animationSwitch.setValue(light.animation != null && light.animation.enabled);
-        shadowCacheSwitch.setValue(LightConfig.shadowCache);
-        shadowBlocksSwitch.setValue(LightConfig.shadowBlocks);
-        autoLightsSwitch.setValue(LightConfig.autoLights);
-        autoLightShadowsSwitch.setValue(LightConfig.autoLightShadows);
+
 
         if (CalSettings.INSTANCE.simplifyAnimations) {
             transformAnimH = targetTransformH;
@@ -795,104 +743,7 @@ public class LightInspectorPanel extends CLUIElement {
             }
         }
 
-        // ==========================================
-        // 8. ENGINE SETTINGS (MOTOR GLOBAL)
-        // ==========================================
-        boolean hoverEngine = ctx.mouseX >= x + 8 && ctx.mouseX < x + w - 8 && ctx.mouseY >= currentY && ctx.mouseY < currentY + headerH;
-        int engineBg = hoverEngine ? 0xFF1565C0 : 0xFF0D47A1;
-        ctx.batcher.box(x + 8, currentY, x + w - 8, currentY + headerH, engineBg);
-        ctx.batcher.icon(engineExpanded ? CalLightsIcons.ARROW_DOWN : CalLightsIcons.ARROW_RIGHT, x + 12, currentY + 1, 0xFFFFFFFF);
-        ctx.batcher.icon(CalLightsIcons.LIGHT, x + 28, currentY + 1, 0xFFFFBB00);
-        ctx.batcher.text(CALKeys.MOTOR.get(), x + 46, currentY + 5, 0xFFFFFFFF);
-        currentY += headerH + gap;
 
-        // Calculate engine section height
-        int shadowQualityRows = 1;
-        int shadowSettingsRows = 3; // cache, blocks, blockradius
-        int autoLightsRows = 1;
-        int autoLightShadowsRows = 1;
-        int autoLightTrackpadsRows = LightConfig.autoLights ? 4 : 0; // intensity, reach, radius, max
-        float targetEngineH = engineExpanded ? ((shadowQualityRows + shadowSettingsRows + autoLightsRows + autoLightShadowsRows + autoLightTrackpadsRows) * (16 + 3)) : 0;
-        
-        if (engineAnimH < 0) engineAnimH = targetEngineH;
-        if (!CalSettings.INSTANCE.simplifyAnimations) {
-            engineAnimH += (targetEngineH - engineAnimH) * 0.25f;
-        } else {
-            engineAnimH = targetEngineH;
-        }
-
-        int animH_engine = (int) engineAnimH;
-        if (animH_engine > 0) {
-            ctx.batcher.clip(x + 2, currentY, w - 4, animH_engine);
-            int drawY = currentY;
-
-            // Shadow Quality (Segmented Buttons: LOW, MED, HIGH, ULTRA)
-            ctx.batcher.text(CALKeys.SHADOW_QUALITY.get() + ":", x + 10, drawY + 2, 0xFFCCCCCC);
-            drawY += elementH + gap;
-            
-            int btnW2 = (w - 22) / 4;
-            String[] qualities = {"LOW", "MED", "HIGH", "ULTRA"};
-            for (int i = 0; i < 4; i++) {
-                boolean hoverQuality = ctx.mouseX >= (x + 10 + i * (btnW2 + 2)) && ctx.mouseX < (x + 10 + i * (btnW2 + 2) + btnW2) && 
-                                      ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
-                boolean isSelected = (shadowQualitySelected == i);
-                int qBg = isSelected ? 0xFF00796B : (hoverQuality ? 0xFF2A2A35 : 0xFF1C1C22);
-                int qBorder = isSelected ? 0xFF00F0FF : 0xFF2D2D38;
-                ctx.batcher.box(x + 10 + i * (btnW2 + 2), drawY, x + 10 + i * (btnW2 + 2) + btnW2, drawY + elementH, qBg);
-                ctx.batcher.outline(x + 10 + i * (btnW2 + 2), drawY, x + 10 + i * (btnW2 + 2) + btnW2, drawY + elementH, qBorder, 1);
-                int qTextW = MinecraftClient.getInstance().textRenderer.getWidth(qualities[i]);
-                ctx.batcher.text(qualities[i], x + 10 + i * (btnW2 + 2) + (btnW2 - qTextW) / 2, drawY + 4, 0xFFFFFFFF);
-            }
-            drawY += elementH + gap;
-
-            // Shadow Cache, Shadow Blocks
-            shadowCacheSwitch.resize(x, drawY, w, elementH);
-            shadowCacheSwitch.render(ctx);
-            drawY += elementH + gap;
-
-            shadowBlocksSwitch.resize(x, drawY, w, elementH);
-            shadowBlocksSwitch.render(ctx);
-            drawY += elementH + gap;
-
-            trackShadowBlockRadius.resize(x + 10, drawY, w - 20, elementH);
-            trackShadowBlockRadius.setValue(LightConfig.shadowBlockRadius);
-            trackShadowBlockRadius.render(ctx);
-            drawY += elementH + gap;
-
-            // Auto Lights
-            autoLightsSwitch.resize(x, drawY, w, elementH);
-            autoLightsSwitch.render(ctx);
-            drawY += elementH + gap;
-
-            autoLightShadowsSwitch.resize(x, drawY, w, elementH);
-            autoLightShadowsSwitch.render(ctx);
-            drawY += elementH + gap;
-
-            // Auto Light Trackpads (only if auto lights enabled)
-            if (LightConfig.autoLights) {
-                trackAutoLightIntensity.resize(x + 10, drawY, w - 20, elementH);
-                trackAutoLightIntensity.setValue(LightConfig.autoLightIntensity);
-                trackAutoLightIntensity.render(ctx);
-                drawY += elementH + gap;
-
-                trackAutoLightReach.resize(x + 10, drawY, w - 20, elementH);
-                trackAutoLightReach.setValue(LightConfig.autoLightReach);
-                trackAutoLightReach.render(ctx);
-                drawY += elementH + gap;
-
-                trackAutoLightRadius.resize(x + 10, drawY, w - 20, elementH);
-                trackAutoLightRadius.setValue(LightConfig.autoLightRadius);
-                trackAutoLightRadius.render(ctx);
-                drawY += elementH + gap;
-
-                trackAutoLightMax.resize(x + 10, drawY, w - 20, elementH);
-                trackAutoLightMax.setValue(LightConfig.autoLightMax);
-                trackAutoLightMax.render(ctx);
-            }
-
-            ctx.batcher.unclip();
-            currentY += animH_engine;
-        }
 
         // Restore standard drawing state at the very end
         ctx.batcher.unclip();
@@ -1178,64 +1029,7 @@ public class LightInspectorPanel extends CLUIElement {
             currentY += (int) goboAnimH;
         }
 
-        // 8. Engine Settings expanded toggle click
-        if (mx >= x + 8 && mx < x + w - 8 && relativeMy >= currentY && relativeMy < currentY + headerH) {
-            engineExpanded = !engineExpanded;
-            return true;
-        }
-        currentY += headerH + gap;
-        if (engineExpanded) {
-            int drawY = currentY;
 
-            // Shadow Quality buttons (4 segments: LOW, MED, HIGH, ULTRA)
-            drawY += elementH + gap; // Skip label row
-            
-            int btnW2 = (w - 22) / 4;
-            for (int i = 0; i < 4; i++) {
-                if (mx >= (x + 10 + i * (btnW2 + 2)) && mx < (x + 10 + i * (btnW2 + 2) + btnW2) && 
-                    relativeMy >= drawY && relativeMy < drawY + elementH) {
-                    shadowQualitySelected = i;
-                    LightConfig.shadowQuality = i;
-                    return true;
-                }
-            }
-            drawY += elementH + gap;
-
-            // Shadow Cache toggle
-            if (shadowCacheSwitch.mouseClicked(mx, my, btn)) return true;
-            drawY += elementH + gap;
-
-            // Shadow Blocks toggle
-            if (shadowBlocksSwitch.mouseClicked(mx, my, btn)) return true;
-            drawY += elementH + gap;
-
-            // Shadow Block Radius trackpad
-            if (trackShadowBlockRadius.mouseClicked(mx, my, btn)) return true;
-            drawY += elementH + gap;
-
-            // Auto Lights toggle
-            if (autoLightsSwitch.mouseClicked(mx, my, btn)) return true;
-            drawY += elementH + gap;
-
-            // Auto Light Shadows toggle
-            if (autoLightShadowsSwitch.mouseClicked(mx, my, btn)) return true;
-            drawY += elementH + gap;
-
-            // Auto Light trackpads (only if enabled)
-            if (LightConfig.autoLights) {
-                if (trackAutoLightIntensity.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-
-                if (trackAutoLightReach.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-
-                if (trackAutoLightRadius.mouseClicked(mx, my, btn)) return true;
-                drawY += elementH + gap;
-
-                if (trackAutoLightMax.mouseClicked(mx, my, btn)) return true;
-            }
-        }
-        currentY += (int) engineAnimH;
 
         return false;
     }
@@ -1260,11 +1054,6 @@ public class LightInspectorPanel extends CLUIElement {
                trackBulbSize.mouseReleased(mx, my, btn) ||
                trackGoboRotation.mouseReleased(mx, my, btn) ||
                trackCookieScale.mouseReleased(mx, my, btn) ||
-               trackShadowBlockRadius.mouseReleased(mx, my, btn) ||
-               trackAutoLightIntensity.mouseReleased(mx, my, btn) ||
-               trackAutoLightReach.mouseReleased(mx, my, btn) ||
-               trackAutoLightRadius.mouseReleased(mx, my, btn) ||
-               trackAutoLightMax.mouseReleased(mx, my, btn) ||
                animationPanel.mouseReleased(mx, my, btn);
     }
 
@@ -1288,11 +1077,6 @@ public class LightInspectorPanel extends CLUIElement {
                trackBulbSize.mouseDragged(mx, my, btn, dx, dy) ||
                trackGoboRotation.mouseDragged(mx, my, btn, dx, dy) ||
                trackCookieScale.mouseDragged(mx, my, btn, dx, dy) ||
-               trackShadowBlockRadius.mouseDragged(mx, my, btn, dx, dy) ||
-               trackAutoLightIntensity.mouseDragged(mx, my, btn, dx, dy) ||
-               trackAutoLightReach.mouseDragged(mx, my, btn, dx, dy) ||
-               trackAutoLightRadius.mouseDragged(mx, my, btn, dx, dy) ||
-               trackAutoLightMax.mouseDragged(mx, my, btn, dx, dy) ||
                animationPanel.mouseDragged(mx, my, btn, dx, dy);
     }
 

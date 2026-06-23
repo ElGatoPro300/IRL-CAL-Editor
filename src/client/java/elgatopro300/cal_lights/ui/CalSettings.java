@@ -18,8 +18,8 @@ public class CalSettings {
     public int guiScale = 2;
     public boolean englishSelected = true; // false = Español, true = English
     public String language = "en_us";
-    public float gizmoSize = 1.0f; // default is 1.0f, ranges from 0.0f to 10.0f
-    public boolean simplifyAnimations = true; // true = simple/no animation, false = premium visual slide transitions
+    public float gizmoSize = 10.0f; // default is 1.0f, ranges from 0.0f to 10.0f
+    public boolean simplifyAnimations = false; // true = simple/no animation, false = premium visual slide transitions
     
     // Premium BBS-style Timeline preferences
     public String durationMode = "ticks"; // "ticks" or "seconds"
