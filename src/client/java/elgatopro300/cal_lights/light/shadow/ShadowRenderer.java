@@ -787,35 +787,35 @@ public final class ShadowRenderer
             float z2 = (float) (oz + maxZ);
 
             // -X  (1.21: VertexConsumer.next() removed — each vertex() starts a new vertex)
-            buf.vertex(x1, y1, z1);
-            buf.vertex(x1, y1, z2);
-            buf.vertex(x1, y2, z2);
-            buf.vertex(x1, y2, z1);
+            buf.vertex(x1, y1, z1).next();
+            buf.vertex(x1, y1, z2).next();
+            buf.vertex(x1, y2, z2).next();
+            buf.vertex(x1, y2, z1).next();
             // +X
-            buf.vertex(x2, y1, z2);
-            buf.vertex(x2, y1, z1);
-            buf.vertex(x2, y2, z1);
-            buf.vertex(x2, y2, z2);
+            buf.vertex(x2, y1, z2).next();
+            buf.vertex(x2, y1, z1).next();
+            buf.vertex(x2, y2, z1).next();
+            buf.vertex(x2, y2, z2).next();
             // -Y
-            buf.vertex(x1, y1, z2);
-            buf.vertex(x1, y1, z1);
-            buf.vertex(x2, y1, z1);
-            buf.vertex(x2, y1, z2);
+            buf.vertex(x1, y1, z2).next();
+            buf.vertex(x1, y1, z1).next();
+            buf.vertex(x2, y1, z1).next();
+            buf.vertex(x2, y1, z2).next();
             // +Y
-            buf.vertex(x1, y2, z1);
-            buf.vertex(x1, y2, z2);
-            buf.vertex(x2, y2, z2);
-            buf.vertex(x2, y2, z1);
+            buf.vertex(x1, y2, z1).next();
+            buf.vertex(x1, y2, z2).next();
+            buf.vertex(x2, y2, z2).next();
+            buf.vertex(x2, y2, z1).next();
             // -Z
-            buf.vertex(x2, y1, z1);
-            buf.vertex(x1, y1, z1);
-            buf.vertex(x1, y2, z1);
-            buf.vertex(x2, y2, z1);
+            buf.vertex(x2, y1, z1).next();
+            buf.vertex(x1, y1, z1).next();
+            buf.vertex(x1, y2, z1).next();
+            buf.vertex(x2, y2, z1).next();
             // +Z
-            buf.vertex(x1, y1, z2);
-            buf.vertex(x2, y1, z2);
-            buf.vertex(x2, y2, z2);
-            buf.vertex(x1, y2, z2);
+            buf.vertex(x1, y1, z2).next();
+            buf.vertex(x2, y1, z2).next();
+            buf.vertex(x2, y2, z2).next();
+            buf.vertex(x1, y2, z2).next();
         }
     }
 

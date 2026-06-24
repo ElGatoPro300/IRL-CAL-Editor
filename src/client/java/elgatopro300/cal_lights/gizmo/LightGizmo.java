@@ -150,10 +150,10 @@ public class LightGizmo {
         float u2 = (texX + texW) / (float) texture.width;
         float v2 = (texY + texH) / (float) texture.height;
 
-        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color);
-        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color);
-        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color);
-        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color);
+        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color).next();
+        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color).next();
+        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color).next();
+        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
@@ -282,8 +282,8 @@ public class LightGizmo {
             float x2 = radius * (float) Math.cos(angle2);
             float z2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, x1, 0, z1).color(r, g, b, a);
-            builder.vertex(matrix, x2, 0, z2).color(r, g, b, a);
+            builder.vertex(matrix, x1, 0, z1).color(r, g, b, a).next();
+            builder.vertex(matrix, x2, 0, z2).color(r, g, b, a).next();
         }
 
         // 2. Vertical circle (XY plane)
@@ -296,8 +296,8 @@ public class LightGizmo {
             float x2 = radius * (float) Math.cos(angle2);
             float y2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, x1, y1, 0).color(r, g, b, a);
-            builder.vertex(matrix, x2, y2, 0).color(r, g, b, a);
+            builder.vertex(matrix, x1, y1, 0).color(r, g, b, a).next();
+            builder.vertex(matrix, x2, y2, 0).color(r, g, b, a).next();
         }
 
         // 3. Vertical circle (YZ plane)
@@ -310,8 +310,8 @@ public class LightGizmo {
             float y2 = radius * (float) Math.cos(angle2);
             float z2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, 0, y1, z1).color(r, g, b, a);
-            builder.vertex(matrix, 0, y2, z2).color(r, g, b, a);
+            builder.vertex(matrix, 0, y1, z1).color(r, g, b, a).next();
+            builder.vertex(matrix, 0, y2, z2).color(r, g, b, a).next();
         }
     }
 
@@ -382,8 +382,8 @@ public class LightGizmo {
             float p2y = cy + outerRad * (cos2 * uy + sin2 * vy);
             float p2z = cz + outerRad * (cos2 * uz + sin2 * vz);
 
-            builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, a);
-            builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, a);
+            builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, a).next();
+            builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, a).next();
         }
 
         // 2. Draw Inner Base Circle (if distinct from outer circle)
@@ -406,8 +406,8 @@ public class LightGizmo {
                 float p2y = cy + innerRad * (cos2 * uy + sin2 * vy);
                 float p2z = cz + innerRad * (cos2 * uz + sin2 * vz);
 
-                builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, innerA);
-                builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, innerA);
+                builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, innerA).next();
+                builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, innerA).next();
             }
         }
 
@@ -421,8 +421,8 @@ public class LightGizmo {
             float py = cy + outerRad * (cos * uy + sin * vy);
             float pz = cz + outerRad * (cos * uz + sin * vz);
 
-            builder.vertex(matrix, 0f, 0f, 0f).color(r, g, b, a);
-            builder.vertex(matrix, px, py, pz).color(r, g, b, a);
+            builder.vertex(matrix, 0f, 0f, 0f).color(r, g, b, a).next();
+            builder.vertex(matrix, px, py, pz).color(r, g, b, a).next();
         }
     }
 
@@ -447,14 +447,14 @@ public class LightGizmo {
         Matrix4f matrix4f = stack.peek().getPositionMatrix();
 
         /* Triangle 1 */
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
 
         /* Triangle 2 */
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
-        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a);
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a).next();
     }
 
     public boolean onMouseClicked(double mouseX, double mouseY, int btn) {

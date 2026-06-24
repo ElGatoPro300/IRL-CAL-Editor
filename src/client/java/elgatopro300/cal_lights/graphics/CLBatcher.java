@@ -33,10 +33,10 @@ public class CLBatcher {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
-        builder.vertex(matrix4f, x, y, 0).color(color1);
-        builder.vertex(matrix4f, x, y + h, 0).color(color3);
-        builder.vertex(matrix4f, x + w, y + h, 0).color(color4);
-        builder.vertex(matrix4f, x + w, y, 0).color(color2);
+        builder.vertex(matrix4f, x, y, 0).color(color1).next();
+        builder.vertex(matrix4f, x, y + h, 0).color(color3).next();
+        builder.vertex(matrix4f, x + w, y + h, 0).color(color4).next();
+        builder.vertex(matrix4f, x + w, y, 0).color(color2).next();
 
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
@@ -82,12 +82,12 @@ public class CLBatcher {
         float x2 = x + texW;
         float y2 = y + texH;
 
-        builder.vertex(matrix, x, y2, 0).texture(u1, v2).color(color);
-        builder.vertex(matrix, x2, y2, 0).texture(u2, v2).color(color);
-        builder.vertex(matrix, x2, y, 0).texture(u2, v1).color(color);
-        builder.vertex(matrix, x, y2, 0).texture(u1, v2).color(color);
-        builder.vertex(matrix, x2, y, 0).texture(u2, v1).color(color);
-        builder.vertex(matrix, x, y, 0).texture(u1, v1).color(color);
+        builder.vertex(matrix, x, y2, 0).texture(u1, v2).color(color).next();
+        builder.vertex(matrix, x2, y2, 0).texture(u2, v2).color(color).next();
+        builder.vertex(matrix, x2, y, 0).texture(u2, v1).color(color).next();
+        builder.vertex(matrix, x, y2, 0).texture(u1, v2).color(color).next();
+        builder.vertex(matrix, x2, y, 0).texture(u2, v1).color(color).next();
+        builder.vertex(matrix, x, y, 0).texture(u1, v1).color(color).next();
 
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
