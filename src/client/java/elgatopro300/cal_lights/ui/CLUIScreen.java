@@ -55,7 +55,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(DrawContext context) {
         // Override with no-op to disable vanilla background dim and blur shader
     }
 
@@ -106,11 +106,11 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, verticalAmount)) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, amount)) {
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override

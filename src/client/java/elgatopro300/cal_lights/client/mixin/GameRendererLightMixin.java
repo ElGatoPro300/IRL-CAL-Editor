@@ -10,7 +10,7 @@ import org.qualet.irl.light.LightRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.Vec3d;
 
@@ -26,8 +26,7 @@ public class GameRendererLightMixin {
     private static boolean irlite$dormant;
 
     @Inject(method = "renderWorld", at = @At("HEAD"))
-    private void irlite$collectLights(RenderTickCounter tickCounter, CallbackInfo ci) {
-        float tickDelta = tickCounter.getTickDelta(true);
+    private void irlite$collectLights(float tickDelta, long limitTime, MatrixStack matrices, CallbackInfo ci) {
 
         if (IrisShadersState.shadersDisabled()) {
             LightRegistry.clear();

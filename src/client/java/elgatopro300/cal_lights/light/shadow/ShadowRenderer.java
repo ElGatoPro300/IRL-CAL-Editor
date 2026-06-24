@@ -4,7 +4,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
@@ -327,9 +326,9 @@ public final class ShadowRenderer
         RenderSystem.setProjectionMatrix(proj, VertexSorter.BY_DISTANCE);
         // 1.21: getModelViewStack() returns a JOML Matrix4fStack (loadIdentity ->
         // identity, multiplyPositionMatrix -> mul); applyModelViewMatrix still uploads it.
-        Matrix4fStack mv = RenderSystem.getModelViewStack();
-        mv.identity();
-        mv.mul(view);
+        MatrixStack mv = RenderSystem.getModelViewStack();
+        mv.loadIdentity();
+        mv.multiplyPositionMatrix(view);
         RenderSystem.applyModelViewMatrix();
     }
 
@@ -474,8 +473,8 @@ public final class ShadowRenderer
     private static VertexBuffer buildBlockVbo(List<BlockShadowEntry> blocks)
     {
         // 1.21: begin() moved to Tessellator and returns the builder.
-        BufferBuilder buf = Tessellator.getInstance()
-            .begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
+        BufferBuilder buf = Tessellator.getInstance().getBuffer();
+        buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
 
         QuadBoxConsumer consumer = new QuadBoxConsumer(buf);
         for (int i = 0, n = blocks.size(); i < n; i++)
@@ -666,8 +665,8 @@ public final class ShadowRenderer
     private static VertexBuffer buildCutoutLayerVbo(List<BlockShadowEntry> blocks, ClientWorld world, BlockRenderManager brm, RenderLayer layer)
     {
         // 1.21: begin() moved to Tessellator and returns the builder.
-        BufferBuilder buf = Tessellator.getInstance()
-            .begin(layer.getDrawMode(), layer.getVertexFormat());
+        BufferBuilder buf = Tessellator.getInstance().getBuffer();
+        buf.begin(layer.getDrawMode(), layer.getVertexFormat());
 
         resetScratch();
         MatrixStack stack = scratch;
@@ -713,7 +712,7 @@ public final class ShadowRenderer
             stack.pop();
         }
 
-        BuiltBuffer built = buf.endNullable();
+        BufferBuilder.BuiltBuffer built = buf.endNullable();
         if (built == null)
         {
             return null; // nothing emitted for this layer
@@ -827,8 +826,8 @@ public final class ShadowRenderer
             return;
         }
 
-        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.popMatrix();
+        MatrixStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.pop();
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(savedProj, savedSorter);
 
@@ -891,10 +890,10 @@ public final class ShadowRenderer
         RenderSystem.setProjectionMatrix(proj, VertexSorter.BY_DISTANCE);
         currentProj.set(proj);
 
-        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.pushMatrix();
-        mvStack.identity();
-        mvStack.mul(currentView);
+        MatrixStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.push();
+        mvStack.loadIdentity();
+        mvStack.multiplyPositionMatrix(currentView);
         RenderSystem.applyModelViewMatrix();
     }
 

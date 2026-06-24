@@ -98,12 +98,12 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        CALEditorPanel.lastScrollX = horizontalAmount;
-        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, verticalAmount)) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        CALEditorPanel.lastScrollX = 0;
+        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, amount)) {
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override
@@ -198,7 +198,7 @@ public class CALEditorScreen extends CLUIScreen {
 
                 if (move.lengthSquared() > 0) {
                     move = move.normalize();
-                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getRenderTickCounter().getLastFrameDuration(); // butter-smooth frame-rate independent speed
+                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getLastFrameDuration(); // butter-smooth frame-rate independent speed
                     if (CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_LEFT_CONTROL) || CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_RIGHT_CONTROL)) {
                         speed *= 3.0; // Fast flight
                     }

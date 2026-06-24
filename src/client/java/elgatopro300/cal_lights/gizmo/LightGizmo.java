@@ -141,7 +141,8 @@ public class LightGizmo {
 
     private void drawBillboardQuad(MatrixStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
         Matrix4f matrix = stack.peek().getPositionMatrix();
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS,
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.QUADS,
                 VertexFormats.POSITION_TEXTURE_COLOR);
 
         float u1 = texX / (float) texture.width;
@@ -171,7 +172,8 @@ public class LightGizmo {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES,
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.TRIANGLES,
                 VertexFormats.POSITION_COLOR);
 
         float axisSize = 0.30f;
@@ -239,7 +241,8 @@ public class LightGizmo {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES,
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.DEBUG_LINES,
                 VertexFormats.POSITION_COLOR);
 
         float r = light.r;

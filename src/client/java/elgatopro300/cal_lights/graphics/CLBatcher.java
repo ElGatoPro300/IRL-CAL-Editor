@@ -30,7 +30,8 @@ public class CLBatcher {
 
     public void box(float x, float y, float w, float h, int color1, int color2, int color3, int color4) {
         Matrix4f matrix4f = this.ctx.getMatrices().peek().getPositionMatrix();
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
         builder.vertex(matrix4f, x, y, 0).color(color1);
         builder.vertex(matrix4f, x, y + h, 0).color(color3);
@@ -71,7 +72,8 @@ public class CLBatcher {
         texture.bind();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         Matrix4f matrix = this.ctx.getMatrices().peek().getPositionMatrix();
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_TEXTURE_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_TEXTURE_COLOR);
 
         float u1 = texX / (float) texture.width;
         float v1 = texY / (float) texture.height;
