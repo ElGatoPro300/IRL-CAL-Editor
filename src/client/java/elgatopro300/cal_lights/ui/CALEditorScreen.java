@@ -210,6 +210,10 @@ public class CALEditorScreen extends CLUIScreen {
                 }
             }
         }
+        // Draw the 3D gizmo/billboards in the GUI phase (over the composited
+        // world, under the UI panels) so they survive Iris shader pipelines.
+        LightGizmo.INSTANCE.renderOverlay();
+
         super.render(context, mouseX, mouseY, delta);
         if (this.root instanceof CALEditorPanel panel && panel.closing) {
             if (panel.isFullyClosed()) {
