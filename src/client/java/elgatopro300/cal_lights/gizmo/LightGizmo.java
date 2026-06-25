@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
@@ -122,16 +123,16 @@ public class LightGizmo {
                 
                 // Draw Tint Layer
                 icon.tintTexture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
 
                 // Draw Static Layer
                 icon.staticTexture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
             } else if (icon.texture != null) {
                 icon.texture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 int color = (light == selectedLight) ? 0xFFFFAA00 : 0xFFFFFFFF;
                 drawBillboardQuad(stack, size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
             }
@@ -166,7 +167,7 @@ public class LightGizmo {
                 * CalSettings.INSTANCE.gizmoSize);
         stack.scale(scale, scale, scale);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
@@ -234,7 +235,7 @@ public class LightGizmo {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();

@@ -2,6 +2,7 @@ package elgatopro300.cal_lights.graphics;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -38,7 +39,7 @@ public class CLBatcher {
         builder.vertex(matrix4f, x + w, y, 0).color(color2);
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 
@@ -88,7 +89,7 @@ public class CLBatcher {
         builder.vertex(matrix, x, y, 0).texture(u1, v1).color(color);
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 

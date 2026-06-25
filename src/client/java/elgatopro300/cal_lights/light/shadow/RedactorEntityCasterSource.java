@@ -77,7 +77,7 @@ public final class RedactorEntityCasterSource implements ShadowCasterSource
         EntityRenderDispatcher dispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
         if (dispatcher != null)
         {
-            dispatcher.render(entity, cx, cy, cz, yaw, tickDelta, matrices, immediate, FULL_LIGHT);
+            dispatcher.render(entity, cx, cy, cz, tickDelta, matrices, immediate, FULL_LIGHT);
         }
     }
 }
