@@ -24,8 +24,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import com.mojang.blaze3d.systems.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
 
 import org.lwjgl.opengl.GL11;
 
@@ -103,13 +103,12 @@ public class LightGizmo {
         // Back up the GUI matrix state and install the world matrices captured
         // during the world render phase (AFTER_TRANSLUCENT).
         Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
-        VertexSorter prevSorter = RenderSystem.getVertexSorting();
-        RenderSystem.setProjectionMatrix(lastProjectionMatrix, VertexSorter.BY_DISTANCE);
+        ProjectionType prevProjectionType = RenderSystem.getProjectionType();
+        RenderSystem.setProjectionMatrix(lastProjectionMatrix, ProjectionType.PERSPECTIVE);
 
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
         mvStack.set(capturedModelView);
-        RenderSystem.applyModelViewMatrix();
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -136,8 +135,7 @@ public class LightGizmo {
 
         // Restore the GUI matrix state.
         mvStack.popMatrix();
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.setProjectionMatrix(prevProjection, prevSorter);
+        RenderSystem.setProjectionMatrix(prevProjection, prevProjectionType);
     }
 
     private void drawBillboards(MatrixStack stack, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
