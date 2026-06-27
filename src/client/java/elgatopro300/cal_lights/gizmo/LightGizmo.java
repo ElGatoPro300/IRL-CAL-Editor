@@ -15,13 +15,14 @@ import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
 
 
 import java.util.Collection;
@@ -161,6 +162,8 @@ public class LightGizmo {
         buf.vertex(matrix, -size, size, 0).color(r, g, b, a).texture(u1, v1).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
     }
 
+    private static final Identifier WHITE_TEX = Identifier.ofVanilla("textures/block/white_concrete.png");
+
     private void drawAxes(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, LightInstance light) {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
@@ -182,20 +185,40 @@ public class LightGizmo {
             sz = this.lastSz;
         }
 
+        boolean activeX = activeAxis == -1 || activeAxis == 0;
+        boolean activeY = activeAxis == -1 || activeAxis == 1;
+        boolean activeZ = activeAxis == -1 || activeAxis == 2;
+        boolean activeXZ = activeAxis == -1 || activeAxis == 3;
+        boolean activeXY = activeAxis == -1 || activeAxis == 4;
+        boolean activeZY = activeAxis == -1 || activeAxis == 5;
+        boolean activeFree = activeAxis == -1 || activeAxis == 6;
+
         float[] xCol = (activeAxis == 0) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.15f, 0.15f };
         float[] yCol = (activeAxis == 1) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.15f };
         float[] zCol = (activeAxis == 2) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 0.35f, 1.0f };
+        float[] xzCol = (activeAxis == 3) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.6f };
+        float[] xyCol = (activeAxis == 4) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.6f, 0.15f, 1.0f };
+        float[] zyCol = (activeAxis == 5) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.4f, 0.15f };
+        float[] freeCol = (activeAxis == 6) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 1.0f, 1.0f };
 
-        float axisLen = 0.35f;
-        float width = 2.0f;
-        float a = 1.0f;
+        float axisSize = 0.30f;
+        float axisOffset = 0.012f;
+        float planeInner = 0.08f;
+        float planeOuter = 0.20f;
+        float offset = 0.001f;
 
-        VertexConsumer buf = consumers.getBuffer(RenderLayers.linesTranslucent());
+        VertexConsumer buf = consumers.getBuffer(RenderLayers.entityTranslucentEmissive(WHITE_TEX));
         MatrixStack.Entry e = stack.peek();
 
-        line(buf, e, 0f, 0f, 0f, axisLen * sx, 0f, 0f, xCol[0], xCol[1], xCol[2], a, width);
-        line(buf, e, 0f, 0f, 0f, 0f, axisLen * sy, 0f, yCol[0], yCol[1], yCol[2], a, width);
-        line(buf, e, 0f, 0f, 0f, 0f, 0f, axisLen * sz, zCol[0], zCol[1], zCol[2], a, width);
+        if (activeX) fillBox(buf, e, 0, -axisOffset, -axisOffset, axisSize * sx, axisOffset, axisOffset, xCol[0], xCol[1], xCol[2], 1.0f);
+        if (activeY) fillBox(buf, e, -axisOffset, 0, -axisOffset, axisOffset, axisSize * sy, axisOffset, yCol[0], yCol[1], yCol[2], 1.0f);
+        if (activeZ) fillBox(buf, e, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize * sz, zCol[0], zCol[1], zCol[2], 1.0f);
+
+        if (activeXZ) fillBox(buf, e, planeInner * sx, -offset, planeInner * sz, planeOuter * sx, offset, planeOuter * sz, xzCol[0], xzCol[1], xzCol[2], 0.4f);
+        if (activeXY) fillBox(buf, e, planeInner * sx, planeInner * sy, -offset, planeOuter * sx, planeOuter * sy, offset, xyCol[0], xyCol[1], xyCol[2], 0.4f);
+        if (activeZY) fillBox(buf, e, -offset, planeInner * sy, planeInner * sz, offset, planeOuter * sy, planeOuter * sz, zyCol[0], zyCol[1], zyCol[2], 0.4f);
+
+        if (activeFree) fillBox(buf, e, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, freeCol[0], freeCol[1], freeCol[2], 1.0f);
 
         stack.pop();
     }
@@ -213,56 +236,72 @@ public class LightGizmo {
             g = 0.66f;
             b = 0.0f;
         }
-
-        float width = 2.0f;
         float a = 0.75f;
 
-        VertexConsumer buf = consumers.getBuffer(RenderLayers.linesTranslucent());
+        VertexConsumer buf = consumers.getBuffer(RenderLayers.entityTranslucentEmissive(WHITE_TEX));
         MatrixStack.Entry e = stack.peek();
 
         if (light.isSpot) {
-            drawSpotGuide(buf, e, light, r, g, b, a, width);
+            drawSpotIndicator(buf, e, light, r, g, b, a);
         } else {
-            drawPointGuide(buf, e, light.radius, r, g, b, a, width);
+            drawPointIndicator(buf, e, light, r, g, b, a);
         }
 
         stack.pop();
     }
 
-    private static void drawPointGuide(VertexConsumer buf, MatrixStack.Entry e, float radius, float r, float g, float b, float a, float width) {
-        float rr = Math.max(0.5f, Math.min(radius, 16.0f));
-        int seg = 48;
+    private void vert(VertexConsumer buf, Matrix4f m, float x, float y, float z, float r, float g, float b, float a) {
+        buf.vertex(m, x, y, z).color(r, g, b, a).texture(0, 0).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 1, 0);
+    }
 
-        float px = rr, pz = 0f;
-        for (int i = 1; i <= seg; i++) {
-            double ang = (Math.PI * 2.0) * i / seg;
-            float x = rr * (float) Math.cos(ang);
-            float z = rr * (float) Math.sin(ang);
-            line(buf, e, px, 0f, pz, x, 0f, z, r, g, b, a, width);
-            px = x;
-            pz = z;
+    private void lineQuad(Matrix4f m, VertexConsumer buf, float x1, float y1, float z1, float x2, float y2, float z2, float hw, float r, float g, float b, float a) {
+        float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+        float dl = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dl < 1e-5f) return;
+        dx /= dl; dy /= dl; dz /= dl;
+        float upx = 0, upy = 1, upz = 0;
+        if (Math.abs(dy) > 0.99f) { upx = 1; upy = 0; upz = 0; }
+        float wx = dy * upz - dz * upy;
+        float wy = dz * upx - dx * upz;
+        float wz = dx * upy - dy * upx;
+        float wl = (float) Math.sqrt(wx * wx + wy * wy + wz * wz);
+        if (wl < 1e-5f) return;
+        wx = wx / wl * hw; wy = wy / wl * hw; wz = wz / wl * hw;
+        vert(buf, m, x1 - wx, y1 - wy, z1 - wz, r, g, b, a);
+        vert(buf, m, x1 + wx, y1 + wy, z1 + wz, r, g, b, a);
+        vert(buf, m, x2 + wx, y2 + wy, z2 + wz, r, g, b, a);
+        vert(buf, m, x1 - wx, y1 - wy, z1 - wz, r, g, b, a);
+        vert(buf, m, x2 + wx, y2 + wy, z2 + wz, r, g, b, a);
+        vert(buf, m, x2 - wx, y2 - wy, z2 - wz, r, g, b, a);
+    }
+
+    private void drawPointIndicator(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a) {
+        float radius = Math.max(0.5f, Math.min(light.radius, 16.0f));
+        int seg = 48;
+        float hw = 0.005f;
+        Matrix4f m = e.getPositionMatrix();
+
+        for (int i = 0; i < seg; i++) {
+            double a1 = Math.PI * 2.0 * i / seg;
+            double a2 = Math.PI * 2.0 * (i + 1) / seg;
+            float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+            float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
+            lineQuad(m, buf, radius * c1, 0, radius * s1, radius * c2, 0, radius * s2, hw, r, g, b, a);
+            lineQuad(m, buf, radius * c1, radius * s1, 0, radius * c2, radius * s2, 0, hw, r, g, b, a);
+            lineQuad(m, buf, 0, radius * c1, radius * s1, 0, radius * c2, radius * s2, hw, r, g, b, a);
         }
     }
 
-    private static void drawSpotGuide(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a, float width) {
+    private void drawSpotIndicator(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a) {
         float dx = light.dx, dy = light.dy, dz = light.dz;
         float dlen = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dlen < 1e-4f) {
-            dx = 0f;
-            dy = -1f;
-            dz = 0f;
-            dlen = 1f;
-        }
-        dx /= dlen;
-        dy /= dlen;
-        dz /= dlen;
+        if (dlen < 1e-4f) { dx = 0f; dy = -1f; dz = 0f; dlen = 1f; }
+        dx /= dlen; dy /= dlen; dz /= dlen;
 
         float len = Math.max(1f, Math.min(light.distance, 32f));
-        float radius = (float) (len * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
+        float outerRad = (float) (len * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
 
-        float ex = dx * len;
-        float ey = dy * len;
-        float ez = dz * len;
+        float cx = dx * len, cy = dy * len, cz = dz * len;
 
         float rx, ry, rz;
         if (Math.abs(dy) < 0.99f) { rx = 0f; ry = 1f; rz = 0f; }
@@ -272,226 +311,59 @@ public class LightGizmo {
         ux /= ul; uy /= ul; uz /= ul;
         float vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
 
-        line(buf, e, 0f, 0f, 0f, ex, ey, ez, r, g, b, a, width);
+        Matrix4f m = e.getPositionMatrix();
+        int seg = 32;
+        float hw = 0.003f;
 
-        int seg = 28;
-        float px = 0f, py = 0f, pz = 0f;
-        for (int i = 0; i <= seg; i++) {
-            double ang = (Math.PI * 2.0) * i / seg;
-            float cos = (float) Math.cos(ang), sin = (float) Math.sin(ang);
-            float qx = ex + (ux * cos + vx * sin) * radius;
-            float qy = ey + (uy * cos + vy * sin) * radius;
-            float qz = ez + (uz * cos + vz * sin) * radius;
-
-            if (i > 0) {
-                line(buf, e, px, py, pz, qx, qy, qz, r, g, b, a, width);
-            }
-            px = qx;
-            py = qy;
-            pz = qz;
-        }
-    }
-
-    private static void line(VertexConsumer buf, MatrixStack.Entry e, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a, float width) {
-        float nx = x2 - x1, ny = y2 - y1, nz = z2 - z1;
-        float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (nl < 1e-5f) {
-            nx = 0f; ny = 1f; nz = 0f;
-        } else {
-            nx /= nl; ny /= nl; nz /= nl;
-        }
-        buf.vertex(e.getPositionMatrix(), x1, y1, z1).color(r, g, b, a).normal(e, nx, ny, nz).lineWidth(width);
-        buf.vertex(e.getPositionMatrix(), x2, y2, z2).color(r, g, b, a).normal(e, nx, ny, nz).lineWidth(width);
-    }
-
-    private void drawPointIndicator(BufferBuilder builder, MatrixStack stack, LightInstance light, float r, float g, float b, float a) {
-        float radius = light.radius;
-        int segments = 64;
-        Matrix4f matrix = stack.peek().getPositionMatrix();
-
-        // 1. Horizontal circle (XZ plane)
-        for (int i = 0; i < segments; i++) {
-            float angle1 = (float) (2.0 * Math.PI * i / segments);
-            float angle2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-            float x1 = radius * (float) Math.cos(angle1);
-            float z1 = radius * (float) Math.sin(angle1);
-            float x2 = radius * (float) Math.cos(angle2);
-            float z2 = radius * (float) Math.sin(angle2);
-
-            builder.vertex(matrix, x1, 0, z1).color(r, g, b, a);
-            builder.vertex(matrix, x2, 0, z2).color(r, g, b, a);
+        for (int i = 0; i < seg; i++) {
+            double a1 = Math.PI * 2.0 * i / seg;
+            double a2 = Math.PI * 2.0 * (i + 1) / seg;
+            float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+            float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
+            float p1x = cx + outerRad * (c1 * ux + s1 * vx), p1y = cy + outerRad * (c1 * uy + s1 * vy), p1z = cz + outerRad * (c1 * uz + s1 * vz);
+            float p2x = cx + outerRad * (c2 * ux + s2 * vx), p2y = cy + outerRad * (c2 * uy + s2 * vy), p2z = cz + outerRad * (c2 * uz + s2 * vz);
+            lineQuad(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, a);
         }
 
-        // 2. Vertical circle (XY plane)
-        for (int i = 0; i < segments; i++) {
-            float angle1 = (float) (2.0 * Math.PI * i / segments);
-            float angle2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-            float x1 = radius * (float) Math.cos(angle1);
-            float y1 = radius * (float) Math.sin(angle1);
-            float x2 = radius * (float) Math.cos(angle2);
-            float y2 = radius * (float) Math.sin(angle2);
-
-            builder.vertex(matrix, x1, y1, 0).color(r, g, b, a);
-            builder.vertex(matrix, x2, y2, 0).color(r, g, b, a);
-        }
-
-        // 3. Vertical circle (YZ plane)
-        for (int i = 0; i < segments; i++) {
-            float angle1 = (float) (2.0 * Math.PI * i / segments);
-            float angle2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-            float y1 = radius * (float) Math.cos(angle1);
-            float z1 = radius * (float) Math.sin(angle1);
-            float y2 = radius * (float) Math.cos(angle2);
-            float z2 = radius * (float) Math.sin(angle2);
-
-            builder.vertex(matrix, 0, y1, z1).color(r, g, b, a);
-            builder.vertex(matrix, 0, y2, z2).color(r, g, b, a);
-        }
-    }
-
-    private void drawSpotIndicator(BufferBuilder builder, MatrixStack stack, LightInstance light, float r, float g, float b, float a) {
-        float dx = light.dx;
-        float dy = light.dy;
-        float dz = light.dz;
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 0.0001f) {
-            dx = 0f;
-            dy = -1f;
-            dz = 0f;
-            len = 1f;
-        }
-        float ndx = dx / len;
-        float ndy = dy / len;
-        float ndz = dz / len;
-
-        float wx = 1f;
-        float wy = 0f;
-        float wz = 0f;
-        if (Math.abs(ndx) > 0.9f) {
-            wx = 0f;
-            wy = 1f;
-            wz = 0f;
-        }
-
-        float ux = ndy * wz - ndz * wy;
-        float uy = ndz * wx - ndx * wz;
-        float uz = ndx * wy - ndy * wx;
-        float uLen = (float) Math.sqrt(ux * ux + uy * uy + uz * uz);
-        if (uLen > 0.0001f) {
-            ux /= uLen;
-            uy /= uLen;
-            uz /= uLen;
-        }
-
-        float vx = ndy * uz - ndz * uy;
-        float vy = ndz * ux - ndx * uz;
-        float vz = ndx * uy - ndy * ux;
-
-        float dist = light.distance;
-        float outerRad = (float) (dist * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
-        float innerRad = (float) (dist * Math.tan(Math.toRadians(light.getInnerAngleDeg() * 0.5f)));
-
-        float cx = ndx * dist;
-        float cy = ndy * dist;
-        float cz = ndz * dist;
-
-        Matrix4f matrix = stack.peek().getPositionMatrix();
-        int segments = 64;
-
-        // 1. Draw Outer Base Circle
-        for (int i = 0; i < segments; i++) {
-            float angle1 = (float) (2.0 * Math.PI * i / segments);
-            float angle2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-            float cos1 = (float) Math.cos(angle1);
-            float sin1 = (float) Math.sin(angle1);
-            float cos2 = (float) Math.cos(angle2);
-            float sin2 = (float) Math.sin(angle2);
-
-            float p1x = cx + outerRad * (cos1 * ux + sin1 * vx);
-            float p1y = cy + outerRad * (cos1 * uy + sin1 * vy);
-            float p1z = cz + outerRad * (cos1 * uz + sin1 * vz);
-
-            float p2x = cx + outerRad * (cos2 * ux + sin2 * vx);
-            float p2y = cy + outerRad * (cos2 * uy + sin2 * vy);
-            float p2z = cz + outerRad * (cos2 * uz + sin2 * vz);
-
-            builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, a);
-            builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, a);
-        }
-
-        // 2. Draw Inner Base Circle (if distinct from outer circle)
         if (light.soft > 0.1f) {
-            float innerA = a * 0.4f; // slightly lower opacity for inner angle boundary
-            for (int i = 0; i < segments; i++) {
-                float angle1 = (float) (2.0 * Math.PI * i / segments);
-                float angle2 = (float) (2.0 * Math.PI * (i + 1) / segments);
-
-                float cos1 = (float) Math.cos(angle1);
-                float sin1 = (float) Math.sin(angle1);
-                float cos2 = (float) Math.cos(angle2);
-                float sin2 = (float) Math.sin(angle2);
-
-                float p1x = cx + innerRad * (cos1 * ux + sin1 * vx);
-                float p1y = cy + innerRad * (cos1 * uy + sin1 * vy);
-                float p1z = cz + innerRad * (cos1 * uz + sin1 * vz);
-
-                float p2x = cx + innerRad * (cos2 * ux + sin2 * vx);
-                float p2y = cy + innerRad * (cos2 * uy + sin2 * vy);
-                float p2z = cz + innerRad * (cos2 * uz + sin2 * vz);
-
-                builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, innerA);
-                builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, innerA);
+            float innerRad = (float) (len * Math.tan(Math.toRadians(light.getInnerAngleDeg() * 0.5f)));
+            float innerA = a * 0.4f;
+            for (int i = 0; i < seg; i++) {
+                double a1 = Math.PI * 2.0 * i / seg;
+                double a2 = Math.PI * 2.0 * (i + 1) / seg;
+                float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+                float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
+                float p1x = cx + innerRad * (c1 * ux + s1 * vx), p1y = cy + innerRad * (c1 * uy + s1 * vy), p1z = cz + innerRad * (c1 * uz + s1 * vz);
+                float p2x = cx + innerRad * (c2 * ux + s2 * vx), p2y = cy + innerRad * (c2 * uy + s2 * vy), p2z = cz + innerRad * (c2 * uz + s2 * vz);
+                lineQuad(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, innerA);
             }
         }
 
-        // 3. Draw 4 lines from Apex (0, 0, 0) to Outer Circle perimeter (at 0, 90, 180, 270 degrees)
         float[] angles = {0f, (float) (Math.PI / 2.0), (float) Math.PI, (float) (3.0 * Math.PI / 2.0)};
         for (float angle : angles) {
-            float cos = (float) Math.cos(angle);
-            float sin = (float) Math.sin(angle);
-
+            float cos = (float) Math.cos(angle), sin = (float) Math.sin(angle);
             float px = cx + outerRad * (cos * ux + sin * vx);
             float py = cy + outerRad * (cos * uy + sin * vy);
             float pz = cz + outerRad * (cos * uz + sin * vz);
-
-            builder.vertex(matrix, 0f, 0f, 0f).color(r, g, b, a);
-            builder.vertex(matrix, px, py, pz).color(r, g, b, a);
+            lineQuad(m, buf, 0, 0, 0, px, py, pz, hw, r, g, b, a);
         }
     }
 
-
-    private void fillBox(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2,
+    private void fillBox(VertexConsumer buf, MatrixStack.Entry entry, float x1, float y1, float z1, float x2, float y2,
             float z2, float r, float g, float b, float a) {
-        /* X faces */
-        fillQuad(builder, stack, x1, y1, z2, x1, y2, z2, x1, y2, z1, x1, y1, z1, r, g, b, a);
-        fillQuad(builder, stack, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, r, g, b, a);
-
-        /* Y faces */
-        fillQuad(builder, stack, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
-        fillQuad(builder, stack, x2, y2, z1, x1, y2, z1, x1, y2, z2, x2, y2, z2, r, g, b, a);
-
-        /* Z faces */
-        fillQuad(builder, stack, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a);
-        fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
-    }
-
-    private void fillQuad(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2,
-            float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a) {
-        Matrix4f matrix4f = stack.peek().getPositionMatrix();
-
-        /* Triangle 1 */
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
-
-        /* Triangle 2 */
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
-        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a);
+        Matrix4f m = entry.getPositionMatrix();
+        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a);
+        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x1, y1, z1, r, g, b, a);
+        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
+        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a);
+        vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a);
+        vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a); vert(buf, m, x1, y1, z2, r, g, b, a);
+        vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a);
+        vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
+        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a);
+        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x2, y2, z1, r, g, b, a);
+        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
+        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a);
     }
 
     public boolean onMouseClicked(double mouseX, double mouseY, int btn) {
