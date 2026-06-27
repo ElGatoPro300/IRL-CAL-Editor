@@ -2,9 +2,11 @@ package elgatopro300.cal_lights.ui;
 
 import elgatopro300.cal_lights.graphics.CLBatcher;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
 
 public class CLUIScreen extends Screen {
@@ -13,7 +15,6 @@ public class CLUIScreen extends Screen {
 
     public CLUIScreen(CLUIElement root) {
         super(Text.empty());
-        this.client = MinecraftClient.getInstance();
         this.root = root;
     }
 
@@ -30,8 +31,8 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void resize(MinecraftClient client, int width, int height) {
-        super.resize(client, width, height);
+    public void resize(int width, int height) {
+        super.resize(width, height);
         if (this.root != null) {
             this.root.resize(0, 0, width, height);
         }
@@ -66,43 +67,43 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.root != null && this.root.mouseClicked((int) mouseX, (int) mouseY, button)) {
+    public boolean mouseClicked(Click click, boolean bool) {
+        if (this.root != null && this.root.mouseClicked((int) click.x(), (int) click.y(), click.button())) {
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(click, bool);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (this.root != null && this.root.mouseReleased((int) mouseX, (int) mouseY, button)) {
+    public boolean mouseReleased(Click click) {
+        if (this.root != null && this.root.mouseReleased((int) click.x(), (int) click.y(), click.button())) {
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(click);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (this.root != null && this.root.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
+    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+        if (this.root != null && this.root.mouseDragged(click.x(), click.y(), click.button(), deltaX, deltaY)) {
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(click, deltaX, deltaY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.root != null && this.root.keyPressed(keyCode, scanCode, modifiers)) {
+    public boolean keyPressed(KeyInput key) {
+        if (this.root != null && this.root.keyPressed(key.key(), key.scancode(), key.modifiers())) {
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(key);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (this.root != null && this.root.charTyped(chr, modifiers)) {
+    public boolean charTyped(CharInput input) {
+        if (this.root != null && this.root.charTyped((char) input.codepoint(), input.modifiers())) {
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(input);
     }
 
     @Override

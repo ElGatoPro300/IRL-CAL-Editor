@@ -7,6 +7,8 @@ import elgatopro300.cal_lights.light.shadow.ShadowBaker;
 import org.qualet.irl.light.LightBuffer;
 import org.qualet.irl.light.LightRegistry;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
@@ -27,7 +29,7 @@ public class GameRendererLightMixin {
 
     @Inject(method = "renderWorld", at = @At("HEAD"))
     private void irlite$collectLights(RenderTickCounter tickCounter, CallbackInfo ci) {
-        float tickDelta = tickCounter.getTickDelta(true);
+        float tickDelta = tickCounter.getTickProgress(true);
 
         if (IrisShadersState.shadersDisabled()) {
             LightRegistry.clear();
@@ -46,19 +48,19 @@ public class GameRendererLightMixin {
         MinecraftClient mc = MinecraftClient.getInstance();
         ClientWorld world = mc.world;
         Camera camera = mc.gameRenderer.getCamera();
-        Vec3d cameraPos = camera != null ? camera.getPos() : Vec3d.ZERO;
+        Vec3d cameraPos = camera != null ? camera.getCameraPos() : Vec3d.ZERO;
         Vec3d cameraForward = camera != null ? Vec3d.fromPolar(camera.getPitch(), camera.getYaw()) : null;
 
         // Register every light up front
         CALLightsClient.registerLightsToIrlCore();
 
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
             return;
         }
 
         // Configure dispatcher before Iris activates
         if (world != null && camera != null) {
-            mc.getEntityRenderDispatcher().configure(world, camera, mc.getCameraEntity());
+            mc.getEntityRenderDispatcher().configure(camera, mc.getCameraEntity());
         }
 
         ShadowBaker.bake(world, cameraPos, cameraForward, tickDelta);

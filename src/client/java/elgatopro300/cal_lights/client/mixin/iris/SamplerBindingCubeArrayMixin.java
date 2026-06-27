@@ -3,6 +3,8 @@ package elgatopro300.cal_lights.client.mixin.iris;
 import elgatopro300.cal_lights.light.shadow.PointShadowArray;
 import elgatopro300.cal_lights.manager.GoboManager;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 
@@ -29,7 +31,7 @@ public abstract class SamplerBindingCubeArrayMixin {
 
     @Inject(method = "updateSampler", at = @At("HEAD"), cancellable = true)
     private void irlite$bindCubeArrayInsteadOf2D(CallbackInfo ci) {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
             return;
         }
         int id = this.texture.getAsInt();

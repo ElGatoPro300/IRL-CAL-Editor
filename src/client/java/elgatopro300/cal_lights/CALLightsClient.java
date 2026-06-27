@@ -20,7 +20,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
@@ -60,14 +60,14 @@ public class CALLightsClient implements ClientModInitializer {
             "key.cal.editor",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
-            "category.cal"
+            KeyBinding.Category.MISC
         ));
 
         createLightKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cal.create_light",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_F7,
-            "category.cal"
+            KeyBinding.Category.MISC
         ));
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
@@ -98,7 +98,7 @@ public class CALLightsClient implements ClientModInitializer {
 
             while (createLightKeyBinding.wasPressed()) {
                 if (client.player != null) {
-                    Vec3d p = client.gameRenderer.getCamera().getPos();
+                    Vec3d p = client.gameRenderer.getCamera().getCameraPos();
                     int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                     boolean isSpot = ThreadLocalRandom.current().nextBoolean();
                     if (isSpot) {
@@ -201,7 +201,7 @@ public class CALLightsClient implements ClientModInitializer {
         if (LightConfig.autoLights()) {
             MinecraftClient mc = MinecraftClient.getInstance();
             if (mc.player != null && mc.world != null) {
-                Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
+                Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
 
                 int headroom = Math.max(0, LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
                 int feedMax = Math.min(LightConfig.autoLightMax(), headroom);

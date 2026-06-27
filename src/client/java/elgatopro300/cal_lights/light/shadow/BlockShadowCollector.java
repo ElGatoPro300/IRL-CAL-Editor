@@ -2,8 +2,8 @@ package elgatopro300.cal_lights.light.shadow;
 
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
+import net.minecraft.client.render.BlockRenderLayer;
+import net.minecraft.client.render.BlockRenderLayers;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.shape.VoxelShape;
@@ -101,17 +101,16 @@ public final class BlockShadowCollector
                     // via vanilla's alpha-test cutout shader so transparent
                     // texture pixels let light through. Shape is unused for
                     // these - geometry comes from the model, not the AABB.
-                    boolean cutout;
+                    BlockRenderLayer layer;
                     try
                     {
-                        RenderLayer layer = RenderLayers.getBlockLayer(state);
-                        cutout = layer == RenderLayer.getCutout() || layer == RenderLayer.getCutoutMipped();
+                        layer = BlockRenderLayers.getBlockLayer(state);
                     }
                     catch (Throwable t)
                     {
-                        cutout = false;
+                        layer = BlockRenderLayer.SOLID;
                     }
-                    if (cutout)
+                    if (layer == BlockRenderLayer.CUTOUT)
                     {
                         out.add(new BlockShadowEntry(mut.toImmutable(), null, true));
                         continue;

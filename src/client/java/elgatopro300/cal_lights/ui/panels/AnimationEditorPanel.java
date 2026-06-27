@@ -19,6 +19,7 @@ import elgatopro300.cal_lights.ui.elements.CLUITrackpad;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.InputUtil;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -435,20 +436,20 @@ public class AnimationEditorPanel extends CLUIElement {
                                   && ctx.mouseY >= yCenter - 4 && ctx.mouseY <= yCenter + 4
                                   && ctx.mouseY >= y + 16 && ctx.mouseY < y + h;
 
-                boolean isCtrlPressed = Screen.hasControlDown();
+                boolean isCtrlPressed = isCtrlDown();
                 int kfCol = isKfSel ? 0xFFFFAA00 : (hoverKf ? (isCtrlPressed ? 0xFFFF0000 : 0xFFFFFFFF) : 0xFF00E5FF);
                 drawDiamond(ctx.batcher, kfX, yCenter, kfCol);
             }
         }
 
         // Render visual Ctrl pulsing preview diamond if Ctrl is held!
-        boolean isCtrlPressed = Screen.hasControlDown();
+        boolean isCtrlPressed = isCtrlDown();
         if (isCtrlPressed && ctx.mouseX >= x_c2 + 10 && ctx.mouseX <= x_c2 + c2W - 10 && ctx.mouseY >= y + 16 && ctx.mouseY < y + h) {
             int hoveredTrackIdx = (ctx.mouseY - listStartY + timelineScrollY) / rowH;
             if (hoveredTrackIdx >= 0 && hoveredTrackIdx < tracks.size()) {
                 float localMouseX = (float) (ctx.mouseX - (x_c2 + 10));
                 float hoverTime = (localMouseX / (c2W - 20)) * timelineLen;
-                if (!Screen.hasShiftDown()) {
+                if (!isShiftDown()) {
                     hoverTime = Math.round(hoverTime / 50f) * 50f;
                 }
                 hoverTime = Math.max(0f, Math.min(timelineLen, hoverTime));
@@ -850,7 +851,7 @@ public class AnimationEditorPanel extends CLUIElement {
                     int kfX = x_c2 + 10 + (int) ((kf.tick / timelineLen) * (c2W - 20));
 
                     if (Math.abs(mx - kfX) <= 6 && Math.abs(my - yCenter) <= 6) {
-                        boolean shiftOrCtrl = Screen.hasShiftDown() || Screen.hasControlDown();
+                        boolean shiftOrCtrl = isShiftDown() || isCtrlDown();
                         if (shiftOrCtrl) {
                             if (selectedKeyframes.contains(kf)) {
                                 selectedKeyframes.remove(kf);
@@ -886,11 +887,11 @@ public class AnimationEditorPanel extends CLUIElement {
                 LightAnimationTrack tr = anim.tracks.get(i);
                 int rowY = listStartY + i * rowH - timelineScrollY;
                 if (my >= rowY && my < rowY + rowH) {
-                    if (Screen.hasControlDown()) {
+                    if (isCtrlDown()) {
                         CALUndoManager.pushState();
                         float localMouseX = (float) (mx - (x_c2 + 10));
                         float clickTime = (localMouseX / (c2W - 20)) * timelineLen;
-                        if (!Screen.hasShiftDown()) {
+                        if (!isShiftDown()) {
                             clickTime = Math.round(clickTime / 50f) * 50f;
                         }
                         clickTime = Math.max(0f, Math.min(timelineLen, clickTime));
@@ -924,7 +925,7 @@ public class AnimationEditorPanel extends CLUIElement {
                         selectEndX = mx;
                         selectEndY = my;
                         initialSelection.clear();
-                        if (Screen.hasShiftDown() || Screen.hasControlDown()) {
+                        if (isShiftDown() || isCtrlDown()) {
                             initialSelection.addAll(selectedKeyframes);
                         } else {
                             selectedKeyframes.clear();
@@ -1105,7 +1106,7 @@ public class AnimationEditorPanel extends CLUIElement {
                     // Check bounds (both inside Column 2 timeline and inside selection box)
                     if (kfX >= x_c2 && kfX <= x_c2 + c2W && yCenter >= y + 16 && yCenter < y + h) {
                         if (kfX >= x1 && kfX <= x2 && yCenter >= y1 && yCenter <= y2) {
-                            if (Screen.hasControlDown() || Screen.hasShiftDown()) {
+                            if (isCtrlDown() || isShiftDown()) {
                                 if (initialSelection.contains(kf)) {
                                     selectedKeyframes.remove(kf); // Toggle off if already selected
                                 } else {
@@ -1162,7 +1163,7 @@ public class AnimationEditorPanel extends CLUIElement {
                     float origTick = dragStartTicks.getOrDefault(kf, kf.tick);
                     float newTick = origTick + deltaTicks;
                     newTick = Math.max(0f, Math.min(tr.duration, newTick));
-                    if (!Screen.hasShiftDown()) {
+                    if (!isShiftDown()) {
                         newTick = Math.round(newTick / 50f) * 50f;
                     }
                     kf.tick = newTick;
@@ -1231,7 +1232,7 @@ public class AnimationEditorPanel extends CLUIElement {
         }
 
         // --- CLIPBOARD & KEYS SHORTCUTS FROM BBS ---
-        boolean ctrl = Screen.hasControlDown();
+        boolean ctrl = isCtrlDown();
         if (ctrl && keyCode == GLFW.GLFW_KEY_A) {
             selectAllKeyframes();
             return true;
@@ -1448,5 +1449,17 @@ public class AnimationEditorPanel extends CLUIElement {
         }
         
         if (onUpdate != null) onUpdate.run();
+    }
+
+    private static boolean isCtrlDown() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null) return false;
+        return InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) || InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+    }
+
+    private static boolean isShiftDown() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null) return false;
+        return InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT) || InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 }

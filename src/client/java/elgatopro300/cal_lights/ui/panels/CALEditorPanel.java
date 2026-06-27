@@ -629,10 +629,10 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(0, 0, w, h, (alpha << 24) | 0x0B0B0E);
 
             // Apply scaling matrix for the popup contents
-            ctx.batcher.getCtx().getMatrices().push();
-            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f, 0.0f);
-            ctx.batcher.getCtx().getMatrices().scale(settingsPopupScale, settingsPopupScale, 1.0f);
-            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f, 0.0f);
+            ctx.batcher.getCtx().getMatrices().pushMatrix();
+            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f);
+            ctx.batcher.getCtx().getMatrices().scale(settingsPopupScale, settingsPopupScale);
+            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f);
 
             // Modal Box Dimensions (Premium BBS size: 520x320)
             int pW = 520;
@@ -1032,7 +1032,7 @@ public class CALEditorPanel extends CLUIElement {
                 }
             }
 
-            ctx.batcher.getCtx().getMatrices().pop();
+            ctx.batcher.getCtx().getMatrices().popMatrix();
         }
 
         // --- RENDER PATCHER POPUP ---
@@ -1042,10 +1042,10 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(0, 0, w, h, (alpha << 24) | 0x0B0B0E);
 
             // Apply scaling matrix for the popup contents
-            ctx.batcher.getCtx().getMatrices().push();
-            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f, 0.0f);
-            ctx.batcher.getCtx().getMatrices().scale(patcherPopupScale, patcherPopupScale, 1.0f);
-            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f, 0.0f);
+            ctx.batcher.getCtx().getMatrices().pushMatrix();
+            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f);
+            ctx.batcher.getCtx().getMatrices().scale(patcherPopupScale, patcherPopupScale);
+            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f);
 
             // Patcher Box Dimensions (BBS size: 450x300 or similar)
             int pW = 450;
@@ -1058,7 +1058,7 @@ public class CALEditorPanel extends CLUIElement {
                 patcherPanel.render(ctx);
             }
 
-            ctx.batcher.getCtx().getMatrices().pop();
+            ctx.batcher.getCtx().getMatrices().popMatrix();
         }
 
         // --- RENDER VIEWPORT RIGHT-CLICK CONTEXT POPUP ---
@@ -1128,7 +1128,7 @@ public class CALEditorPanel extends CLUIElement {
     private String getKeyName(int key) {
         if (key == GLFW.GLFW_KEY_UNKNOWN) return "???";
         try {
-            InputUtil.Key inputKey = InputUtil.fromKeyCode(key, 0);
+            InputUtil.Key inputKey = InputUtil.Type.KEYSYM.createFromCode(key);
             String name = inputKey.getLocalizedText().getString();
             if (name != null && !name.isEmpty() && !name.contains("key.keyboard")) {
                 return name;
@@ -1332,7 +1332,7 @@ public class CALEditorPanel extends CLUIElement {
                 if (client.world != null) {
                     Vec3d rayDir = LightGizmo.INSTANCE.getRayDirection(mx, my);
                     net.minecraft.client.render.Camera camera = client.gameRenderer.getCamera();
-                    Vec3d rayStart = camera.getPos();
+                    Vec3d rayStart = camera.getCameraPos();
                     
                     // Check if right-clicking directly on a light billboard
                     LightInstance clickedLight = LightGizmo.INSTANCE.checkBillboardClickExternal(rayStart, rayDir);
@@ -1753,7 +1753,7 @@ public class CALEditorPanel extends CLUIElement {
             int btnW = (leftPanelW - 22) / 2;
             if (mx >= 8 && mx < 8 + btnW && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 10.0f);
                 light.persistent = true;
@@ -1765,7 +1765,7 @@ public class CALEditorPanel extends CLUIElement {
             // Quick Add Spot
             if (mx >= 8 + btnW + 6 && mx < leftPanelW - 8 && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f);
                 light.persistent = true;
@@ -1937,7 +1937,7 @@ public class CALEditorPanel extends CLUIElement {
             }
             return true;
         }
-        boolean ctrl = Screen.hasControlDown();
+        boolean ctrl = isCtrlDown();
         if (ctrl && keyCode == GLFW.GLFW_KEY_Z) {
             CALUndoManager.undo();
             return true;
@@ -2104,5 +2104,11 @@ public class CALEditorPanel extends CLUIElement {
                 && currentStatusBarY >= h - 1f;
         }
         return true;
+    }
+
+    private static boolean isCtrlDown() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null) return false;
+        return InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) || InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 }

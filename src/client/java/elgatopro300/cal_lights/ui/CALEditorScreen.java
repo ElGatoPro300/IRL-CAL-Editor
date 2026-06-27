@@ -4,7 +4,9 @@ import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.ui.panels.CALEditorPanel;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.util.math.Vec3d;
 
@@ -84,17 +86,17 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (!CALEditorPanel.currentlyPressedKeys.contains(keyCode)) {
-            CALEditorPanel.currentlyPressedKeys.add(keyCode);
+    public boolean keyPressed(KeyInput key) {
+        if (!CALEditorPanel.currentlyPressedKeys.contains(key.key())) {
+            CALEditorPanel.currentlyPressedKeys.add(key.key());
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(key);
     }
 
     @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        CALEditorPanel.currentlyPressedKeys.remove(Integer.valueOf(keyCode));
-        return super.keyReleased(keyCode, scanCode, modifiers);
+    public boolean keyReleased(KeyInput key) {
+        CALEditorPanel.currentlyPressedKeys.remove(Integer.valueOf(key.key()));
+        return super.keyReleased(key);
     }
 
     @Override
@@ -107,7 +109,10 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(Click click, boolean bool) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.button();
         if (this.root != null && this.root.mouseClicked((int) mouseX, (int) mouseY, button)) {
             return true;
         }
@@ -121,22 +126,28 @@ public class CALEditorScreen extends CLUIScreen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(click, bool);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(Click click) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.button();
         if (this.root != null && this.root.mouseReleased((int) mouseX, (int) mouseY, button)) {
             return true;
         }
         if (LightGizmo.INSTANCE.onMouseReleased(mouseX, mouseY, button)) {
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(click);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.button();
         if (this.root != null && this.root.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
             return true;
         }
@@ -158,7 +169,7 @@ public class CALEditorScreen extends CLUIScreen {
                 }
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(click, deltaX, deltaY);
     }
 
     @Override
@@ -198,7 +209,7 @@ public class CALEditorScreen extends CLUIScreen {
 
                 if (move.lengthSquared() > 0) {
                     move = move.normalize();
-                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getRenderTickCounter().getLastFrameDuration(); // butter-smooth frame-rate independent speed
+                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getRenderTickCounter().getDynamicDeltaTicks();
                     if (CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_LEFT_CONTROL) || CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_RIGHT_CONTROL)) {
                         speed *= 3.0; // Fast flight
                     }

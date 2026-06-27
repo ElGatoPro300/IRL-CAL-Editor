@@ -1,6 +1,6 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  * perspective depth (NOT Euclidean length — that gives a 6-pointed star).
  *
  * GL_TEXTURE_CUBE_MAP_ARRAY is not in Iris's TextureType enum, so the sampler
- * bind is fixed up by {@link org.qualet.irlredactor.mixin.client.iris.SamplerBindingCubeArrayMixin}.
+ * bind is fixed up by {@link SamplerBindingCubeArrayMixin}.
  */
 public final class PointShadowArray
 {
@@ -104,10 +104,11 @@ public final class PointShadowArray
         );
     }
 
-    /** GPU-copy ONE face of a slot's cube (array layer slot*6 + face) from the
-     *  static array into the live array. The overlay path copies only the faces
-     *  a dynamic caster touches this frame or touched last frame, instead of all
-     *  6, when the static base itself is unchanged (see ShadowBaker T1.2). */
+    /** GPU-copy a SINGLE cube face (array layer {@code slot*6 + face}) from the
+     *  static array into the live array. The overlay path uses this to restore
+     *  only the faces a dynamic caster touched (or vacated) instead of blitting
+     *  all 6 every frame, since dynamic shadows usually fall on one or two
+     *  faces. */
     public static void copyStaticFaceToLive(int slot, int face)
     {
         if (!initialized)

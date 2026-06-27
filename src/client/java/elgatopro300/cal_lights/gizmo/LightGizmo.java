@@ -9,11 +9,10 @@ import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.CalSettings;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
@@ -22,8 +21,6 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import org.lwjgl.opengl.GL11;
 
@@ -48,7 +45,7 @@ public class LightGizmo {
     public static boolean snapToGrid = false;
 
     public void init() {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(this::render);
+        WorldRenderEvents.END_MAIN.register(this::render);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -67,39 +64,46 @@ public class LightGizmo {
             return;
         }
 
-        this.lastProjectionMatrix.set(context.projectionMatrix());
-        this.lastViewMatrix.set(context.matrixStack().peek().getPositionMatrix());
+        MatrixStack stack = context.matrices();
+        if (stack == null) {
+            return;
+        }
 
-        Camera camera = context.camera();
-        MatrixStack stack = context.matrixStack();
-        Vec3d camPos = camera.getPos();
+        this.lastProjectionMatrix.set(client.gameRenderer.getBasicProjectionMatrix(client.getRenderTickCounter().getTickProgress(true)));
+        this.lastViewMatrix.set(stack.peek().getPositionMatrix());
 
-        RenderSystem.disableDepthTest(); // Draw on top
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        Camera camera = context.gameRenderer().getCamera();
+        if (camera == null) {
+            return;
+        }
+        Vec3d camPos = camera.getCameraPos();
 
-        // 1. Draw billboards for all lights
+        VertexConsumerProvider consumers = context.consumers();
+        if (consumers == null) {
+            return;
+        }
+
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
 
-        drawBillboards(stack, camPos, points, false);
-        drawBillboards(stack, camPos, spots, true);
+        drawBillboards(stack, camPos, consumers, points, false);
+        drawBillboards(stack, camPos, consumers, spots, true);
 
-        // 2. Draw indicators and axes for selected light
         if (selectedLight != null) {
-            drawLightIndicators(stack, camPos, selectedLight);
-            drawAxes(stack, camPos, selectedLight);
+            drawLightIndicators(stack, camPos, consumers, selectedLight);
+            drawAxes(stack, camPos, consumers, selectedLight);
         }
-
-        RenderSystem.enableDepthTest();
     }
 
-    private void drawBillboards(MatrixStack stack, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
+    private void drawBillboards(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, Collection<LightInstance> lights, boolean isSpot) {
         CLIcon icon = isSpot ? CalLightsIcons.SPOT_LIGHT : CalLightsIcons.POINT_LIGHT;
         if (icon == null)
             return;
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        if (camera == null) {
+            return;
+        }
         Quaternionf camRot = camera.getRotation();
 
         for (LightInstance light : lights) {
@@ -121,70 +125,50 @@ public class LightGizmo {
             if (icon.staticTexture != null && icon.tintTexture != null) {
                 int tintColor = (light == selectedLight) ? 0xFFFFAA00 : (0xFF000000 | ((int) (light.r * 255) << 16) | ((int) (light.g * 255) << 8) | (int) (light.b * 255));
                 
-                // Draw Tint Layer
-                icon.tintTexture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-                drawBillboardQuad(stack, size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
-
-                // Draw Static Layer
-                icon.staticTexture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-                drawBillboardQuad(stack, size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
+                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.tintTexture.identifier)), size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
+                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.staticTexture.identifier)), size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
             } else if (icon.texture != null) {
-                icon.texture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 int color = (light == selectedLight) ? 0xFFFFAA00 : 0xFFFFFFFF;
-                drawBillboardQuad(stack, size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
+                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.texture.identifier)), size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
             }
             stack.pop();
         }
     }
 
-    private void drawBillboardQuad(MatrixStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
-        Matrix4f matrix = stack.peek().getPositionMatrix();
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS,
-                VertexFormats.POSITION_TEXTURE_COLOR);
+    private void drawBillboardQuad(MatrixStack stack, VertexConsumer buf, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
+        MatrixStack.Entry entry = stack.peek();
+        Matrix4f matrix = entry.getPositionMatrix();
 
         float u1 = texX / (float) texture.width;
         float v1 = texY / (float) texture.height;
         float u2 = (texX + texW) / (float) texture.width;
         float v2 = (texY + texH) / (float) texture.height;
 
-        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color);
-        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color);
-        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color);
-        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color);
+        float a = ((color >>> 24) & 0xFF) / 255.0f;
+        float r = ((color >>> 16) & 0xFF) / 255.0f;
+        float g = ((color >>> 8) & 0xFF) / 255.0f;
+        float b = (color & 0xFF) / 255.0f;
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        int light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+        int overlay = OverlayTexture.DEFAULT_UV;
+
+        buf.vertex(matrix, -size, -size, 0).color(r, g, b, a).texture(u1, v2).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
+        buf.vertex(matrix, size, -size, 0).color(r, g, b, a).texture(u2, v2).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
+        buf.vertex(matrix, size, size, 0).color(r, g, b, a).texture(u2, v1).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
+        buf.vertex(matrix, -size, size, 0).color(r, g, b, a).texture(u1, v1).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
     }
 
-    private void drawAxes(MatrixStack stack, Vec3d camPos, LightInstance light) {
+    private void drawAxes(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, LightInstance light) {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
 
         double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
-        float scale = (float) (0.4f * Math.max(0.5, dist * 0.12)
-                * CalSettings.INSTANCE.gizmoSize);
+        float scale = (float) (0.4f * Math.max(0.5, dist * 0.12) * CalSettings.INSTANCE.gizmoSize);
         stack.scale(scale, scale, scale);
-
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableCull();
-
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES,
-                VertexFormats.POSITION_COLOR);
-
-        float axisSize = 0.30f;
-        float axisOffset = 0.012f;
-        float planeInner = 0.08f;
-        float planeOuter = 0.20f;
-        float offset = 0.001f;
 
         float sx = (camPos.x - light.x) >= 0 ? 1.0f : -1.0f;
         float sy = (camPos.y - light.y) >= 0 ? 1.0f : -1.0f;
         float sz = (camPos.z - light.z) >= 0 ? 1.0f : -1.0f;
-
         if (!dragging) {
             this.lastSx = sx;
             this.lastSy = sy;
@@ -194,54 +178,28 @@ public class LightGizmo {
             sy = this.lastSy;
             sz = this.lastSz;
         }
-        boolean activeX = activeAxis == -1 || activeAxis == 0;
-        boolean activeY = activeAxis == -1 || activeAxis == 1;
-        boolean activeZ = activeAxis == -1 || activeAxis == 2;
-        boolean activeXZ = activeAxis == -1 || activeAxis == 3;
-        boolean activeXY = activeAxis == -1 || activeAxis == 4;
-        boolean activeZY = activeAxis == -1 || activeAxis == 5;
-        boolean activeFree = activeAxis == -1 || activeAxis == 6;
 
-        // Colors
         float[] xCol = (activeAxis == 0) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.15f, 0.15f };
         float[] yCol = (activeAxis == 1) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.15f };
         float[] zCol = (activeAxis == 2) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 0.35f, 1.0f };
 
-        float[] xzCol = (activeAxis == 3) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.6f };
-        float[] xyCol = (activeAxis == 4) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.6f, 0.15f, 1.0f };
-        float[] zyCol = (activeAxis == 5) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.4f, 0.15f };
+        float axisLen = 0.35f;
+        float width = 2.0f;
+        float a = 1.0f;
 
-        float[] freeCol = (activeAxis == 6) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 1.0f, 1.0f };
+        VertexConsumer buf = consumers.getBuffer(RenderLayers.linesTranslucent());
+        MatrixStack.Entry e = stack.peek();
 
-        // 1. Draw 1D Axis boxes
-        if (activeX) fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize * sx, axisOffset, axisOffset, xCol[0], xCol[1], xCol[2], 1.0f);
-        if (activeY) fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize * sy, axisOffset, yCol[0], yCol[1], yCol[2], 1.0f);
-        if (activeZ) fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize * sz, zCol[0], zCol[1], zCol[2], 1.0f);
+        line(buf, e, 0f, 0f, 0f, axisLen * sx, 0f, 0f, xCol[0], xCol[1], xCol[2], a, width);
+        line(buf, e, 0f, 0f, 0f, 0f, axisLen * sy, 0f, yCol[0], yCol[1], yCol[2], a, width);
+        line(buf, e, 0f, 0f, 0f, 0f, 0f, axisLen * sz, zCol[0], zCol[1], zCol[2], a, width);
 
-        // 2. Draw 2D Plane handles (translucent)
-        if (activeXZ) fillBox(builder, stack, planeInner * sx, -offset, planeInner * sz, planeOuter * sx, offset, planeOuter * sz, xzCol[0], xzCol[1], xzCol[2], 0.4f);
-        if (activeXY) fillBox(builder, stack, planeInner * sx, planeInner * sy, -offset, planeOuter * sx, planeOuter * sy, offset, xyCol[0], xyCol[1], xyCol[2], 0.4f);
-        if (activeZY) fillBox(builder, stack, -offset, planeInner * sy, planeInner * sz, offset, planeOuter * sy, planeOuter * sz, zyCol[0], zyCol[1], zyCol[2], 0.4f);
-
-        // 3. Draw Center free translate box
-        if (activeFree) fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, freeCol[0], freeCol[1], freeCol[2], 1.0f);
-
-        BufferRenderer.drawWithGlobalProgram(builder.end());
-        RenderSystem.enableCull();
         stack.pop();
     }
 
-    private void drawLightIndicators(MatrixStack stack, Vec3d camPos, LightInstance light) {
+    private void drawLightIndicators(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, LightInstance light) {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
-
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableCull();
-
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES,
-                VertexFormats.POSITION_COLOR);
 
         float r = light.r;
         float g = light.g;
@@ -252,17 +210,95 @@ public class LightGizmo {
             g = 0.66f;
             b = 0.0f;
         }
-        float alpha = 0.65f; // Beautiful semi-translucent wireframes
+
+        float width = 2.0f;
+        float a = 0.75f;
+
+        VertexConsumer buf = consumers.getBuffer(RenderLayers.linesTranslucent());
+        MatrixStack.Entry e = stack.peek();
 
         if (light.isSpot) {
-            drawSpotIndicator(builder, stack, light, r, g, b, alpha);
+            drawSpotGuide(buf, e, light, r, g, b, a, width);
         } else {
-            drawPointIndicator(builder, stack, light, r, g, b, alpha);
+            drawPointGuide(buf, e, light.radius, r, g, b, a, width);
         }
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
-        RenderSystem.enableCull();
         stack.pop();
+    }
+
+    private static void drawPointGuide(VertexConsumer buf, MatrixStack.Entry e, float radius, float r, float g, float b, float a, float width) {
+        float rr = Math.max(0.5f, Math.min(radius, 16.0f));
+        int seg = 48;
+
+        float px = rr, pz = 0f;
+        for (int i = 1; i <= seg; i++) {
+            double ang = (Math.PI * 2.0) * i / seg;
+            float x = rr * (float) Math.cos(ang);
+            float z = rr * (float) Math.sin(ang);
+            line(buf, e, px, 0f, pz, x, 0f, z, r, g, b, a, width);
+            px = x;
+            pz = z;
+        }
+    }
+
+    private static void drawSpotGuide(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a, float width) {
+        float dx = light.dx, dy = light.dy, dz = light.dz;
+        float dlen = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dlen < 1e-4f) {
+            dx = 0f;
+            dy = -1f;
+            dz = 0f;
+            dlen = 1f;
+        }
+        dx /= dlen;
+        dy /= dlen;
+        dz /= dlen;
+
+        float len = Math.max(1f, Math.min(light.distance, 32f));
+        float radius = (float) (len * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
+
+        float ex = dx * len;
+        float ey = dy * len;
+        float ez = dz * len;
+
+        float rx, ry, rz;
+        if (Math.abs(dy) < 0.99f) { rx = 0f; ry = 1f; rz = 0f; }
+        else { rx = 1f; ry = 0f; rz = 0f; }
+        float ux = dy * rz - dz * ry, uy = dz * rx - dx * rz, uz = dx * ry - dy * rx;
+        float ul = (float) Math.sqrt(ux * ux + uy * uy + uz * uz);
+        ux /= ul; uy /= ul; uz /= ul;
+        float vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
+
+        line(buf, e, 0f, 0f, 0f, ex, ey, ez, r, g, b, a, width);
+
+        int seg = 28;
+        float px = 0f, py = 0f, pz = 0f;
+        for (int i = 0; i <= seg; i++) {
+            double ang = (Math.PI * 2.0) * i / seg;
+            float cos = (float) Math.cos(ang), sin = (float) Math.sin(ang);
+            float qx = ex + (ux * cos + vx * sin) * radius;
+            float qy = ey + (uy * cos + vy * sin) * radius;
+            float qz = ez + (uz * cos + vz * sin) * radius;
+
+            if (i > 0) {
+                line(buf, e, px, py, pz, qx, qy, qz, r, g, b, a, width);
+            }
+            px = qx;
+            py = qy;
+            pz = qz;
+        }
+    }
+
+    private static void line(VertexConsumer buf, MatrixStack.Entry e, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a, float width) {
+        float nx = x2 - x1, ny = y2 - y1, nz = z2 - z1;
+        float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        if (nl < 1e-5f) {
+            nx = 0f; ny = 1f; nz = 0f;
+        } else {
+            nx /= nl; ny /= nl; nz /= nl;
+        }
+        buf.vertex(e.getPositionMatrix(), x1, y1, z1).color(r, g, b, a).normal(e, nx, ny, nz).lineWidth(width);
+        buf.vertex(e.getPositionMatrix(), x2, y2, z2).color(r, g, b, a).normal(e, nx, ny, nz).lineWidth(width);
     }
 
     private void drawPointIndicator(BufferBuilder builder, MatrixStack stack, LightInstance light, float r, float g, float b, float a) {
@@ -464,7 +500,7 @@ public class LightGizmo {
 
         Camera camera = client.gameRenderer.getCamera();
         Vec3d rayDir = getRayDirection(mouseX, mouseY);
-        Vec3d rayStart = camera.getPos();
+        Vec3d rayStart = camera.getCameraPos();
 
         if (selectedLight != null) {
             int clickedAxis = checkAxisClickLocal(rayStart, rayDir, selectedLight);
@@ -512,7 +548,7 @@ public class LightGizmo {
             MinecraftClient client = MinecraftClient.getInstance();
             Camera camera = client.gameRenderer.getCamera();
             Vec3d rayDir = getRayDirection(mouseX, mouseY);
-            Vec3d rayStart = camera.getPos();
+            Vec3d rayStart = camera.getCameraPos();
 
             Vec3d currentProj = null;
             if (activeAxis >= 0 && activeAxis <= 2) {
