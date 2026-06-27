@@ -22,7 +22,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import org.lwjgl.opengl.GL11;
+
 
 import java.util.Collection;
 
@@ -77,9 +77,6 @@ public class LightGizmo {
         VertexConsumerProvider consumers = context.consumers();
         MatrixStack stack = context.matrices();
 
-        GL11.glDisable(GL11.GL_CULL_FACE);
-        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
 
@@ -91,7 +88,6 @@ public class LightGizmo {
             drawAxes(stack, camPos, consumers, selectedLight);
         }
 
-        GL11.glEnable(GL11.GL_CULL_FACE);
     }
 
     private void computeProjectionMatrix(MinecraftClient client, Camera camera) {
