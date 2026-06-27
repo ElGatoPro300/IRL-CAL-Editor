@@ -19,11 +19,13 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
 
 import org.lwjgl.opengl.GL11;
 
@@ -38,7 +40,9 @@ public class LightGizmo {
     private Vec3d dragStartMousePos = null;
     private Vec3d dragStartLightPos = null;
     private final Matrix4f lastProjectionMatrix = new Matrix4f();
+    private final Matrix4f capturedModelView = new Matrix4f();
     private final Matrix4f lastViewMatrix = new Matrix4f();
+    private boolean captured = false;
 
     private float lastSx = 1.0f;
     private float lastSy = 1.0f;
@@ -67,16 +71,53 @@ public class LightGizmo {
             return;
         }
 
+        // Only capture the world matrices here. The actual gizmo/billboard
+        // drawing happens later, in the GUI phase (renderOverlay), so the
+        // overlay survives Iris/shader pipelines that discard immediate-mode
+        // geometry written to the framebuffer during world rendering.
+        // context.matrixStack() is identity here — the real view transform
+        // lives in RenderSystem.getModelViewMatrix() (set by the game).
         this.lastProjectionMatrix.set(context.projectionMatrix());
-        this.lastViewMatrix.set(context.matrixStack().peek().getPositionMatrix());
+        this.capturedModelView.set(RenderSystem.getModelViewMatrix());
+        this.captured = true;
+    }
 
-        Camera camera = context.camera();
-        MatrixStack stack = context.matrixStack();
+    /**
+     * Draws the light billboards and gizmo in the GUI phase, after the world
+     * (including any Iris shader composite) is already on the main framebuffer.
+     * Uses the projection/view matrices captured during {@link #render} so the
+     * overlay aligns with the 3D scene. This is required because deferred shader
+     * pipelines (e.g. photon) discard geometry drawn during world rendering.
+     */
+    public void renderOverlay() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world == null || !captured)
+            return;
+        if (!(client.currentScreen instanceof CALEditorScreen)) {
+            return;
+        }
+
+        Camera camera = client.gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
 
-        RenderSystem.disableDepthTest(); // Draw on top
+        // Back up the GUI matrix state and install the world matrices captured
+        // during the world render phase (AFTER_TRANSLUCENT).
+        Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
+        VertexSorter prevSorter = RenderSystem.getVertexSorting();
+        RenderSystem.setProjectionMatrix(lastProjectionMatrix, VertexSorter.BY_DISTANCE);
+
+        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.pushMatrix();
+        mvStack.set(capturedModelView);
+        RenderSystem.applyModelViewMatrix();
+
+        RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
+
+        // Vertex stack starts at identity; the captured ModelView matrix is
+        // already set in RenderSystem so the shader handles the view transform.
+        MatrixStack stack = new MatrixStack();
 
         // 1. Draw billboards for all lights
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
@@ -92,6 +133,11 @@ public class LightGizmo {
         }
 
         RenderSystem.enableDepthTest();
+
+        // Restore the GUI matrix state.
+        mvStack.popMatrix();
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.setProjectionMatrix(prevProjection, prevSorter);
     }
 
     private void drawBillboards(MatrixStack stack, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
@@ -101,6 +147,13 @@ public class LightGizmo {
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Quaternionf camRot = camera.getRotation();
+
+        // Billboards are camera-facing quads with arbitrary winding, so disable
+        // back-face culling (otherwise they vanish depending on view angle).
+        // Also reset the shader colour, which the UI/world pass may have left
+        // tinted, so the textured quads are not multiplied to nothing.
+        RenderSystem.disableCull();
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         for (LightInstance light : lights) {
             if (!renderLightIcons && light != selectedLight) {
@@ -138,6 +191,8 @@ public class LightGizmo {
             }
             stack.pop();
         }
+
+        RenderSystem.enableCull();
     }
 
     private void drawBillboardQuad(MatrixStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
@@ -578,12 +633,16 @@ public class LightGizmo {
 
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
 
-        // 2. Rotate from camera space to world space using camera quaternion directly
-        Camera camera = client.gameRenderer.getCamera();
-        Quaternionf camRot = camera.getRotation();
-        rayEye.rotate(camRot);
+        // 2. Transform from camera space to world space using the inverse of the
+        // SAME captured modelview matrix the gizmo is rendered with (renderOverlay).
+        // This keeps picking aligned with what is drawn; the live camera.getRotation()
+        // can diverge from the captured render view under Iris/shader pipelines,
+        // which made clicks miss the visible handles. w=0 so only rotation applies.
+        Matrix4f invView = new Matrix4f(capturedModelView).invert();
+        Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f);
+        rayWorld4.mul(invView);
 
-        Vector3f rayWorld = rayEye.normalize();
+        Vector3f rayWorld = new Vector3f(rayWorld4.x, rayWorld4.y, rayWorld4.z).normalize();
         return new Vec3d(rayWorld.x, rayWorld.y, rayWorld.z);
     }
 
