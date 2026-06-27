@@ -5,7 +5,7 @@ import elgatopro300.cal_lights.ui.panels.CALEditorPanel;
 
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.phys.Vec3;
@@ -46,7 +46,6 @@ public class CALEditorScreen extends CLUIScreen {
         mc.options.hideGui = true;
         this.lastGuiScale = mc.options.guiScale().get();
         mc.options.guiScale().set(CalSettings.INSTANCE.guiScale);
-        mc.resizeDisplay();
         super.added();
     }
 
@@ -70,7 +69,6 @@ public class CALEditorScreen extends CLUIScreen {
         CalSettings.INSTANCE.guiScale = mc.options.guiScale().get();
         CalSettings.INSTANCE.save();
         mc.options.guiScale().set(this.lastGuiScale);
-        mc.resizeDisplay();
         super.removed();
     }
 
@@ -173,7 +171,7 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             // Freeze the player and allow block clipping
@@ -221,7 +219,7 @@ public class CALEditorScreen extends CLUIScreen {
                 }
             }
         }
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
         if (this.root instanceof CALEditorPanel panel && panel.closing) {
             if (panel.isFullyClosed()) {
                 this.onClose();

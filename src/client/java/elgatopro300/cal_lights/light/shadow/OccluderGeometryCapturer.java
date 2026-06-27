@@ -7,27 +7,26 @@ import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.block.ModelBlockRenderer;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.MovingBlockRenderState;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.BlockModelPart;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -35,8 +34,10 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -152,28 +153,30 @@ public final class OccluderGeometryCapturer
 
     /**
      * Capture one cutout block as world-space POSITION+UV triangles (5 floats per
-     * vertex) through MC's real {@link BlockRenderDispatcher#renderBatched} tessellation
+     * vertex) through MC's real model tessellation
      * (neighbour-culled, correct atlas UVs) — replacing the earlier hand-rolled
      * {@code BakedQuad} extraction. {@link ShadowRenderer} draws these with the
      * atlas-sampling, alpha-discarding cutout program. Empty array on failure.
      */
-    public static float[] captureCutoutBlockTris(BlockAndTintGetter world, BlockRenderDispatcher brm,
-                                                 BlockPos pos, BlockState state, RandomSource random)
+    public static float[] captureCutoutBlockTris(BlockAndTintGetter world, BlockPos pos, BlockState state, RandomSource random)
     {
-        if (world == null || brm == null || state == null)
+        if (world == null || state == null)
         {
             return EMPTY;
         }
         try
         {
-            BlockStateModel model = brm.getBlockModel(state);
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null) return EMPTY;
+            BlockStateModel model = mc.getModelManager().getBlockStateModelSet().get(state);
             if (model == null)
             {
                 return EMPTY;
             }
+            List<BlockStateModelPart> parts = new ArrayList<>();
             random.setSeed(state.getSeed(pos));
-            List<BlockModelPart> parts = model.collectParts(random);
-            if (parts == null || parts.isEmpty())
+            model.collectParts(random, parts);
+            if (parts.isEmpty())
             {
                 return EMPTY;
             }
@@ -184,7 +187,23 @@ public final class OccluderGeometryCapturer
             ms.translate(pos.getX(), pos.getY(), pos.getZ());
 
             CAPTURE.reset();
-            brm.renderBatched(state, pos, world, ms, CAPTURE, true, parts);
+            PoseStack.Pose e = ms.last();
+            QuadInstance qi = new QuadInstance();
+            qi.setColor(0xFFFFFFFF);
+            qi.setLightCoords(0xF000F0);
+            qi.setOverlayCoords(0);
+            for (BlockStateModelPart part : parts)
+            {
+                for (Direction dir : Direction.values())
+                {
+                    List<BakedQuad> quads = part.getQuads(dir);
+                    for (BakedQuad q : quads)
+                    {
+                        if (q != null)
+                            CAPTURE.putBakedQuad(e, q, qi);
+                    }
+                }
+            }
             return CAPTURE.toTris(true);
         }
         catch (Throwable t)
@@ -334,7 +353,7 @@ public final class OccluderGeometryCapturer
      * are not part of an occluder silhouette). Mirrors {@code
      * OrderedRenderCommandQueueImpl}'s method surface.
      */
-    private static final class CaptureQueue implements OrderedRenderCommandQueue
+    private static final class CaptureQueue implements SubmitNodeCollector
     {
         private final Capture capture;
 
@@ -344,15 +363,15 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public OrderedSubmitNodeCollector getBatchingQueue(int order)
+        public OrderedSubmitNodeCollector order(int priority)
         {
-            return this; // no batching: we render straight into the capture
+            return this;
         }
 
         @Override
-        public <S> void submitModel(Model<? super S> model, S state, PoseStack matrices, RenderType renderLayer,
-                                    int light, int overlay, int tintedColor, TextureAtlasSprite sprite, int outlineColor,
-                                    ModelFeatureRenderer.CrumblingOverlay crumblingOverlay)
+        public <S> void submitModel(Model<? super S> model, S state, PoseStack matrices, RenderType renderType,
+                                    int light, int overlay, int tintedColor, TextureAtlasSprite sprite,
+                                    int atlasWidth, ModelFeatureRenderer.CrumblingOverlay crumblingOverlay)
         {
             if (model == null)
             {
@@ -370,7 +389,7 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitModelPart(ModelPart part, PoseStack matrices, RenderType renderLayer, int light, int overlay,
+        public void submitModelPart(ModelPart part, PoseStack matrices, RenderType renderType, int light, int overlay,
                                     TextureAtlasSprite sprite, boolean sheeted, boolean hasGlint, int tintedColor,
                                     ModelFeatureRenderer.CrumblingOverlay crumblingOverlay, int i)
         {
@@ -389,7 +408,7 @@ public final class OccluderGeometryCapturer
 
         @Override
         public void submitItem(PoseStack matrices, ItemDisplayContext displayContext, int light, int overlay,
-                               int outlineColors, int[] tintLayers, List<BakedQuad> quads, RenderType renderLayer,
+                               int outlineColors, int[] tintLayers, List<BakedQuad> quads,
                                ItemStackRenderState.FoilType glintType)
         {
             if (quads == null || quads.isEmpty())
@@ -399,14 +418,16 @@ public final class OccluderGeometryCapturer
             try
             {
                 PoseStack.Pose e = matrices.last();
-                for (int qi = 0, n = quads.size(); qi < n; qi++)
+                QuadInstance qi = new QuadInstance();
+                qi.setColor(0xFFFFFFFF);
+                qi.setLightCoords(light);
+                qi.setOverlayCoords(overlay);
+                for (int i = 0, n = quads.size(); i < n; i++)
                 {
-                    BakedQuad q = quads.get(qi);
+                    BakedQuad q = quads.get(i);
                     if (q != null)
                     {
-                        // default quad(...) transforms by the matrix + feeds our
-                        // vertex()/texture() -> captured in world space.
-                        capture.putBulkData(e, q, 1f, 1f, 1f, 1f, light, overlay);
+                        capture.putBakedQuad(e, q, qi);
                     }
                 }
             }
@@ -418,13 +439,13 @@ public final class OccluderGeometryCapturer
         // --- no-op submits (not part of an occluder silhouette) ---------------
 
         @Override
-        public void submitShadowPieces(PoseStack matrices, float shadowRadius, List<EntityRenderState.ShadowPiece> shadowPieces)
+        public void submitShadow(PoseStack matrices, float shadowRadius, List<EntityRenderState.ShadowPiece> shadowPieces)
         {
         }
 
         @Override
-        public void submitLabel(PoseStack matrices, Vec3 nameLabelPos, int y, Component label, boolean notSneaking,
-                                int light, double squaredDistanceToCamera, CameraRenderState cameraState)
+        public void submitNameTag(PoseStack matrices, Vec3 nameLabelPos, int y, Component label, boolean notSneaking,
+                                  int light, double squaredDistanceToCamera, CameraRenderState cameraState)
         {
         }
 
@@ -435,7 +456,7 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitFire(PoseStack matrices, EntityRenderState renderState, Quaternionf rotation)
+        public void submitFlame(PoseStack matrices, EntityRenderState renderState, Quaternionf rotation)
         {
         }
 
@@ -445,26 +466,38 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitBlock(PoseStack matrices, BlockState state, int light, int overlay, int outlineColor)
+        public void submitBlockModel(PoseStack matrices, RenderType renderType,
+                                     List<BlockStateModelPart> parts, int[] tintLayers,
+                                     int light, int overlay, int outlineColor)
         {
-            // Block held/worn by a living mob (enderman carried block, iron-golem
-            // poppy, copper-golem head, ...). Resolve its model and tessellate it
-            // into the capture so the attachment casts a silhouette too.
-            if (state == null || state.getRenderShape() == RenderShape.INVISIBLE)
+            if (parts == null || parts.isEmpty())
             {
                 return;
             }
             try
             {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc == null)
+                PoseStack.Pose e = matrices.last();
+                QuadInstance qi = new QuadInstance();
+                qi.setColor(0xFFFFFFFF);
+                qi.setLightCoords(light);
+                qi.setOverlayCoords(overlay);
+                for (BlockStateModelPart part : parts)
                 {
-                    return;
-                }
-                BlockStateModel model = mc.getBlockRenderer().getBlockModel(state);
-                if (model != null)
-                {
-                    ModelBlockRenderer.renderModel(matrices.last(), capture, model, 1f, 1f, 1f, light, overlay);
+                    List<BakedQuad> quads = part.getQuads(null);
+                    for (BakedQuad q : quads)
+                    {
+                        if (q != null)
+                            capture.putBakedQuad(e, q, qi);
+                    }
+                    for (Direction dir : Direction.values())
+                    {
+                        quads = part.getQuads(dir);
+                        for (BakedQuad q : quads)
+                        {
+                            if (q != null)
+                                capture.putBakedQuad(e, q, qi);
+                        }
+                    }
                 }
             }
             catch (Throwable ignored)
@@ -480,31 +513,18 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitBlockStateModel(PoseStack matrices, RenderType renderLayer, BlockStateModel model,
-                                          float r, float g, float b, int light, int overlay, int outlineColor)
+        public void submitBreakingBlockModel(PoseStack matrices, BlockStateModel model, long seed, int overlay)
         {
-            // Block-state model attached to a living mob (snow-golem pumpkin head,
-            // mooshroom back mushrooms, ...) — tessellate it into the capture.
-            if (model == null)
-            {
-                return;
-            }
-            try
-            {
-                ModelBlockRenderer.renderModel(matrices.last(), capture, model, r, g, b, light, overlay);
-            }
-            catch (Throwable ignored)
-            {
-            }
+            // Breaking-progress overlay — not needed for occluder silhouette.
         }
 
         @Override
-        public void submitCustom(PoseStack matrices, RenderType renderLayer, SubmitNodeCollector.CustomGeometryRenderer customRenderer)
+        public void submitCustomGeometry(PoseStack matrices, RenderType renderLayer, SubmitNodeCollector.CustomGeometryRenderer customRenderer)
         {
         }
 
         @Override
-        public void submitCustom(SubmitNodeCollector.ParticleGroupRenderer customRenderer)
+        public void submitParticleGroup(SubmitNodeCollector.ParticleGroupRenderer customRenderer)
         {
         }
     }

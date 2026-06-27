@@ -1491,7 +1491,6 @@ public class CALEditorPanel extends CLUIElement {
                         CalSettings.INSTANCE.guiScale = sc;
                         CalSettings.INSTANCE.save();
                         Minecraft.getInstance().options.guiScale().set(sc);
-                        Minecraft.getInstance().resizeDisplay();
                         return true;
                     }
                 }
@@ -1670,7 +1669,7 @@ public class CALEditorPanel extends CLUIElement {
                         LightSaveManager.forceSaveCurrent();
                         Minecraft mc = Minecraft.getInstance();
                         if (mc.player != null) {
-                            mc.player.displayClientMessage(Component.literal(CALKeys.SAVED_SUCCESS.get()), false);
+                            mc.player.sendSystemMessage(Component.literal(CALKeys.SAVED_SUCCESS.get()));
                         }
                     } else if (clickedIdx == 2) {
                         showPatcherPopup = true;

@@ -9,13 +9,11 @@ import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.CalSettings;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.render.*;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -51,7 +49,7 @@ public class LightGizmo {
     public static boolean snapToGrid = false;
 
     public void init() {
-        WorldRenderEvents.END_MAIN.register(this::render);
+        LevelRenderEvents.END_MAIN.register(this::render);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -62,7 +60,7 @@ public class LightGizmo {
         return this.selectedLight;
     }
 
-    private void render(WorldRenderContext context) {
+    private void render(LevelRenderContext context) {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null)
             return;
@@ -81,8 +79,8 @@ public class LightGizmo {
         // provider and matrix stack.  In 1.21.11 there is no immediate-mode
         // rendering that shader packs can discard — geometry goes through the
         // deferred command queue — so we draw directly during END_MAIN.
-        MultiBufferSource consumers = context.consumers();
-        PoseStack stack = context.matrices();
+        MultiBufferSource consumers = context.bufferSource();
+        PoseStack stack = context.poseStack();
 
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
@@ -159,7 +157,7 @@ public class LightGizmo {
         float g = ((color >>> 8) & 0xFF) / 255.0f;
         float b = (color & 0xFF) / 255.0f;
 
-        int light = LightTexture.FULL_BRIGHT;
+        int light = 0xF000F0;
         int overlay = OverlayTexture.NO_OVERLAY;
 
         buf.addVertex(matrix, -size, -size, 0).setColor(r, g, b, a).setUv(u1, v2).setOverlay(overlay).setLight(light).setNormal(entry, 0f, 0f, 1f);
@@ -257,7 +255,7 @@ public class LightGizmo {
     }
 
     private void vert(VertexConsumer buf, Matrix4f m, float x, float y, float z, float r, float g, float b, float a) {
-        buf.addVertex(m, x, y, z).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+        buf.addVertex(m, x, y, z).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(0, 1, 0);
     }
 
     private void lineQuad(Matrix4f m, VertexConsumer buf, float x1, float y1, float z1, float x2, float y2, float z2, float hw, float r, float g, float b, float a) {

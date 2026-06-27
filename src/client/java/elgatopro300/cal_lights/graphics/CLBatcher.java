@@ -1,19 +1,19 @@
 package elgatopro300.cal_lights.graphics;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import org.joml.Matrix4f;
 
 public class CLBatcher {
-    private final GuiGraphics ctx;
+    private final GuiGraphicsExtractor ctx;
 
-    public CLBatcher(GuiGraphics ctx) {
+    public CLBatcher(GuiGraphicsExtractor ctx) {
         this.ctx = ctx;
     }
 
-    public GuiGraphics getCtx() {
+    public GuiGraphicsExtractor getCtx() {
         return this.ctx;
     }
 
@@ -91,11 +91,11 @@ public class CLBatcher {
     }
 
     public void text(String s, float x, float y, int color) {
-        this.ctx.drawString(Minecraft.getInstance().font, s, (int) x, (int) y, color, false);
+        this.ctx.text(Minecraft.getInstance().font, s, (int) x, (int) y, color, false);
     }
 
     public void textShadow(String s, float x, float y, int color) {
-        this.ctx.drawString(Minecraft.getInstance().font, s, (int) x, (int) y, color, true);
+        this.ctx.text(Minecraft.getInstance().font, s, (int) x, (int) y, color, true);
     }
 
     public void clip(int x, int y, int w, int h) {

@@ -1,8 +1,6 @@
 package elgatopro300.cal_lights.light.shadow;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -101,16 +99,9 @@ public final class BlockShadowCollector
                     // via vanilla's alpha-test cutout shader so transparent
                     // texture pixels let light through. Shape is unused for
                     // these - geometry comes from the model, not the AABB.
-                    ChunkSectionLayer layer;
-                    try
-                    {
-                        layer = ItemBlockRenderTypes.getChunkRenderType(state);
-                    }
-                    catch (Throwable t)
-                    {
-                        layer = ChunkSectionLayer.SOLID;
-                    }
-                    if (layer == ChunkSectionLayer.CUTOUT)
+                    // In 26.1.2, ItemBlockRenderTypes was removed; non-solid
+                    // full-model blocks are treated as cutout.
+                    if (!state.isSolid())
                     {
                         out.add(new BlockShadowEntry(mut.immutable(), null, true));
                         continue;

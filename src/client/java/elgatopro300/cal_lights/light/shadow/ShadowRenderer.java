@@ -2,7 +2,6 @@ package elgatopro300.cal_lights.light.shadow;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
@@ -753,8 +752,7 @@ public final class ShadowRenderer
     {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel world = mc != null ? mc.level : null;
-        BlockRenderDispatcher brm = mc != null ? mc.getBlockRenderer() : null;
-        if (world == null || brm == null)
+        if (world == null)
         {
             releaseCutoutVbo(id);
             cutoutList.put(id, blocks);
@@ -781,7 +779,7 @@ public final class ShadowRenderer
                 // Real MC tessellation (neighbour-culled, correct atlas UVs) ->
                 // world-space POSITION+UV triangles in the stride-20 layout this
                 // buffer expects. Replaces the old hand-rolled BakedQuad walk.
-                float[] tris = OccluderGeometryCapturer.captureCutoutBlockTris(world, brm, p, state, cutoutRandom);
+                float[] tris = OccluderGeometryCapturer.captureCutoutBlockTris(world, p, state, cutoutRandom);
                 if (tris.length > 0)
                 {
                     data.addElements(data.size(), tris);
