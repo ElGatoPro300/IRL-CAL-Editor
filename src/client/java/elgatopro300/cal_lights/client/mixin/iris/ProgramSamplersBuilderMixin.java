@@ -7,7 +7,6 @@ import elgatopro300.cal_lights.manager.GoboManager;
 import net.fabricmc.loader.api.FabricLoader;
 
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.sampler.GlSampler;
 import net.irisshaders.iris.gl.texture.TextureType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,8 +21,8 @@ public class ProgramSamplersBuilderMixin {
             return;
         }
         ProgramSamplers.Builder self = (ProgramSamplers.Builder) (Object) this;
-        self.addDynamicSampler(TextureType.TEXTURE_2D, SpotlightDepthAtlas::getGlTextureId, () -> GlSampler.NEAREST, "irl_spotShadowAtlas");
-        self.addDynamicSampler(TextureType.TEXTURE_2D, PointShadowArray::getGlTextureId, () -> GlSampler.NEAREST, "irl_pointShadowArray");
-        self.addDynamicSampler(TextureType.TEXTURE_2D, GoboManager.INSTANCE::getTextureArrayId, () -> GlSampler.NEAREST, "irl_cookieArray");
+        self.addDynamicSampler(TextureType.TEXTURE_2D, SpotlightDepthAtlas::getGlTextureId, () -> null, "irl_spotShadowAtlas");
+        self.addDynamicSampler(TextureType.TEXTURE_2D, PointShadowArray::getGlTextureId, () -> null, "irl_pointShadowArray");
+        self.addDynamicSampler(TextureType.TEXTURE_2D, GoboManager.INSTANCE::getTextureArrayId, () -> null, "irl_cookieArray");
     }
 }
