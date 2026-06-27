@@ -275,20 +275,49 @@ public class LightGizmo {
         vert(buf, m, x2 - wx, y2 - wy, z2 - wz, r, g, b, a);
     }
 
+    private void lineQuadCross(Matrix4f m, VertexConsumer buf,
+            float x1, float y1, float z1, float x2, float y2, float z2,
+            float hw, float r, float g, float b, float a) {
+        float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+        float dl = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dl < 1e-5f) return;
+        dx /= dl; dy /= dl; dz /= dl;
+        float upx = 0, upy = 1, upz = 0;
+        if (Math.abs(dy) > 0.99f) { upx = 1; upy = 0; upz = 0; }
+        float b1x = dy * upz - dz * upy, b1y = dz * upx - dx * upz, b1z = dx * upy - dy * upx;
+        float b1l = (float) Math.sqrt(b1x * b1x + b1y * b1y + b1z * b1z);
+        if (b1l < 1e-5f) return;
+        b1x = b1x / b1l * hw; b1y = b1y / b1l * hw; b1z = b1z / b1l * hw;
+        float b2x = dy * b1z - dz * b1y, b2y = dz * b1x - dx * b1z, b2z = dx * b1y - dy * b1x;
+        float b2l = (float) Math.sqrt(b2x * b2x + b2y * b2y + b2z * b2z);
+        if (b2l > 1e-5f) { b2x = b2x / b2l * hw; b2y = b2y / b2l * hw; b2z = b2z / b2l * hw; }
+        vert(buf, m, x1 - b1x, y1 - b1y, z1 - b1z, r, g, b, a);
+        vert(buf, m, x1 + b1x, y1 + b1y, z1 + b1z, r, g, b, a);
+        vert(buf, m, x2 + b1x, y2 + b1y, z2 + b1z, r, g, b, a);
+        vert(buf, m, x1 - b1x, y1 - b1y, z1 - b1z, r, g, b, a);
+        vert(buf, m, x2 + b1x, y2 + b1y, z2 + b1z, r, g, b, a);
+        vert(buf, m, x2 - b1x, y2 - b1y, z2 - b1z, r, g, b, a);
+        vert(buf, m, x1 - b2x, y1 - b2y, z1 - b2z, r, g, b, a);
+        vert(buf, m, x1 + b2x, y1 + b2y, z1 + b2z, r, g, b, a);
+        vert(buf, m, x2 + b2x, y2 + b2y, z2 + b2z, r, g, b, a);
+        vert(buf, m, x1 - b2x, y1 - b2y, z1 - b2z, r, g, b, a);
+        vert(buf, m, x2 + b2x, y2 + b2y, z2 + b2z, r, g, b, a);
+        vert(buf, m, x2 - b2x, y2 - b2y, z2 - b2z, r, g, b, a);
+    }
+
     private void drawPointIndicator(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a) {
         float radius = Math.max(0.5f, Math.min(light.radius, 16.0f));
-        int seg = 48;
-        float hw = 0.005f;
+        int seg = 64;
+        float hw = 0.015f;
         Matrix4f m = e.getPositionMatrix();
-
         for (int i = 0; i < seg; i++) {
             double a1 = Math.PI * 2.0 * i / seg;
             double a2 = Math.PI * 2.0 * (i + 1) / seg;
             float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
             float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
-            lineQuad(m, buf, radius * c1, 0, radius * s1, radius * c2, 0, radius * s2, hw, r, g, b, a);
-            lineQuad(m, buf, radius * c1, radius * s1, 0, radius * c2, radius * s2, 0, hw, r, g, b, a);
-            lineQuad(m, buf, 0, radius * c1, radius * s1, 0, radius * c2, radius * s2, hw, r, g, b, a);
+            lineQuadCross(m, buf, radius * c1, 0, radius * s1, radius * c2, 0, radius * s2, hw, r, g, b, a);
+            lineQuadCross(m, buf, radius * c1, radius * s1, 0, radius * c2, radius * s2, 0, hw, r, g, b, a);
+            lineQuadCross(m, buf, 0, radius * c1, radius * s1, 0, radius * c2, radius * s2, hw, r, g, b, a);
         }
     }
 
@@ -300,7 +329,6 @@ public class LightGizmo {
 
         float len = Math.max(1f, Math.min(light.distance, 32f));
         float outerRad = (float) (len * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
-
         float cx = dx * len, cy = dy * len, cz = dz * len;
 
         float rx, ry, rz;
@@ -312,8 +340,8 @@ public class LightGizmo {
         float vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
 
         Matrix4f m = e.getPositionMatrix();
-        int seg = 32;
-        float hw = 0.003f;
+        int seg = 64;
+        float hw = 0.015f;
 
         for (int i = 0; i < seg; i++) {
             double a1 = Math.PI * 2.0 * i / seg;
@@ -322,7 +350,7 @@ public class LightGizmo {
             float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
             float p1x = cx + outerRad * (c1 * ux + s1 * vx), p1y = cy + outerRad * (c1 * uy + s1 * vy), p1z = cz + outerRad * (c1 * uz + s1 * vz);
             float p2x = cx + outerRad * (c2 * ux + s2 * vx), p2y = cy + outerRad * (c2 * uy + s2 * vy), p2z = cz + outerRad * (c2 * uz + s2 * vz);
-            lineQuad(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, a);
+            lineQuadCross(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, a);
         }
 
         if (light.soft > 0.1f) {
@@ -335,7 +363,7 @@ public class LightGizmo {
                 float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
                 float p1x = cx + innerRad * (c1 * ux + s1 * vx), p1y = cy + innerRad * (c1 * uy + s1 * vy), p1z = cz + innerRad * (c1 * uz + s1 * vz);
                 float p2x = cx + innerRad * (c2 * ux + s2 * vx), p2y = cy + innerRad * (c2 * uy + s2 * vy), p2z = cz + innerRad * (c2 * uz + s2 * vz);
-                lineQuad(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, innerA);
+                lineQuadCross(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, innerA);
             }
         }
 
@@ -345,7 +373,7 @@ public class LightGizmo {
             float px = cx + outerRad * (cos * ux + sin * vx);
             float py = cy + outerRad * (cos * uy + sin * vy);
             float pz = cz + outerRad * (cos * uz + sin * vz);
-            lineQuad(m, buf, 0, 0, 0, px, py, pz, hw, r, g, b, a);
+            lineQuadCross(m, buf, 0, 0, 0, px, py, pz, hw, r, g, b, a);
         }
     }
 
