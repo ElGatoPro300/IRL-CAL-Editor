@@ -1,6 +1,6 @@
 package elgatopro300.cal_lights.ui;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,7 +43,7 @@ public class CalSettings {
     public int keyInterpBounce = GLFW.GLFW_KEY_O;
 
     private File getConfigFile() {
-        return new File(MinecraftClient.getInstance().runDirectory, "config/cal_lights_settings.json");
+        return new File(Minecraft.getInstance().gameDirectory, "config/cal_lights_settings.json");
     }
 
     public void load() {

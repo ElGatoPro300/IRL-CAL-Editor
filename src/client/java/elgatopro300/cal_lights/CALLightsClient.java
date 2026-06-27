@@ -22,11 +22,11 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
 
 public class CALLightsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("IRL CAL Editor Client");
-    public static KeyBinding editorKeyBinding;
-    public static KeyBinding createLightKeyBinding;
+    public static KeyMapping editorKeyBinding;
+    public static KeyMapping createLightKeyBinding;
 
     private static final int AUTO_SHADOW_RAMP_STEP = 2;
     private static int autoShadowRamp = 0;
@@ -56,18 +56,18 @@ public class CALLightsClient implements ClientModInitializer {
         // dir / Iris shaderpacks dir / bundled .irlights patches.
         Patcher.install(new CALPatcherHost());
 
-        editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.cal.editor",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
-        createLightKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        createLightKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.cal.create_light",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F7,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
@@ -199,9 +199,9 @@ public class CALLightsClient implements ClientModInitializer {
 
         // 3. Auto block-lights
         if (LightConfig.autoLights()) {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc.player != null && mc.world != null) {
-                Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.level != null) {
+                Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
 
                 int headroom = Math.max(0, LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
                 int feedMax = Math.min(LightConfig.autoLightMax(), headroom);

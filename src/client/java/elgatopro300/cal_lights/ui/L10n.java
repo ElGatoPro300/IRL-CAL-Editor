@@ -1,7 +1,5 @@
 package elgatopro300.cal_lights.ui;
 
-import net.minecraft.client.MinecraftClient;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 

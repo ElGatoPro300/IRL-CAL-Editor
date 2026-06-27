@@ -1,9 +1,9 @@
 package elgatopro300.cal_lights.light.auto;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.RedstoneWireBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -43,18 +43,18 @@ public final class BlockLightDefs {
     }
 
     public static Def resolve(BlockState state) {
-        if (state.getLuminance() > 0) {
+        if (state.getLightEmission() > 0) {
             return DEFS.get(state.getBlock());
         }
-        if (state.isOf(Blocks.REDSTONE_WIRE)) {
-            int power = state.get(RedstoneWireBlock.POWER);
+        if (state.is(Blocks.REDSTONE_WIRE)) {
+            int power = state.getValue(RedStoneWireBlock.POWER);
             return power > 0 ? REDSTONE_BY_POWER[power] : null;
         }
         return null;
     }
 
     public static boolean paletteCandidate(BlockState state) {
-        return state.getLuminance() > 0 || state.isOf(Blocks.REDSTONE_WIRE);
+        return state.getLightEmission() > 0 || state.is(Blocks.REDSTONE_WIRE);
     }
 
     static {

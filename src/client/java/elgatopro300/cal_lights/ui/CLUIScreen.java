@@ -2,19 +2,19 @@ package elgatopro300.cal_lights.ui;
 
 import elgatopro300.cal_lights.graphics.CLBatcher;
 
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.CharInput;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
 
 public class CLUIScreen extends Screen {
     protected final CLUIElement root;
     private long tickCount = 0;
 
     public CLUIScreen(CLUIElement root) {
-        super(Text.empty());
+        super(Component.empty());
         this.root = root;
     }
 
@@ -39,7 +39,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
 
         CLUIContext uiCtx = new CLUIContext();
@@ -56,7 +56,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
         // Override with no-op to disable vanilla background dim and blur shader
     }
 
@@ -67,7 +67,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean bool) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean bool) {
         if (this.root != null && this.root.mouseClicked((int) click.x(), (int) click.y(), click.button())) {
             return true;
         }
@@ -75,7 +75,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (this.root != null && this.root.mouseReleased((int) click.x(), (int) click.y(), click.button())) {
             return true;
         }
@@ -83,7 +83,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent click, double deltaX, double deltaY) {
         if (this.root != null && this.root.mouseDragged(click.x(), click.y(), click.button(), deltaX, deltaY)) {
             return true;
         }
@@ -91,7 +91,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput key) {
+    public boolean keyPressed(KeyEvent key) {
         if (this.root != null && this.root.keyPressed(key.key(), key.scancode(), key.modifiers())) {
             return true;
         }
@@ -99,7 +99,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean charTyped(CharInput input) {
+    public boolean charTyped(CharacterEvent input) {
         if (this.root != null && this.root.charTyped((char) input.codepoint(), input.modifiers())) {
             return true;
         }
@@ -115,7 +115,7 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

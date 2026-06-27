@@ -1,7 +1,7 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
@@ -83,7 +83,7 @@ public final class BlockShadowCache
      *  crosses into another 1-block cell (and the cached list instance stays
      *  stable in between, which the VBO cache keys on). Blocks the padding
      *  pulls in past the light's range are clipped by the bake far plane. */
-    public static List<BlockShadowEntry> getOrCompute(long id, ClientWorld world,
+    public static List<BlockShadowEntry> getOrCompute(long id, ClientLevel world,
                                                       float lx, float ly, float lz, float radius)
     {
         float cx = Math.round(lx);

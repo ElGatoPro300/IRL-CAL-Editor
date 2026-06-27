@@ -1,19 +1,19 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.GlTexture;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import org.lwjgl.opengl.GL11;
@@ -427,7 +427,7 @@ public final class ShadowRenderer
     private static final Long2ObjectOpenHashMap<List<BlockShadowEntry>> cutoutList = new Long2ObjectOpenHashMap<>();
     private static final Long2IntOpenHashMap cutoutVboId = new Long2IntOpenHashMap();
     private static final Long2IntOpenHashMap cutoutVertCount = new Long2IntOpenHashMap();
-    private static final Random cutoutRandom = Random.create();
+    private static final RandomSource cutoutRandom = RandomSource.create();
     private static boolean cutoutErrorLogged = false;
 
     private static boolean blockErrorLogged = false;
@@ -554,7 +554,7 @@ public final class ShadowRenderer
             BlockShadowEntry e = blocks.get(i);
             if (e != null && e.shape != null)
             {
-                e.shape.forEachBox((a, b, c, d, f, g) -> boxes[0]++);
+                e.shape.forAllBoxes((a, b, c, d, f, g) -> boxes[0]++);
             }
         }
         int boxCount = boxes[0];
@@ -579,7 +579,7 @@ public final class ShadowRenderer
                     continue;
                 }
                 final float ox = e.pos.getX(), oy = e.pos.getY(), oz = e.pos.getZ();
-                e.shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) ->
+                e.shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
                     emitBox(fb,
                         ox + (float) minX, oy + (float) minY, oz + (float) minZ,
                         ox + (float) maxX, oy + (float) maxY, oz + (float) maxZ));
@@ -751,9 +751,9 @@ public final class ShadowRenderer
      *  vertex count (0 if there is no cutout geometry). */
     private static int buildCutoutVbo(long id, List<BlockShadowEntry> blocks)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ClientWorld world = mc != null ? mc.world : null;
-        BlockRenderManager brm = mc != null ? mc.getBlockRenderManager() : null;
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel world = mc != null ? mc.level : null;
+        BlockRenderDispatcher brm = mc != null ? mc.getBlockRenderer() : null;
         if (world == null || brm == null)
         {
             releaseCutoutVbo(id);
@@ -835,20 +835,20 @@ public final class ShadowRenderer
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null)
             {
                 return 0;
             }
-            AbstractTexture tex = mc.getTextureManager().getTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+            AbstractTexture tex = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
             if (tex == null)
             {
                 return 0;
             }
-            GpuTexture gt = tex.getGlTexture();
+            GpuTexture gt = tex.getTexture();
             if (gt instanceof GlTexture)
             {
-                return ((GlTexture) gt).getGlId();
+                return ((GlTexture) gt).glId();
             }
             return 0;
         }

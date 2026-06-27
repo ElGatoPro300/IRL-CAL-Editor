@@ -1,7 +1,7 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 // cutout=true entries skip the AABB path; the textured BakedModel is baked
 // with vanilla's alpha-test cutout shader so transparent texture pixels

@@ -1,19 +1,19 @@
 package elgatopro300.cal_lights.graphics;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 
 import org.joml.Matrix4f;
 
 public class CLBatcher {
-    private final DrawContext ctx;
+    private final GuiGraphics ctx;
 
-    public CLBatcher(DrawContext ctx) {
+    public CLBatcher(GuiGraphics ctx) {
         this.ctx = ctx;
     }
 
-    public DrawContext getCtx() {
+    public GuiGraphics getCtx() {
         return this.ctx;
     }
 
@@ -87,15 +87,15 @@ public class CLBatcher {
         }
         int ix = (int) x;
         int iy = (int) y;
-        this.ctx.drawTexture(RenderPipelines.GUI_TEXTURED, texture.identifier, ix, iy, (float) texX, (float) texY, texW, texH, texture.width, texture.height, color);
+        this.ctx.blit(RenderPipelines.GUI_TEXTURED, texture.identifier, ix, iy, (float) texX, (float) texY, texW, texH, texture.width, texture.height, color);
     }
 
     public void text(String s, float x, float y, int color) {
-        this.ctx.drawText(MinecraftClient.getInstance().textRenderer, s, (int) x, (int) y, color, false);
+        this.ctx.drawString(Minecraft.getInstance().font, s, (int) x, (int) y, color, false);
     }
 
     public void textShadow(String s, float x, float y, int color) {
-        this.ctx.drawText(MinecraftClient.getInstance().textRenderer, s, (int) x, (int) y, color, true);
+        this.ctx.drawString(Minecraft.getInstance().font, s, (int) x, (int) y, color, true);
     }
 
     public void clip(int x, int y, int w, int h) {

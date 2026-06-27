@@ -1,12 +1,12 @@
 package elgatopro300.cal_lights.light.shadow;
 
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.BlockRenderLayer;
-import net.minecraft.client.render.BlockRenderLayers;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ public final class BlockShadowCollector
     {
     }
 
-    public static List<BlockShadowEntry> collectForLight(ClientWorld world,
+    public static List<BlockShadowEntry> collectForLight(ClientLevel world,
                                                          float lx, float ly, float lz,
                                                          float radius,
                                                          int hostX, int hostY, int hostZ)
@@ -54,7 +54,7 @@ public final class BlockShadowCollector
         int maxZ = (int) Math.floor(lz + radius);
 
         float r2 = radius * radius;
-        BlockPos.Mutable mut = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
 
         for (int x = minX; x <= maxX; x++)
         {
@@ -84,7 +84,7 @@ public final class BlockShadowCollector
                     // the host cell (floor of the light position) so emitters
                     // ELSEWHERE in range still cast shadows normally. Same idea
                     // as the INVISIBLE ModelBlock skip just below.
-                    if (x == hostX && y == hostY && z == hostZ && state.getLuminance() > 0) continue;
+                    if (x == hostX && y == hostY && z == hostZ && state.getLightEmission() > 0) continue;
 
                     // BlockRenderType.INVISIBLE means the block draws nothing
                     // through the vanilla render path - ModelBlock, barrier,
@@ -94,39 +94,39 @@ public final class BlockShadowCollector
                     // back to VoxelShapes.fullCube because Block has no
                     // override and collision is empty), trapping the light
                     // inside its own shadow map.
-                    if (state.getRenderType() == BlockRenderType.INVISIBLE) continue;
+                    if (state.getRenderShape() == RenderShape.INVISIBLE) continue;
 
                     // Cutout blocks (doors with glass, iron bars, trapdoors,
                     // ladders, leaves) are baked from their textured BakedModel
                     // via vanilla's alpha-test cutout shader so transparent
                     // texture pixels let light through. Shape is unused for
                     // these - geometry comes from the model, not the AABB.
-                    BlockRenderLayer layer;
+                    ChunkSectionLayer layer;
                     try
                     {
-                        layer = BlockRenderLayers.getBlockLayer(state);
+                        layer = ItemBlockRenderTypes.getChunkRenderType(state);
                     }
                     catch (Throwable t)
                     {
-                        layer = BlockRenderLayer.SOLID;
+                        layer = ChunkSectionLayer.SOLID;
                     }
-                    if (layer == BlockRenderLayer.CUTOUT)
+                    if (layer == ChunkSectionLayer.CUTOUT)
                     {
-                        out.add(new BlockShadowEntry(mut.toImmutable(), null, true));
+                        out.add(new BlockShadowEntry(mut.immutable(), null, true));
                         continue;
                     }
 
                     VoxelShape shape;
                     try
                     {
-                        shape = state.getCullingShape();
+                        shape = state.getOcclusionShape();
                         if (shape == null || shape.isEmpty())
                         {
                             shape = state.getCollisionShape(world, mut);
                         }
                         if (shape == null || shape.isEmpty())
                         {
-                            shape = state.getOutlineShape(world, mut);
+                            shape = state.getShape(world, mut);
                         }
                     }
                     catch (Throwable t)
@@ -135,7 +135,7 @@ public final class BlockShadowCollector
                     }
                     if (shape == null || shape.isEmpty()) continue;
 
-                    out.add(new BlockShadowEntry(mut.toImmutable(), shape, false));
+                    out.add(new BlockShadowEntry(mut.immutable(), shape, false));
                 }
             }
         }

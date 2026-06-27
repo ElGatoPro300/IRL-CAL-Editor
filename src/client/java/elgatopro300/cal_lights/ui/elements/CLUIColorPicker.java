@@ -4,8 +4,6 @@ import elgatopro300.cal_lights.manager.CALUndoManager;
 import elgatopro300.cal_lights.ui.CLUIContext;
 import elgatopro300.cal_lights.ui.CLUIElement;
 
-import net.minecraft.client.MinecraftClient;
-
 import org.lwjgl.glfw.GLFW;
 
 public class CLUIColorPicker extends CLUIElement {

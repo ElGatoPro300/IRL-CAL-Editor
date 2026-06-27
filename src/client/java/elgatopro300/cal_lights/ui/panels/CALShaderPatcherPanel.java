@@ -8,7 +8,7 @@ import elgatopro300.cal_lights.ui.L10n;
 
 import org.qualet.irl.patcher.*;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -265,14 +265,14 @@ public class CALShaderPatcherPanel extends CLUIElement {
         int valBg = hoverVal ? 0xFF3A3A4A : 0xFF212126;
         ctx.batcher.box(x + 15, btnY, x + 15 + btnW, btnY + btnH, valBg);
         ctx.batcher.outline(x + 15, btnY, x + 15 + btnW, btnY + btnH, hoverVal ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-        int valTextW = MinecraftClient.getInstance().textRenderer.getWidth(L10n.get("cal.ui.patcher_validate"));
+        int valTextW = Minecraft.getInstance().font.width(L10n.get("cal.ui.patcher_validate"));
         ctx.batcher.text(L10n.get("cal.ui.patcher_validate"), x + 15 + (btnW - valTextW) / 2, btnY + 6, 0xFFE0E0E0);
 
         boolean hoverPatch = ctx.mouseX >= x + w - 15 - btnW && ctx.mouseX < x + w - 15 && ctx.mouseY >= btnY && ctx.mouseY < btnY + btnH;
         int patchBg = hoverPatch ? 0xFF2E7D32 : 0xFF1B5E20;
         ctx.batcher.box(x + w - 15 - btnW, btnY, x + w - 15, btnY + btnH, patchBg);
         ctx.batcher.outline(x + w - 15 - btnW, btnY, x + w - 15, btnY + btnH, hoverPatch ? 0xFF81C784 : 0xFF555555, 1);
-        int patchTextW = MinecraftClient.getInstance().textRenderer.getWidth(L10n.get("cal.ui.patcher_patch"));
+        int patchTextW = Minecraft.getInstance().font.width(L10n.get("cal.ui.patcher_patch"));
         ctx.batcher.text(L10n.get("cal.ui.patcher_patch"), x + w - 15 - btnW + (btnW - patchTextW) / 2, btnY + 6, 0xFFFFFFFF);
 
         int statusY = btnY + btnH + 10;

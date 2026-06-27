@@ -1,14 +1,17 @@
 package elgatopro300.cal_lights.manager;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.Minecraft;
+
+import com.mojang.blaze3d.platform.NativeImage;
 
 import org.lwjgl.opengl.*;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +64,7 @@ public class GoboManager {
         goboNameToIndex.put("Noise", 3);
 
         // Scan config/cal_lights/gobos/ and config/irl-redactor/cookies/
-        Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path runDir = Minecraft.getInstance().gameDirectory.toPath();
         Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
         Path cookiesDir = runDir.resolve("config").resolve("irl-redactor").resolve("cookies");
 
@@ -139,8 +142,8 @@ public class GoboManager {
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER);
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER);
-        try (var stack = org.lwjgl.system.MemoryStack.stackPush()) {
-            java.nio.FloatBuffer border = stack.floats(0f, 0f, 0f, 0f);
+        try (var stack = MemoryStack.stackPush()) {
+            FloatBuffer border = stack.floats(0f, 0f, 0f, 0f);
             GL11.glTexParameterfv(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_BORDER_COLOR, border);
         }
 
@@ -329,7 +332,7 @@ public class GoboManager {
             byte[] srcData = new byte[w * h * 4];
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
-                    int pixel = img.getColorArgb(x, y);
+                    int pixel = img.getPixel(x, y);
                     int idx = (y * w + x) * 4;
                     srcData[idx] = (byte) ((pixel >> 16) & 0xFF);
                     srcData[idx + 1] = (byte) ((pixel >> 8) & 0xFF);

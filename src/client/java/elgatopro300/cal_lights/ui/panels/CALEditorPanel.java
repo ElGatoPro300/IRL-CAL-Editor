@@ -17,14 +17,15 @@ import elgatopro300.cal_lights.ui.CalSettings;
 import elgatopro300.cal_lights.ui.IKey;
 import elgatopro300.cal_lights.ui.elements.CLUITrackpad;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.google.gson.Gson;
 
@@ -106,7 +107,7 @@ public class CALEditorPanel extends CLUIElement {
     private boolean showRightClickPopup = false;
     private int rightClickPopupX = 0;
     private int rightClickPopupY = 0;
-    private Vec3d rightClickWorldPos = null;
+    private Vec3 rightClickWorldPos = null;
     private boolean isRightClickingLight = false;
 
     // Interaction diagnostics metrics
@@ -402,13 +403,13 @@ public class CALEditorPanel extends CLUIElement {
             boolean hoverP = ctx.mouseX >= 8 && ctx.mouseX < 8 + btnW && ctx.mouseY >= addY && ctx.mouseY < addY + 16;
             ctx.batcher.box(8, addY, 8 + btnW, addY + 16, hoverP ? 0xFF2E7D32 : 0xFF1B5E20);
             ctx.batcher.outline(8, addY, 8 + btnW, addY + 16, 0xFF81C784, 1);
-            int pointTextX = 8 + (btnW - MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.ADD_POINT_SHORT.get())) / 2;
+            int pointTextX = 8 + (btnW - Minecraft.getInstance().font.width(CALKeys.ADD_POINT_SHORT.get())) / 2;
             ctx.batcher.text(CALKeys.ADD_POINT_SHORT.get(), pointTextX, addY + 4, 0xFFFFFFFF);
 
             boolean hoverS = ctx.mouseX >= 8 + btnW + 6 && ctx.mouseX < animLeftPanelW - 8 && ctx.mouseY >= addY && ctx.mouseY < addY + 16;
             ctx.batcher.box(8 + btnW + 6, addY, animLeftPanelW - 8, addY + 16, hoverS ? 0xFF1565C0 : 0xFF0D47A1);
             ctx.batcher.outline(8 + btnW + 6, addY, animLeftPanelW - 8, addY + 16, 0xFF64B5F6, 1);
-            int spotTextX = 8 + btnW + 6 + (btnW - MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.ADD_SPOT_SHORT.get())) / 2;
+            int spotTextX = 8 + btnW + 6 + (btnW - Minecraft.getInstance().font.width(CALKeys.ADD_SPOT_SHORT.get())) / 2;
             ctx.batcher.text(CALKeys.ADD_SPOT_SHORT.get(), spotTextX, addY + 4, 0xFFFFFFFF);
 
             // Populate Lights List
@@ -629,10 +630,10 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(0, 0, w, h, (alpha << 24) | 0x0B0B0E);
 
             // Apply scaling matrix for the popup contents
-            ctx.batcher.getCtx().getMatrices().pushMatrix();
-            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f);
-            ctx.batcher.getCtx().getMatrices().scale(settingsPopupScale, settingsPopupScale);
-            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f);
+            ctx.batcher.getCtx().pose().pushMatrix();
+            ctx.batcher.getCtx().pose().translate(w / 2.0f, h / 2.0f);
+            ctx.batcher.getCtx().pose().scale(settingsPopupScale, settingsPopupScale);
+            ctx.batcher.getCtx().pose().translate(-w / 2.0f, -h / 2.0f);
 
             // Modal Box Dimensions (Premium BBS size: 520x320)
             int pW = 520;
@@ -763,14 +764,14 @@ public class CALEditorPanel extends CLUIElement {
                 boolean isTicks = CalSettings.INSTANCE.durationMode.equals("ticks");
                 ctx.batcher.box(ticksBtnX, btnY2, ticksBtnX + btnW2, btnY2 + btnH2, isTicks ? 0xFF1976D2 : (hoverTicks ? 0xFF2A2A35 : 0xFF1E1E24));
                 ctx.batcher.outline(ticksBtnX, btnY2, ticksBtnX + btnW2, btnY2 + btnH2, isTicks ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                int ticksTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.TICKS.get());
+                int ticksTextW = Minecraft.getInstance().font.width(CALKeys.TICKS.get());
                 ctx.batcher.text(CALKeys.TICKS.get(), ticksBtnX + (btnW2 - ticksTextW) / 2, btnY2 + 5, 0xFFFFFFFF);
 
                 boolean hoverSecs = ctx.mouseX >= secsBtnX && ctx.mouseX < secsBtnX + btnW2 && ctx.mouseY >= btnY2 && ctx.mouseY < btnY2 + btnH2;
                 boolean isSecs = CalSettings.INSTANCE.durationMode.equals("seconds");
                 ctx.batcher.box(secsBtnX, btnY2, secsBtnX + btnW2, btnY2 + btnH2, isSecs ? 0xFF1976D2 : (hoverSecs ? 0xFF2A2A35 : 0xFF1E1E24));
                 ctx.batcher.outline(secsBtnX, btnY2, secsBtnX + btnW2, btnY2 + btnH2, isSecs ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                int secsTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.SECONDS.get());
+                int secsTextW = Minecraft.getInstance().font.width(CALKeys.SECONDS.get());
                 ctx.batcher.text(CALKeys.SECONDS.get(), secsBtnX + (btnW2 - secsTextW) / 2, btnY2 + 5, 0xFFFFFFFF);
 
                 // SIMPLIFICAR ANIMACIONES
@@ -786,14 +787,14 @@ public class CALEditorPanel extends CLUIElement {
                 boolean isYes = CalSettings.INSTANCE.simplifyAnimations;
                 ctx.batcher.box(yesBtnX, animBtnY, yesBtnX + btnW2, animBtnY + btnH2, isYes ? 0xFF1976D2 : (hoverYes ? 0xFF2A2A35 : 0xFF1E1E24));
                 ctx.batcher.outline(yesBtnX, animBtnY, yesBtnX + btnW2, animBtnY + btnH2, isYes ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                int yesTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.YES.get());
+                int yesTextW = Minecraft.getInstance().font.width(CALKeys.YES.get());
                 ctx.batcher.text(CALKeys.YES.get(), yesBtnX + (btnW2 - yesTextW) / 2, animBtnY + 5, 0xFFFFFFFF);
 
                 boolean hoverNo = ctx.mouseX >= noBtnX && ctx.mouseX < noBtnX + btnW2 && ctx.mouseY >= animBtnY && ctx.mouseY < animBtnY + btnH2;
                 boolean isNo = !CalSettings.INSTANCE.simplifyAnimations;
                 ctx.batcher.box(noBtnX, animBtnY, noBtnX + btnW2, animBtnY + btnH2, isNo ? 0xFF1976D2 : (hoverNo ? 0xFF2A2A35 : 0xFF1E1E24));
                 ctx.batcher.outline(noBtnX, animBtnY, noBtnX + btnW2, animBtnY + btnH2, isNo ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                int noTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.NO.get());
+                int noTextW = Minecraft.getInstance().font.width(CALKeys.NO.get());
                 ctx.batcher.text(CALKeys.NO.get(), noBtnX + (btnW2 - noTextW) / 2, animBtnY + 5, 0xFFFFFFFF);
 
             } else if (selectedSettingsCategory == 2) {
@@ -846,13 +847,13 @@ public class CALEditorPanel extends CLUIElement {
                             case 7 -> "Ctrl + V";
                             case 8 -> "Ctrl + X";
                             case 9 -> "F1";
-                            case 10 -> CALLightsClient.createLightKeyBinding != null ? CALLightsClient.createLightKeyBinding.getBoundKeyLocalizedText().getString() : "F7";
-                            case 11 -> CALLightsClient.editorKeyBinding != null ? CALLightsClient.editorKeyBinding.getBoundKeyLocalizedText().getString() : "F8";
+                            case 10 -> CALLightsClient.createLightKeyBinding != null ? CALLightsClient.createLightKeyBinding.getTranslatedKeyMessage().getString() : "F7";
+                            case 11 -> CALLightsClient.editorKeyBinding != null ? CALLightsClient.editorKeyBinding.getTranslatedKeyMessage().getString() : "F8";
                             default -> "";
                         };
                     }
                     
-                    int keyTextW = MinecraftClient.getInstance().textRenderer.getWidth(keyLabel);
+                    int keyTextW = Minecraft.getInstance().font.width(keyLabel);
                     ctx.batcher.text(keyLabel, btnX + (btnW3 - keyTextW) / 2, rowY + 3, isRebindable ? 0xFFFFFFFF : 0xFF888899);
                 }
             } else if (selectedSettingsCategory == 3) {
@@ -878,7 +879,7 @@ public class CALEditorPanel extends CLUIElement {
                     int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
                     ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, qBg);
                     ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentQ ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(qLabels[i]);
+                    int textW = Minecraft.getInstance().font.width(qLabels[i]);
                     ctx.batcher.text(qLabels[i], btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
                 }
                 curY += 20;
@@ -1032,7 +1033,7 @@ public class CALEditorPanel extends CLUIElement {
                 }
             }
 
-            ctx.batcher.getCtx().getMatrices().popMatrix();
+            ctx.batcher.getCtx().pose().popMatrix();
         }
 
         // --- RENDER PATCHER POPUP ---
@@ -1042,10 +1043,10 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(0, 0, w, h, (alpha << 24) | 0x0B0B0E);
 
             // Apply scaling matrix for the popup contents
-            ctx.batcher.getCtx().getMatrices().pushMatrix();
-            ctx.batcher.getCtx().getMatrices().translate(w / 2.0f, h / 2.0f);
-            ctx.batcher.getCtx().getMatrices().scale(patcherPopupScale, patcherPopupScale);
-            ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f);
+            ctx.batcher.getCtx().pose().pushMatrix();
+            ctx.batcher.getCtx().pose().translate(w / 2.0f, h / 2.0f);
+            ctx.batcher.getCtx().pose().scale(patcherPopupScale, patcherPopupScale);
+            ctx.batcher.getCtx().pose().translate(-w / 2.0f, -h / 2.0f);
 
             // Patcher Box Dimensions (BBS size: 450x300 or similar)
             int pW = 450;
@@ -1058,7 +1059,7 @@ public class CALEditorPanel extends CLUIElement {
                 patcherPanel.render(ctx);
             }
 
-            ctx.batcher.getCtx().getMatrices().popMatrix();
+            ctx.batcher.getCtx().pose().popMatrix();
         }
 
         // --- RENDER VIEWPORT RIGHT-CLICK CONTEXT POPUP ---
@@ -1128,8 +1129,8 @@ public class CALEditorPanel extends CLUIElement {
     private String getKeyName(int key) {
         if (key == GLFW.GLFW_KEY_UNKNOWN) return "???";
         try {
-            InputUtil.Key inputKey = InputUtil.Type.KEYSYM.createFromCode(key);
-            String name = inputKey.getLocalizedText().getString();
+            InputConstants.Key inputKey = InputConstants.Type.KEYSYM.getOrCreate(key);
+            String name = inputKey.getDisplayName().getString();
             if (name != null && !name.isEmpty() && !name.contains("key.keyboard")) {
                 return name;
             }
@@ -1328,11 +1329,11 @@ public class CALEditorPanel extends CLUIElement {
         // Viewport right click detection
         if (btn == 1 && !showSettingsPopup && activeMenuDropdown == 0) {
             if (mx >= leftPanelW && mx < w - animRightPanelW && my >= topMenuH + tabsH && my < h - statusBarH - animTimelineH) {
-                MinecraftClient client = MinecraftClient.getInstance();
-                if (client.world != null) {
-                    Vec3d rayDir = LightGizmo.INSTANCE.getRayDirection(mx, my);
-                    net.minecraft.client.render.Camera camera = client.gameRenderer.getCamera();
-                    Vec3d rayStart = camera.getCameraPos();
+                Minecraft client = Minecraft.getInstance();
+                if (client.level != null) {
+                    Vec3 rayDir = LightGizmo.INSTANCE.getRayDirection(mx, my);
+                    Camera camera = client.gameRenderer.getMainCamera();
+                    Vec3 rayStart = camera.position();
                     
                     // Check if right-clicking directly on a light billboard
                     LightInstance clickedLight = LightGizmo.INSTANCE.checkBillboardClickExternal(rayStart, rayDir);
@@ -1340,22 +1341,22 @@ public class CALEditorPanel extends CLUIElement {
                         LightGizmo.INSTANCE.setSelectedLight(clickedLight);
                         rebuildSettings();
                         isRightClickingLight = true;
-                        rightClickWorldPos = new Vec3d(clickedLight.x, clickedLight.y, clickedLight.z);
+                        rightClickWorldPos = new Vec3(clickedLight.x, clickedLight.y, clickedLight.z);
                     } else {
                         isRightClickingLight = false;
-                        Vec3d rayEnd = rayStart.add(rayDir.multiply(100.0));
-                        BlockHitResult hit = client.world.raycast(new RaycastContext(
+                        Vec3 rayEnd = rayStart.add(rayDir.scale(100.0));
+                        BlockHitResult hit = client.level.clip(new ClipContext(
                             rayStart,
                             rayEnd,
-                            RaycastContext.ShapeType.OUTLINE,
-                            RaycastContext.FluidHandling.NONE,
+                            ClipContext.Block.OUTLINE,
+                            ClipContext.Fluid.NONE,
                             client.player
                         ));
                         
                         if (hit != null && hit.getType() == HitResult.Type.BLOCK) {
-                            rightClickWorldPos = hit.getPos().add(Vec3d.of(hit.getSide().getVector()).multiply(0.2));
+                            rightClickWorldPos = hit.getLocation().add(Vec3.atLowerCornerOf(hit.getDirection().getUnitVec3i()).scale(0.2));
                         } else {
-                            rightClickWorldPos = rayStart.add(rayDir.multiply(8.0));
+                            rightClickWorldPos = rayStart.add(rayDir.scale(8.0));
                         }
                     }
                     
@@ -1489,8 +1490,8 @@ public class CALEditorPanel extends CLUIElement {
                     if (mx >= scX && mx < scX + 26 && my >= scY && my < scY + 18) {
                         CalSettings.INSTANCE.guiScale = sc;
                         CalSettings.INSTANCE.save();
-                        MinecraftClient.getInstance().options.getGuiScale().setValue(sc);
-                        MinecraftClient.getInstance().onResolutionChanged();
+                        Minecraft.getInstance().options.guiScale().set(sc);
+                        Minecraft.getInstance().resizeDisplay();
                         return true;
                     }
                 }
@@ -1667,9 +1668,9 @@ public class CALEditorPanel extends CLUIElement {
                         showSettingsPopup = true;
                     } else if (clickedIdx == 1) {
                         LightSaveManager.forceSaveCurrent();
-                        MinecraftClient mc = MinecraftClient.getInstance();
+                        Minecraft mc = Minecraft.getInstance();
                         if (mc.player != null) {
-                            mc.player.sendMessage(Text.literal(CALKeys.SAVED_SUCCESS.get()), false);
+                            mc.player.displayClientMessage(Component.literal(CALKeys.SAVED_SUCCESS.get()), false);
                         }
                     } else if (clickedIdx == 2) {
                         showPatcherPopup = true;
@@ -1677,9 +1678,9 @@ public class CALEditorPanel extends CLUIElement {
                             patcherPanel.reload();
                         }
                     } else if (clickedIdx == 3) {
-                        MinecraftClient mc = MinecraftClient.getInstance();
-                        if (mc.currentScreen != null) {
-                            mc.currentScreen.close();
+                        Minecraft mc = Minecraft.getInstance();
+                        if (mc.screen != null) {
+                            mc.screen.onClose();
                         } else {
                             mc.setScreen(null);
                         }
@@ -1753,7 +1754,7 @@ public class CALEditorPanel extends CLUIElement {
             int btnW = (leftPanelW - 22) / 2;
             if (mx >= 8 && mx < 8 + btnW && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
+                Vec3 p = Minecraft.getInstance().gameRenderer.getMainCamera().position();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 10.0f);
                 light.persistent = true;
@@ -1765,7 +1766,7 @@ public class CALEditorPanel extends CLUIElement {
             // Quick Add Spot
             if (mx >= 8 + btnW + 6 && mx < leftPanelW - 8 && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
+                Vec3 p = Minecraft.getInstance().gameRenderer.getMainCamera().position();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f);
                 light.persistent = true;
@@ -1964,9 +1965,9 @@ public class CALEditorPanel extends CLUIElement {
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_F8) {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc.currentScreen != null) {
-                mc.currentScreen.close();
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.screen != null) {
+                mc.screen.onClose();
             }
             return true;
         }
@@ -2107,8 +2108,8 @@ public class CALEditorPanel extends CLUIElement {
     }
 
     private static boolean isCtrlDown() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return false;
-        return InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) || InputUtil.isKeyPressed(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 }

@@ -6,7 +6,7 @@ import elgatopro300.cal_lights.ui.CLUIElement;
 import elgatopro300.cal_lights.ui.CalSettings;
 import elgatopro300.cal_lights.ui.panels.AnimationEditorPanel;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -167,13 +167,13 @@ public class CLUITrackpad extends CLUIElement {
                 }
             }
 
-            int textW = MinecraftClient.getInstance().textRenderer.getWidth(valStr);
+            int textW = Minecraft.getInstance().font.width(valStr);
             int drawX = mainX + (mainW - textW) / 2;
             ctx.batcher.text(valStr, drawX, y + (h - 8) / 2, textColor);
 
             // Draw separate blinking cursor line!
             if (activeEditingTrackpad == this && System.currentTimeMillis() / 500 % 2 == 0) {
-                int subW = MinecraftClient.getInstance().textRenderer.getWidth(editBuffer.substring(0, cursorIdx));
+                int subW = Minecraft.getInstance().font.width(editBuffer.substring(0, cursorIdx));
                 int cursorX = drawX + subW;
                 int cursorY = y + (h - 10) / 2;
                 ctx.batcher.box(cursorX, cursorY, cursorX + 1, cursorY + 10, 0xFFFFFFFF);
@@ -250,8 +250,8 @@ public class CLUITrackpad extends CLUIElement {
             // Draw separate blinking cursor line!
             if (activeEditingTrackpad == this && System.currentTimeMillis() / 500 % 2 == 0) {
                 String prefix = label + ": ";
-                int prefW = MinecraftClient.getInstance().textRenderer.getWidth(prefix);
-                int subW = MinecraftClient.getInstance().textRenderer.getWidth(editBuffer.substring(0, cursorIdx));
+                int prefW = Minecraft.getInstance().font.width(prefix);
+                int subW = Minecraft.getInstance().font.width(editBuffer.substring(0, cursorIdx));
                 int cursorX = x + 6 + prefW + subW;
                 int cursorY = y + (h - 10) / 2;
                 ctx.batcher.box(cursorX, cursorY, cursorX + 1, cursorY + 10, 0xFFFFFFFF);
@@ -391,10 +391,10 @@ public class CLUITrackpad extends CLUIElement {
             if (Math.abs(mx - dragStartX) > 1.5) {
                 hasDragged = true;
             }
-            MinecraftClient mc = MinecraftClient.getInstance();
-            int scaledWidth = mc.getWindow().getScaledWidth();
-            double scaleFactor = mc.getWindow().getScaleFactor();
-            long handle = mc.getWindow().getHandle();
+            Minecraft mc = Minecraft.getInstance();
+            int scaledWidth = mc.getWindow().getGuiScaledWidth();
+            double scaleFactor = mc.getWindow().getGuiScale();
+            long handle = mc.getWindow().handle();
 
             int border = 5;
             int padding = 10;
@@ -402,13 +402,13 @@ public class CLUITrackpad extends CLUIElement {
             if (mx <= border) {
                 // Wrap to the right side of the screen
                 int newMx = scaledWidth - padding;
-                GLFW.glfwSetCursorPos(handle, newMx * scaleFactor, mc.mouse.getY());
+                GLFW.glfwSetCursorPos(handle, newMx * scaleFactor, mc.mouseHandler.ypos());
                 dragStartX += (newMx - mx);
                 mx = newMx;
             } else if (mx >= scaledWidth - border) {
                 // Wrap to the left side of the screen
                 int newMx = padding;
-                GLFW.glfwSetCursorPos(handle, newMx * scaleFactor, mc.mouse.getY());
+                GLFW.glfwSetCursorPos(handle, newMx * scaleFactor, mc.mouseHandler.ypos());
                 dragStartX += (newMx - mx);
                 mx = newMx;
             }

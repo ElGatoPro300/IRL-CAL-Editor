@@ -17,9 +17,9 @@ import elgatopro300.cal_lights.ui.elements.CLUIColorPicker;
 import elgatopro300.cal_lights.ui.elements.CLUISwitch;
 import elgatopro300.cal_lights.ui.elements.CLUITrackpad;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -397,7 +397,7 @@ public class LightInspectorPanel extends CLUIElement {
             int btnBg = hoverPlaceHere ? 0xFF2A2A35 : 0xFF1C1C22;
             ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, btnBg);
             ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverPlaceHere ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-            int textW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_PLACE_HERE.get());
+            int textW = Minecraft.getInstance().font.width(CALKeys.PROP_PLACE_HERE.get());
             ctx.batcher.text(CALKeys.PROP_PLACE_HERE.get(), x + 10 + (w - 20 - textW) / 2, drawY + 4, 0xFFFFFFFF);
 
             ctx.batcher.unclip();
@@ -434,7 +434,7 @@ public class LightInspectorPanel extends CLUIElement {
                 
                 // Draw separate blinking cursor box!
                 if (nameFocused && System.currentTimeMillis() / 500 % 2 == 0) {
-                    int subW = MinecraftClient.getInstance().textRenderer.getWidth(nameText.substring(0, renameCursorIdx));
+                    int subW = Minecraft.getInstance().font.width(nameText.substring(0, renameCursorIdx));
                     int cursorX = x + 16 + subW;
                     int cursorY = currentY + 3;
                     ctx.batcher.box(cursorX, cursorY, cursorX + 1, cursorY + 10, 0xFFFFFFFF);
@@ -452,7 +452,7 @@ public class LightInspectorPanel extends CLUIElement {
             int pointBorder = (!light.isSpot) ? 0xFF00F0FF : 0xFF2D2D38;
             ctx.batcher.box(x + 10, drawY, x + 10 + btnW, drawY + elementH, pointBg);
             ctx.batcher.outline(x + 10, drawY, x + 10 + btnW, drawY + elementH, pointBorder, 1);
-            int pTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.TYPE_POINT.get());
+            int pTextW = Minecraft.getInstance().font.width(CALKeys.TYPE_POINT.get());
             ctx.batcher.text(CALKeys.TYPE_POINT.get(), x + 10 + (btnW - pTextW) / 2, drawY + 4, 0xFFFFFFFF);
 
             // SPOT Button
@@ -461,7 +461,7 @@ public class LightInspectorPanel extends CLUIElement {
             int spotBorder = (light.isSpot) ? 0xFF00F0FF : 0xFF2D2D38;
             ctx.batcher.box(x + 10 + btnW + 2, drawY, x + w - 10, drawY + elementH, spotBg);
             ctx.batcher.outline(x + 10 + btnW + 2, drawY, x + w - 10, drawY + elementH, spotBorder, 1);
-            int sTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.TYPE_SPOT.get());
+            int sTextW = Minecraft.getInstance().font.width(CALKeys.TYPE_SPOT.get());
             ctx.batcher.text(CALKeys.TYPE_SPOT.get(), x + 10 + btnW + 2 + (btnW - sTextW) / 2, drawY + 4, 0xFFFFFFFF);
 
             drawY += elementH + gap;
@@ -551,7 +551,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int btnBg = hoverAimLook ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, btnBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverAimLook ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int textW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_AIM_LOOK.get());
+                int textW = Minecraft.getInstance().font.width(CALKeys.PROP_AIM_LOOK.get());
                 ctx.batcher.text(CALKeys.PROP_AIM_LOOK.get(), x + 10 + (w - 20 - textW) / 2, drawY + 4, 0xFFFFFFFF);
             }
 
@@ -730,7 +730,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int refBg = hoverRefresh ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, refBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverRefresh ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int refTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_GOBO_REFRESH.get());
+                int refTextW = Minecraft.getInstance().font.width(CALKeys.PROP_GOBO_REFRESH.get());
                 ctx.batcher.text(CALKeys.PROP_GOBO_REFRESH.get(), x + 10 + (w - 20 - refTextW) / 2, drawY + 4, 0xFFFFFFFF);
                 drawY += elementH + gap;
 
@@ -739,7 +739,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int foldBg = hoverFolder ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, foldBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverFolder ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int foldTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_GOBO_FOLDER.get());
+                int foldTextW = Minecraft.getInstance().font.width(CALKeys.PROP_GOBO_FOLDER.get());
                 ctx.batcher.text(CALKeys.PROP_GOBO_FOLDER.get(), x + 10 + (w - 20 - foldTextW) / 2, drawY + 4, 0xFFFFFFFF);
                 drawY += elementH + gap;
 
@@ -790,7 +790,7 @@ public class LightInspectorPanel extends CLUIElement {
             }
             int drawY = currentY + elementH + gap;
             if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                MinecraftClient mc = MinecraftClient.getInstance();
+                Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null) {
                     CALUndoManager.pushState();
                     light.x = (float) mc.player.getX();
@@ -879,10 +879,10 @@ public class LightInspectorPanel extends CLUIElement {
                 drawY += elementH + gap;
 
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                    MinecraftClient mc = MinecraftClient.getInstance();
+                    Minecraft mc = Minecraft.getInstance();
                     if (mc.player != null) {
                         CALUndoManager.pushState();
-                        Vec3d look = mc.player.getRotationVector();
+                        Vec3 look = mc.player.getLookAngle();
                         light.dx = (float) look.x;
                         light.dy = (float) look.y;
                         light.dz = (float) look.z;
@@ -1018,12 +1018,12 @@ public class LightInspectorPanel extends CLUIElement {
                 // Click Folder button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
                     try {
-                        Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
+                        Path runDir = Minecraft.getInstance().gameDirectory.toPath();
                         Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
                         if (!Files.exists(gobosDir)) {
                             Files.createDirectories(gobosDir);
                         }
-                        Util.getOperatingSystem().open(gobosDir.toFile());
+                        Util.getPlatform().openFile(gobosDir.toFile());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

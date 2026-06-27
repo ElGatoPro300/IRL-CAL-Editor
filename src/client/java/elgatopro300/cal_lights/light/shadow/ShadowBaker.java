@@ -4,13 +4,13 @@ import elgatopro300.cal_lights.light.LightConfig;
 
 import org.qualet.irl.light.LightRegistry;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -195,7 +195,7 @@ public final class ShadowBaker
     private ShadowBaker()
     {}
 
-    public static void bake(ClientWorld world, Vec3d cameraPos, Vec3d cameraForward, float tickDelta)
+    public static void bake(ClientLevel world, Vec3 cameraPos, Vec3 cameraForward, float tickDelta)
     {
         if (!PROFILE)
         {
@@ -214,7 +214,7 @@ public final class ShadowBaker
         }
     }
 
-    private static void bakeInner(ClientWorld world, Vec3d cameraPos, Vec3d cameraForward, float tickDelta)
+    private static void bakeInner(ClientLevel world, Vec3 cameraPos, Vec3 cameraForward, float tickDelta)
     {
         if (world == null || cameraPos == null)
         {
@@ -303,7 +303,7 @@ public final class ShadowBaker
             float dy = LightRegistry.getDirY(i);
             float dz = LightRegistry.getDirZ(i);
             float cosOuter = LightRegistry.getCosOuter(i);
-            float coneTheta = (float) Math.acos(MathHelper.clamp(cosOuter, -1f, 1f));
+            float coneTheta = (float) Math.acos(Mth.clamp(cosOuter, -1f, 1f));
             float dlen = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
             boolean cone = dlen > 1e-4f;
             float ndx = cone ? dx / dlen : 0f;
@@ -957,7 +957,7 @@ public final class ShadowBaker
      *  feature is off. Backed by the identity-keyed {@link BlockShadowCache}
      *  (O(1) on a hit; recollects on light-move, radius change, or a block change
      *  in range). */
-    private static List<BlockShadowEntry> collectBlocks(long id, ClientWorld world, float lx, float ly, float lz, float range)
+    private static List<BlockShadowEntry> collectBlocks(long id, ClientLevel world, float lx, float ly, float lz, float range)
     {
         if (!LightConfig.shadowBlocks() || world == null)
         {
@@ -1131,8 +1131,8 @@ public final class ShadowBaker
         }
         float dist = (float) Math.sqrt(d2);
         float cosPhi = (vx * dirX + vy * dirY + vz * dirZ) / dist; // dir is unit
-        float phi = (float) Math.acos(MathHelper.clamp(cosPhi, -1f, 1f));
-        float alpha = (float) Math.asin(MathHelper.clamp(r / dist, 0f, 1f));
+        float phi = (float) Math.acos(Mth.clamp(cosPhi, -1f, 1f));
+        float alpha = (float) Math.asin(Mth.clamp(r / dist, 0f, 1f));
         return phi - alpha <= coneTheta + CONE_ANGLE_MARGIN;
     }
 
@@ -1158,13 +1158,13 @@ public final class ShadowBaker
         return lim >= a && lim >= b;
     }
 
-    private static void collect(ClientWorld world, Vec3d cameraPos, float tickDelta)
+    private static void collect(ClientLevel world, Vec3 cameraPos, float tickDelta)
     {
         occCount = 0;
         double camX = cameraPos.x, camY = cameraPos.y, camZ = cameraPos.z;
 
         // --- world entities (vanilla render path) ---
-        for (Entity entity : world.getEntities())
+        for (Entity entity : world.entitiesForRendering())
         {
             if (occCount >= MAX_OCCLUDERS)
             {
@@ -1175,16 +1175,16 @@ public final class ShadowBaker
                 continue;
             }
 
-            double ex = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX());
-            double ey = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY());
-            double ez = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ());
+            double ex = Mth.lerp(tickDelta, entity.xOld, entity.getX());
+            double ey = Mth.lerp(tickDelta, entity.yOld, entity.getY());
+            double ez = Mth.lerp(tickDelta, entity.zOld, entity.getZ());
             double dx = ex - camX, dy = ey - camY, dz = ez - camZ;
             if (dx * dx + dy * dy + dz * dz > COLLECT_DIST_SQ)
             {
                 continue;
             }
 
-            Box box = entity.getBoundingBox();
+            AABB box = entity.getBoundingBox();
             // Box edge lengths via stable public fields (yarn renamed getXLength()
             // -> getLengthX() after 1.20.1; fields are identical across versions).
             float rad = (float) (Math.max(box.maxX - box.minX, Math.max(box.maxY - box.minY, box.maxZ - box.minZ)) * 0.5) + OVERLAP_MARGIN;

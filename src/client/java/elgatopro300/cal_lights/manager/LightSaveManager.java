@@ -3,7 +3,7 @@ package elgatopro300.cal_lights.manager;
 import elgatopro300.cal_lights.CALLightsClient;
 import elgatopro300.cal_lights.animation.LightAnimation;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,8 +20,8 @@ public class LightSaveManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static String lastWorldId = null;
 
-    public static void tick(MinecraftClient client) {
-        if (client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.level == null) {
             if (lastWorldId != null) {
                 // Player left the world, save the last world's lights
                 saveLights(lastWorldId);
@@ -46,19 +46,19 @@ public class LightSaveManager {
         }
     }
 
-    private static String getCurrentWorldId(MinecraftClient client) {
-        if (client.isInSingleplayer() && client.getServer() != null) {
-            return "singleplayer_" + client.getServer().getSaveProperties().getLevelName();
-        } else if (client.getCurrentServerEntry() != null) {
-            return "multiplayer_" + client.getCurrentServerEntry().address.replace(":", "_");
-        } else if (client.world != null) {
-            return "world_" + client.world.getRegistryKey().getValue().getPath();
+    private static String getCurrentWorldId(Minecraft client) {
+        if (client.isLocalServer() && client.getSingleplayerServer() != null) {
+            return "singleplayer_" + client.getSingleplayerServer().getWorldData().getLevelName();
+        } else if (client.getCurrentServer() != null) {
+            return "multiplayer_" + client.getCurrentServer().ip.replace(":", "_");
+        } else if (client.level != null) {
+            return "world_" + client.level.dimension().identifier().getPath();
         }
         return null;
     }
 
     private static File getSaveFile(String worldId) {
-        File dir = new File(MinecraftClient.getInstance().runDirectory, "config/cal_lights/saved_lights");
+        File dir = new File(Minecraft.getInstance().gameDirectory, "config/cal_lights/saved_lights");
         if (!dir.exists()) {
             dir.mkdirs();
         }

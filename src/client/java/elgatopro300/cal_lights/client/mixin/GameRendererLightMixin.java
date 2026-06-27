@@ -9,12 +9,12 @@ import org.qualet.irl.light.LightRegistry;
 
 import net.fabricmc.loader.api.FabricLoader;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.phys.Vec3;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,9 +27,9 @@ public class GameRendererLightMixin {
     @Unique
     private static boolean irlite$dormant;
 
-    @Inject(method = "renderWorld", at = @At("HEAD"))
-    private void irlite$collectLights(RenderTickCounter tickCounter, CallbackInfo ci) {
-        float tickDelta = tickCounter.getTickProgress(true);
+    @Inject(method = "renderLevel", at = @At("HEAD"))
+    private void irlite$collectLights(DeltaTracker tickCounter, CallbackInfo ci) {
+        float tickDelta = tickCounter.getGameTimeDeltaPartialTick(true);
 
         if (IrisShadersState.shadersDisabled()) {
             LightRegistry.clear();
@@ -45,11 +45,11 @@ public class GameRendererLightMixin {
 
         irlite$dormant = false;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ClientWorld world = mc.world;
-        Camera camera = mc.gameRenderer.getCamera();
-        Vec3d cameraPos = camera != null ? camera.getCameraPos() : Vec3d.ZERO;
-        Vec3d cameraForward = camera != null ? Vec3d.fromPolar(camera.getPitch(), camera.getYaw()) : null;
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel world = mc.level;
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera != null ? camera.position() : Vec3.ZERO;
+        Vec3 cameraForward = camera != null ? Vec3.directionFromRotation(camera.xRot(), camera.yRot()) : null;
 
         // Register every light up front
         CALLightsClient.registerLightsToIrlCore();
@@ -60,7 +60,7 @@ public class GameRendererLightMixin {
 
         // Configure dispatcher before Iris activates
         if (world != null && camera != null) {
-            mc.getEntityRenderDispatcher().configure(camera, mc.getCameraEntity());
+            mc.getEntityRenderDispatcher().prepare(camera, mc.getCameraEntity());
         }
 
         ShadowBaker.bake(world, cameraPos, cameraForward, tickDelta);

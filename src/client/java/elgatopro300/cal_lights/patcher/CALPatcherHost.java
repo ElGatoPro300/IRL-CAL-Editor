@@ -52,7 +52,7 @@ public final class CALPatcherHost implements PatcherHost {
 
     @Override
     public void openFolder(Path dir) {
-        Util.getOperatingSystem().open(dir.toFile());
+        Util.getPlatform().openFile(dir.toFile());
     }
 
     @Override

@@ -2,9 +2,9 @@ package elgatopro300.cal_lights.client.mixin;
 
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.Entity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class EntityMixin {
     @Inject(method = "isSpectator", at = @At("HEAD"), cancellable = true)
     private void cal_isSpectator(CallbackInfoReturnable<Boolean> cir) {
-        if ((Object) this instanceof ClientPlayerEntity) {
-            if (MinecraftClient.getInstance().currentScreen instanceof CALEditorScreen) {
+        if ((Object) this instanceof LocalPlayer) {
+            if (Minecraft.getInstance().screen instanceof CALEditorScreen) {
                 cir.setReturnValue(true);
             }
         }

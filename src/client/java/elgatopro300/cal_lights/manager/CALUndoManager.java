@@ -4,7 +4,7 @@ import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.panels.CALEditorPanel;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -176,8 +176,8 @@ public class CALUndoManager {
         }
 
         // Rebuild UI editor settings
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.currentScreen instanceof CALEditorScreen screen) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen instanceof CALEditorScreen screen) {
             if (screen.getRoot() instanceof CALEditorPanel p) {
                 p.rebuildSettings();
                 p.resize(p.x, p.y, p.w, p.h);

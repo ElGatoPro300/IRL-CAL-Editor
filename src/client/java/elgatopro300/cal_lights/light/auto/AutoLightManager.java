@@ -4,12 +4,12 @@ import elgatopro300.cal_lights.light.IrisShadersState;
 import elgatopro300.cal_lights.light.LightConfig;
 import elgatopro300.cal_lights.light.PlacedLight;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public final class AutoLightManager {
         passChunkIdx = 0;
     }
 
-    public static void tick(ClientWorld world, double centerX, double centerY, double centerZ) {
+    public static void tick(ClientLevel world, double centerX, double centerY, double centerZ) {
         if (!LightConfig.autoLights() || world == null) {
             if (!byPos.isEmpty() || passActive) {
                 clear();
@@ -93,7 +93,7 @@ public final class AutoLightManager {
         passActive = true;
     }
 
-    private static void stepPass(ClientWorld world) {
+    private static void stepPass(ClientLevel world) {
         int total = passSpanX * passSpanZ;
         int chunksThisTick = 0;
         int sectionsThisTick = 0;
@@ -106,7 +106,7 @@ public final class AutoLightManager {
 
             int chunkX = passMinChunkX + (idx % passSpanX);
             int chunkZ = passMinChunkZ + (idx / passSpanX);
-            WorldChunk chunk = world.getChunkManager().getWorldChunk(chunkX, chunkZ, false);
+            LevelChunk chunk = world.getChunkSource().getChunk(chunkX, chunkZ, false);
             if (chunk == null) {
                 continue;
             }
@@ -126,16 +126,16 @@ public final class AutoLightManager {
         }
     }
 
-    private static int scanChunk(WorldChunk chunk, int chunkX, int chunkZ) {
-        ChunkSection[] sections = chunk.getSectionArray();
-        int bottomY = chunk.getBottomY();
+    private static int scanChunk(LevelChunk chunk, int chunkX, int chunkZ) {
+        LevelChunkSection[] sections = chunk.getSections();
+        int bottomY = chunk.getMinY();
         int baseX = chunkX << 4;
         int baseZ = chunkZ << 4;
         int fullScanned = 0;
 
         for (int s = 0; s < sections.length; s++) {
-            ChunkSection sec = sections[s];
-            if (sec == null || sec.isEmpty()) {
+            LevelChunkSection sec = sections[s];
+            if (sec == null || sec.hasOnlyAir()) {
                 continue;
             }
 
@@ -143,7 +143,7 @@ public final class AutoLightManager {
             if (secMinY + 15 < passMinY || secMinY > passMaxY) {
                 continue;
             }
-            if (!sec.hasAny(EMISSIVE)) {
+            if (!sec.maybeHas(EMISSIVE)) {
                 continue;
             }
             fullScanned++;
@@ -192,7 +192,7 @@ public final class AutoLightManager {
         return fullScanned;
     }
 
-    public static List<PlacedLight> nearest(Vec3d cameraPos, int max) {
+    public static List<PlacedLight> nearest(Vec3 cameraPos, int max) {
         feed.clear();
         if (byPos.isEmpty() || cameraPos == null || max <= 0) {
             return feed;

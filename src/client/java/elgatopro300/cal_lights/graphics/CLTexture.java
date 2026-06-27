@@ -1,9 +1,10 @@
 package elgatopro300.cal_lights.graphics;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
+
+import com.mojang.blaze3d.platform.NativeImage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CLTexture {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
-    private final NativeImageBackedTexture mcTexture;
+    private final DynamicTexture mcTexture;
     public final Identifier identifier;
     public final int width;
     public final int height;
@@ -32,9 +33,9 @@ public class CLTexture {
             this.width = image.getWidth();
             this.height = image.getHeight();
             String name = "cal_texture_" + COUNTER.getAndIncrement();
-            this.mcTexture = new NativeImageBackedTexture(() -> name, image);
-            this.identifier = Identifier.of("cal", name);
-            MinecraftClient.getInstance().getTextureManager().registerTexture(this.identifier, this.mcTexture);
+            this.mcTexture = new DynamicTexture(() -> name, image);
+            this.identifier = Identifier.fromNamespaceAndPath("cal", name);
+            Minecraft.getInstance().getTextureManager().register(this.identifier, this.mcTexture);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read texture stream", e);
         }
@@ -48,7 +49,7 @@ public class CLTexture {
      * Returns the underlying MC texture object. Useful when a caller needs the
      * GPU texture view directly.
      */
-    public NativeImageBackedTexture getMcTexture() {
+    public DynamicTexture getMcTexture() {
         return this.mcTexture;
     }
 
