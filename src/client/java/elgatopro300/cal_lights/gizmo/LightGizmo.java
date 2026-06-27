@@ -18,13 +18,9 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import com.mojang.blaze3d.systems.ProjectionType;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import org.lwjgl.opengl.GL11;
 
@@ -38,10 +34,7 @@ public class LightGizmo {
     private boolean dragging = false;
     private Vec3d dragStartMousePos = null;
     private Vec3d dragStartLightPos = null;
-    private final Matrix4f lastProjectionMatrix = new Matrix4f();
-    private final Matrix4f capturedModelView = new Matrix4f();
-    private final Matrix4f lastViewMatrix = new Matrix4f();
-    private boolean captured = false;
+    private final Matrix4f projectionMatrix = new Matrix4f();
 
     private float lastSx = 1.0f;
     private float lastSy = 1.0f;
@@ -70,54 +63,23 @@ public class LightGizmo {
             return;
         }
 
-        // Only capture the world matrices here. The actual gizmo/billboard
-        // drawing happens later, in the GUI phase (renderOverlay), so the
-        // overlay survives Iris/shader pipelines that discard immediate-mode
-        // geometry written to the framebuffer during world rendering.
-        // context.matrixStack() is identity here — the real view transform
-        // lives in RenderSystem.getModelViewMatrix() (set by the game).
-        this.lastProjectionMatrix.set(context.projectionMatrix());
-        this.capturedModelView.set(RenderSystem.getModelViewMatrix());
-        this.captured = true;
-    }
-
-    /**
-     * Draws the light billboards and gizmo in the GUI phase, after the world
-     * (including any Iris shader composite) is already on the main framebuffer.
-     * Uses the projection/view matrices captured during {@link #render} so the
-     * overlay aligns with the 3D scene. This is required because deferred shader
-     * pipelines (e.g. photon) discard geometry drawn during world rendering.
-     */
-    public void renderOverlay() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null || !captured)
-            return;
-        if (!(client.currentScreen instanceof CALEditorScreen)) {
-            return;
-        }
-
         Camera camera = client.gameRenderer.getCamera();
-        Vec3d camPos = camera.getPos();
+        Vec3d camPos = camera.getCameraPos();
 
-        // Back up the GUI matrix state and install the world matrices captured
-        // during the world render phase (AFTER_TRANSLUCENT).
-        Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
-        ProjectionType prevProjectionType = RenderSystem.getProjectionType();
-        RenderSystem.setProjectionMatrix(lastProjectionMatrix, ProjectionType.PERSPECTIVE);
+        // Compute projection matrix for picking (world-view matrices are not
+        // exposed via RenderSystem in 1.21.11, so we reconstruct it from FOV).
+        computeProjectionMatrix(client, camera);
 
-        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.pushMatrix();
-        mvStack.set(capturedModelView);
+        // Draw billboards and gizmos using the world renderer's consumer
+        // provider and matrix stack.  In 1.21.11 there is no immediate-mode
+        // rendering that shader packs can discard — geometry goes through the
+        // deferred command queue — so we draw directly during END_MAIN.
+        VertexConsumerProvider consumers = context.consumers();
+        MatrixStack stack = context.matrices();
 
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-        // Vertex stack starts at identity; the captured ModelView matrix is
-        // already set in RenderSystem so the shader handles the view transform.
-        MatrixStack stack = new MatrixStack();
-
-        // 1. Draw billboards for all lights
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
 
@@ -129,11 +91,15 @@ public class LightGizmo {
             drawAxes(stack, camPos, consumers, selectedLight);
         }
 
-        RenderSystem.enableDepthTest();
+        GL11.glEnable(GL11.GL_CULL_FACE);
+    }
 
-        // Restore the GUI matrix state.
-        mvStack.popMatrix();
-        RenderSystem.setProjectionMatrix(prevProjection, prevProjectionType);
+    private void computeProjectionMatrix(MinecraftClient client, Camera camera) {
+        double fov = client.options.getFov().getValue();
+        int width = client.getWindow().getScaledWidth();
+        int height = client.getWindow().getScaledHeight();
+        float aspect = (float) width / (float) height;
+        this.projectionMatrix.setPerspective((float) Math.toRadians(fov), aspect, 0.05f, 1000.0f);
     }
 
     private void drawBillboards(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, Collection<LightInstance> lights, boolean isSpot) {
@@ -146,13 +112,6 @@ public class LightGizmo {
             return;
         }
         Quaternionf camRot = camera.getRotation();
-
-        // Billboards are camera-facing quads with arbitrary winding, so disable
-        // back-face culling (otherwise they vanish depending on view angle).
-        // Also reset the shader colour, which the UI/world pass may have left
-        // tinted, so the textured quads are not multiplied to nothing.
-        RenderSystem.disableCull();
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         for (LightInstance light : lights) {
             if (!renderLightIcons && light != selectedLight) {
@@ -181,8 +140,6 @@ public class LightGizmo {
             }
             stack.pop();
         }
-
-        RenderSystem.enableCull();
     }
 
     private void drawBillboardQuad(MatrixStack stack, VertexConsumer buf, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
@@ -656,25 +613,21 @@ public class LightGizmo {
         float x = (2.0f * (float) mouseX) / width - 1.0f;
         float y = 1.0f - (2.0f * (float) mouseY) / height;
 
-        Matrix4f invProj = new Matrix4f(lastProjectionMatrix).invert();
+        Matrix4f invProj = new Matrix4f(projectionMatrix).invert();
 
-        // 1. Unproject from clip space to camera space
+        // Unproject from clip space to camera space
         Vector4f rayClip = new Vector4f(x, y, -1.0f, 1.0f);
         rayClip.mul(invProj);
 
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
 
-        // 2. Transform from camera space to world space using the inverse of the
-        // SAME captured modelview matrix the gizmo is rendered with (renderOverlay).
-        // This keeps picking aligned with what is drawn; the live camera.getRotation()
-        // can diverge from the captured render view under Iris/shader pipelines,
-        // which made clicks miss the visible handles. w=0 so only rotation applies.
-        Matrix4f invView = new Matrix4f(capturedModelView).invert();
-        Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f);
-        rayWorld4.mul(invView);
+        // Transform from camera space to world space using the camera rotation.
+        // In 1.21.11 the projection/view are GPU-internal, so we reconstruct the
+        // view transform from the camera's orientation quaternion.
+        Camera camera = client.gameRenderer.getCamera();
+        rayEye.rotate(camera.getRotation());
 
-        Vector3f rayWorld = new Vector3f(rayWorld4.x, rayWorld4.y, rayWorld4.z).normalize();
-        return new Vec3d(rayWorld.x, rayWorld.y, rayWorld.z);
+        return new Vec3d(rayEye.x, rayEye.y, rayEye.z).normalize();
     }
 
     public LightInstance checkBillboardClickExternal(Vec3d rayStart, Vec3d rayDir) {
