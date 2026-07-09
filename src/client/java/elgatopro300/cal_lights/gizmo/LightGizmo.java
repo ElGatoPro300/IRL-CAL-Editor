@@ -13,14 +13,15 @@ import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
+import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.RenderLayers;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -29,22 +30,33 @@ import java.util.Collection;
 public class LightGizmo {
     public static final LightGizmo INSTANCE = new LightGizmo();
 
+    private static final int AXIS_X_COLOR = 0xFFFF2626;
+    private static final int AXIS_Y_COLOR = 0xFF26FF26;
+    private static final int AXIS_Z_COLOR = 0xFF2659FF;
+    private static final int ACTIVE_COLOR = 0xFFFFFF00;
+    private static final int FREE_COLOR = 0xFFFFFFFF;
+    private static final float LINE_WIDTH = 2.0f;
+    private static final float ICON_BASE_SIZE = 18.0f;
+    private static final float ICON_SELECTED_SIZE = 22.0f;
+
     private LightInstance selectedLight = null;
     private int activeAxis = -1; // -1: none, 0: X, 1: Y, 2: Z, 3: XZ, 4: XY, 5: ZY, 6: FREE
     private boolean dragging = false;
     private Vec3d dragStartMousePos = null;
     private Vec3d dragStartLightPos = null;
-    private final Matrix4f projectionMatrix = new Matrix4f();
 
     private float lastSx = 1.0f;
     private float lastSy = 1.0f;
     private float lastSz = 1.0f;
 
+    private final Matrix4f overlayProj = new Matrix4f();
+    private final Matrix4f overlayView = new Matrix4f();
+
     public static boolean renderLightIcons = true;
     public static boolean snapToGrid = false;
 
     public void init() {
-        WorldRenderEvents.END_MAIN.register(this::render);
+        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::renderWorldOverlay);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -55,177 +67,174 @@ public class LightGizmo {
         return this.selectedLight;
     }
 
-    private void render(WorldRenderContext context) {
+    public void renderOverlay(DrawContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null)
-            return;
-        if (!(client.currentScreen instanceof CALEditorScreen)) {
+        if (client.world == null || !(client.currentScreen instanceof CALEditorScreen)) {
             return;
         }
 
         Camera camera = client.gameRenderer.getCamera();
+        if (camera == null) {
+            return;
+        }
+
         Vec3d camPos = camera.getCameraPos();
-
-        // Compute projection matrix for picking (world-view matrices are not
-        // exposed via RenderSystem in 1.21.11, so we reconstruct it from FOV).
-        computeProjectionMatrix(client, camera);
-
-        // Draw billboards and gizmos using the world renderer's consumer
-        // provider and matrix stack.  In 1.21.11 there is no immediate-mode
-        // rendering that shader packs can discard — geometry goes through the
-        // deferred command queue — so we draw directly during END_MAIN.
-        VertexConsumerProvider consumers = context.consumers();
-        MatrixStack stack = context.matrices();
+        rebuildOverlayMatrices(client, camera);
 
         Collection<LightInstance> points = LightManager.INSTANCE.getPointLights();
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
 
-        drawBillboards(stack, camPos, consumers, points, false);
-        drawBillboards(stack, camPos, consumers, spots, true);
+        drawBillboards(context, camPos, points, false);
+        drawBillboards(context, camPos, spots, true);
+    }
 
-        if (selectedLight != null) {
-            drawLightIndicators(stack, camPos, consumers, selectedLight);
-            drawAxes(stack, camPos, consumers, selectedLight);
+    private void renderWorldOverlay(WorldRenderContext ctx) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world == null || !(client.currentScreen instanceof CALEditorScreen) || selectedLight == null) {
+            return;
         }
 
+        Camera cam = ctx.gameRenderer().getCamera();
+        MatrixStack ms = ctx.matrices();
+        if (cam == null || ms == null) {
+            return;
+        }
+
+        Vec3d camPos = cam.getCameraPos();
+        MatrixStack.Entry entry = ms.peek();
+        VertexConsumer buf = ctx.consumers().getBuffer(RenderLayers.lines());
+
+        drawLightIndicators(buf, entry, camPos, selectedLight);
+        drawAxes(buf, entry, camPos, selectedLight);
     }
 
-    private void computeProjectionMatrix(MinecraftClient client, Camera camera) {
-        double fov = client.options.getFov().getValue();
-        int width = client.getWindow().getScaledWidth();
-        int height = client.getWindow().getScaledHeight();
-        float aspect = (float) width / (float) height;
-        this.projectionMatrix.setPerspective((float) Math.toRadians(fov), aspect, 0.05f, 1000.0f);
+    private void rebuildOverlayMatrices(MinecraftClient client, Camera camera) {
+        int fbWidth = Math.max(1, client.getWindow().getFramebufferWidth());
+        int fbHeight = Math.max(1, client.getWindow().getFramebufferHeight());
+        float aspect = (float) fbWidth / (float) fbHeight;
+        double fovDeg = client.options.getFov().getValue();
+
+        overlayView.identity()
+            .rotateX((float) Math.toRadians(camera.getPitch()))
+            .rotateY((float) Math.toRadians(camera.getYaw() + 180.0));
+        overlayProj.identity()
+            .perspective((float) Math.toRadians(fovDeg), aspect, 0.05f, 1000f);
     }
 
-    private void drawBillboards(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, Collection<LightInstance> lights, boolean isSpot) {
+    private void drawBillboards(DrawContext context, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
         CLIcon icon = isSpot ? CalLightsIcons.SPOT_LIGHT : CalLightsIcons.POINT_LIGHT;
-        if (icon == null)
-            return;
-
-        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
-        if (camera == null) {
+        if (icon == null) {
             return;
         }
-        Quaternionf camRot = camera.getRotation();
 
         for (LightInstance light : lights) {
             if (!renderLightIcons && light != selectedLight) {
                 continue;
             }
-            stack.push();
-            stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
-            stack.multiply(camRot);
-
-            // Render a square billboard scaling with distance for comfortable
-            // viewing/clicking
-            double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
-            float size = (float) (0.3f * Math.max(1.0, dist * 0.15));
-            if (light == selectedLight) {
-                size = (float) (0.4f * Math.max(1.0, dist * 0.15)); // larger if selected
+            ScreenPoint p = project(light.x, light.y, light.z);
+            if (p == null) {
+                continue;
             }
+
+            double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
+            float base = light == selectedLight ? ICON_SELECTED_SIZE : ICON_BASE_SIZE;
+            int size = Math.round(base + (float) Math.min(10.0, Math.sqrt(dist) * 1.25));
+            size = Math.max(Math.round(base), Math.min(32, size));
+            int x = Math.round(p.x) - size / 2;
+            int y = Math.round(p.y) - size / 2;
 
             if (icon.staticTexture != null && icon.tintTexture != null) {
-                int tintColor = (light == selectedLight) ? 0xFFFFAA00 : (0xFF000000 | ((int) (light.r * 255) << 16) | ((int) (light.g * 255) << 8) | (int) (light.b * 255));
-                
-                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.tintTexture.identifier)), size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
-                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.staticTexture.identifier)), size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
+                int tintColor = (light == selectedLight)
+                    ? 0xFFFFAA00
+                    : (0xFF000000 | ((int) (light.r * 255) << 16) | ((int) (light.g * 255) << 8) | (int) (light.b * 255));
+                drawTextureLayer(context, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, x, y, size, size, tintColor);
+                drawTextureLayer(context, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, x, y, size, size, 0xFFFFFFFF);
             } else if (icon.texture != null) {
                 int color = (light == selectedLight) ? 0xFFFFAA00 : 0xFFFFFFFF;
-                drawBillboardQuad(stack, consumers.getBuffer(RenderLayers.entityTranslucent(icon.texture.identifier)), size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
+                drawTextureLayer(context, icon.texture, icon.x, icon.y, icon.w, icon.h, x, y, size, size, color);
             }
-            stack.pop();
         }
     }
 
-    private void drawBillboardQuad(MatrixStack stack, VertexConsumer buf, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
-        MatrixStack.Entry entry = stack.peek();
-        Matrix4f matrix = entry.getPositionMatrix();
-
-        float u1 = texX / (float) texture.width;
-        float v1 = texY / (float) texture.height;
-        float u2 = (texX + texW) / (float) texture.width;
-        float v2 = (texY + texH) / (float) texture.height;
-
-        float a = ((color >>> 24) & 0xFF) / 255.0f;
-        float r = ((color >>> 16) & 0xFF) / 255.0f;
-        float g = ((color >>> 8) & 0xFF) / 255.0f;
-        float b = (color & 0xFF) / 255.0f;
-
-        int light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
-        int overlay = OverlayTexture.DEFAULT_UV;
-
-        buf.vertex(matrix, -size, -size, 0).color(r, g, b, a).texture(u1, v2).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
-        buf.vertex(matrix, size, -size, 0).color(r, g, b, a).texture(u2, v2).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
-        buf.vertex(matrix, size, size, 0).color(r, g, b, a).texture(u2, v1).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
-        buf.vertex(matrix, -size, size, 0).color(r, g, b, a).texture(u1, v1).overlay(overlay).light(light).normal(entry, 0f, 0f, 1f);
+    private void drawTextureLayer(DrawContext context, CLTexture texture, int texX, int texY, int texW, int texH,
+                                  int x, int y, int w, int h, int color) {
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, texture.identifier, x, y, texX, texY, w, h, texW, texH, texture.width, texture.height, color);
     }
 
-    private static final Identifier WHITE_TEX = Identifier.ofVanilla("textures/block/white_concrete.png");
-
-    private void drawAxes(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, LightInstance light) {
-        stack.push();
-        stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
-
+    private void drawAxes(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light) {
         double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
         float scale = (float) (0.4f * Math.max(0.5, dist * 0.12) * CalSettings.INSTANCE.gizmoSize);
-        stack.scale(scale, scale, scale);
 
         float sx = (camPos.x - light.x) >= 0 ? 1.0f : -1.0f;
         float sy = (camPos.y - light.y) >= 0 ? 1.0f : -1.0f;
         float sz = (camPos.z - light.z) >= 0 ? 1.0f : -1.0f;
+
         if (!dragging) {
-            this.lastSx = sx;
-            this.lastSy = sy;
-            this.lastSz = sz;
+            lastSx = sx;
+            lastSy = sy;
+            lastSz = sz;
         } else {
-            sx = this.lastSx;
-            sy = this.lastSy;
-            sz = this.lastSz;
+            sx = lastSx;
+            sy = lastSy;
+            sz = lastSz;
         }
 
-        boolean activeX = activeAxis == -1 || activeAxis == 0;
-        boolean activeY = activeAxis == -1 || activeAxis == 1;
-        boolean activeZ = activeAxis == -1 || activeAxis == 2;
-        boolean activeXZ = activeAxis == -1 || activeAxis == 3;
-        boolean activeXY = activeAxis == -1 || activeAxis == 4;
-        boolean activeZY = activeAxis == -1 || activeAxis == 5;
-        boolean activeFree = activeAxis == -1 || activeAxis == 6;
+        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x + 0.30f * scale * sx, light.y, light.z, colorForAxis(0, AXIS_X_COLOR));
+        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x, light.y + 0.30f * scale * sy, light.z, colorForAxis(1, AXIS_Y_COLOR));
+        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x, light.y, light.z + 0.30f * scale * sz, colorForAxis(2, AXIS_Z_COLOR));
 
-        float[] xCol = (activeAxis == 0) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.15f, 0.15f };
-        float[] yCol = (activeAxis == 1) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.15f };
-        float[] zCol = (activeAxis == 2) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 0.35f, 1.0f };
-        float[] xzCol = (activeAxis == 3) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.15f, 1.0f, 0.6f };
-        float[] xyCol = (activeAxis == 4) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 0.6f, 0.15f, 1.0f };
-        float[] zyCol = (activeAxis == 5) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 0.4f, 0.15f };
-        float[] freeCol = (activeAxis == 6) ? new float[] { 1.0f, 1.0f, 0.0f } : new float[] { 1.0f, 1.0f, 1.0f };
-
-        float axisSize = 0.30f;
-        float axisOffset = 0.012f;
-        float planeInner = 0.08f;
-        float planeOuter = 0.20f;
-        float offset = 0.001f;
-
-        VertexConsumer buf = consumers.getBuffer(RenderLayers.entityTranslucentEmissive(WHITE_TEX));
-        MatrixStack.Entry e = stack.peek();
-
-        if (activeX) fillBox(buf, e, 0, -axisOffset, -axisOffset, axisSize * sx, axisOffset, axisOffset, xCol[0], xCol[1], xCol[2], 1.0f);
-        if (activeY) fillBox(buf, e, -axisOffset, 0, -axisOffset, axisOffset, axisSize * sy, axisOffset, yCol[0], yCol[1], yCol[2], 1.0f);
-        if (activeZ) fillBox(buf, e, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize * sz, zCol[0], zCol[1], zCol[2], 1.0f);
-
-        if (activeXZ) fillBox(buf, e, planeInner * sx, -offset, planeInner * sz, planeOuter * sx, offset, planeOuter * sz, xzCol[0], xzCol[1], xzCol[2], 0.4f);
-        if (activeXY) fillBox(buf, e, planeInner * sx, planeInner * sy, -offset, planeOuter * sx, planeOuter * sy, offset, xyCol[0], xyCol[1], xyCol[2], 0.4f);
-        if (activeZY) fillBox(buf, e, -offset, planeInner * sy, planeInner * sz, offset, planeOuter * sy, planeOuter * sz, zyCol[0], zyCol[1], zyCol[2], 0.4f);
-
-        if (activeFree) fillBox(buf, e, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, freeCol[0], freeCol[1], freeCol[2], 1.0f);
-
-        stack.pop();
+        drawPlaneHandle(buf, entry, camPos, light, scale, sx, sz, 3, 0xFF26FF99);
+        drawPlaneHandle(buf, entry, camPos, light, scale, sx, sy, 4, 0xFF9926FF);
+        drawPlaneHandle(buf, entry, camPos, light, scale, sz, sy, 5, 0xFFFF7A26);
+        drawCenterCube(buf, entry, camPos, light, 0.04f * scale, colorForAxis(6, FREE_COLOR));
     }
 
-    private void drawLightIndicators(MatrixStack stack, Vec3d camPos, VertexConsumerProvider consumers, LightInstance light) {
-        stack.push();
-        stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
+    private void drawPlaneHandle(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float scale, float sa, float sb, int plane, int color) {
+        float inner = 0.08f * scale;
+        float outer = 0.20f * scale;
+        int c = colorForAxis(plane, color);
 
+        if (plane == 3) { // XZ
+            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + inner * sb, c);
+            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + outer * sb, c);
+            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + outer * sb, c);
+            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + inner * sb, c);
+        } else if (plane == 4) { // XY
+            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + inner * sb, light.z, c);
+            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + outer * sb, light.z, c);
+            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + outer * sb, light.z, c);
+            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + inner * sb, light.z, c);
+        } else { // ZY
+            lineWorld(buf, entry, camPos, light.x, light.y + inner * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + inner * sa, c);
+            lineWorld(buf, entry, camPos, light.x, light.y + outer * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + outer * sa, c);
+            lineWorld(buf, entry, camPos, light.x, light.y + outer * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + outer * sa, c);
+            lineWorld(buf, entry, camPos, light.x, light.y + inner * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + inner * sa, c);
+        }
+    }
+
+    private void drawCenterCube(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float half, int color) {
+        double x = light.x;
+        double y = light.y;
+        double z = light.z;
+        lineWorld(buf, entry, camPos, x - half, y - half, z - half, x + half, y - half, z - half, color);
+        lineWorld(buf, entry, camPos, x + half, y - half, z - half, x + half, y - half, z + half, color);
+        lineWorld(buf, entry, camPos, x + half, y - half, z + half, x - half, y - half, z + half, color);
+        lineWorld(buf, entry, camPos, x - half, y - half, z + half, x - half, y - half, z - half, color);
+        lineWorld(buf, entry, camPos, x - half, y + half, z - half, x + half, y + half, z - half, color);
+        lineWorld(buf, entry, camPos, x + half, y + half, z - half, x + half, y + half, z + half, color);
+        lineWorld(buf, entry, camPos, x + half, y + half, z + half, x - half, y + half, z + half, color);
+        lineWorld(buf, entry, camPos, x - half, y + half, z + half, x - half, y + half, z - half, color);
+        lineWorld(buf, entry, camPos, x - half, y - half, z - half, x - half, y + half, z - half, color);
+        lineWorld(buf, entry, camPos, x + half, y - half, z - half, x + half, y + half, z - half, color);
+        lineWorld(buf, entry, camPos, x + half, y - half, z + half, x + half, y + half, z + half, color);
+        lineWorld(buf, entry, camPos, x - half, y - half, z + half, x - half, y + half, z + half, color);
+    }
+
+    private int colorForAxis(int axis, int baseColor) {
+        return activeAxis == axis ? ACTIVE_COLOR : baseColor;
+    }
+
+    private void drawLightIndicators(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light) {
         float r = light.r;
         float g = light.g;
         float b = light.b;
@@ -235,170 +244,186 @@ public class LightGizmo {
             g = 0.66f;
             b = 0.0f;
         }
-        float a = 0.75f;
-
-        VertexConsumer buf = consumers.getBuffer(RenderLayers.entityTranslucentEmissive(WHITE_TEX));
-        MatrixStack.Entry e = stack.peek();
+        int color = argb(0.65f, r, g, b);
 
         if (light.isSpot) {
-            drawSpotIndicator(buf, e, light, r, g, b, a);
+            drawSpotIndicator(buf, entry, camPos, light, color);
         } else {
-            drawPointIndicator(buf, e, light, r, g, b, a);
-        }
-
-        stack.pop();
-    }
-
-    private void vert(VertexConsumer buf, Matrix4f m, float x, float y, float z, float r, float g, float b, float a) {
-        buf.vertex(m, x, y, z).color(r, g, b, a).texture(0, 0).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 1, 0);
-    }
-
-    private void lineQuad(Matrix4f m, VertexConsumer buf, float x1, float y1, float z1, float x2, float y2, float z2, float hw, float r, float g, float b, float a) {
-        float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-        float dl = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dl < 1e-5f) return;
-        dx /= dl; dy /= dl; dz /= dl;
-        float upx = 0, upy = 1, upz = 0;
-        if (Math.abs(dy) > 0.99f) { upx = 1; upy = 0; upz = 0; }
-        float wx = dy * upz - dz * upy;
-        float wy = dz * upx - dx * upz;
-        float wz = dx * upy - dy * upx;
-        float wl = (float) Math.sqrt(wx * wx + wy * wy + wz * wz);
-        if (wl < 1e-5f) return;
-        wx = wx / wl * hw; wy = wy / wl * hw; wz = wz / wl * hw;
-        vert(buf, m, x1 - wx, y1 - wy, z1 - wz, r, g, b, a);
-        vert(buf, m, x1 + wx, y1 + wy, z1 + wz, r, g, b, a);
-        vert(buf, m, x2 + wx, y2 + wy, z2 + wz, r, g, b, a);
-        vert(buf, m, x1 - wx, y1 - wy, z1 - wz, r, g, b, a);
-        vert(buf, m, x2 + wx, y2 + wy, z2 + wz, r, g, b, a);
-        vert(buf, m, x2 - wx, y2 - wy, z2 - wz, r, g, b, a);
-    }
-
-    private void lineQuadCross(Matrix4f m, VertexConsumer buf,
-            float x1, float y1, float z1, float x2, float y2, float z2,
-            float hw, float r, float g, float b, float a) {
-        float dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-        float dl = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dl < 1e-5f) return;
-        dx /= dl; dy /= dl; dz /= dl;
-        float upx = 0, upy = 1, upz = 0;
-        if (Math.abs(dy) > 0.99f) { upx = 1; upy = 0; upz = 0; }
-        float b1x = dy * upz - dz * upy, b1y = dz * upx - dx * upz, b1z = dx * upy - dy * upx;
-        float b1l = (float) Math.sqrt(b1x * b1x + b1y * b1y + b1z * b1z);
-        if (b1l < 1e-5f) return;
-        b1x = b1x / b1l * hw; b1y = b1y / b1l * hw; b1z = b1z / b1l * hw;
-        float b2x = dy * b1z - dz * b1y, b2y = dz * b1x - dx * b1z, b2z = dx * b1y - dy * b1x;
-        float b2l = (float) Math.sqrt(b2x * b2x + b2y * b2y + b2z * b2z);
-        if (b2l > 1e-5f) { b2x = b2x / b2l * hw; b2y = b2y / b2l * hw; b2z = b2z / b2l * hw; }
-        vert(buf, m, x1 - b1x, y1 - b1y, z1 - b1z, r, g, b, a);
-        vert(buf, m, x1 + b1x, y1 + b1y, z1 + b1z, r, g, b, a);
-        vert(buf, m, x2 + b1x, y2 + b1y, z2 + b1z, r, g, b, a);
-        vert(buf, m, x1 - b1x, y1 - b1y, z1 - b1z, r, g, b, a);
-        vert(buf, m, x2 + b1x, y2 + b1y, z2 + b1z, r, g, b, a);
-        vert(buf, m, x2 - b1x, y2 - b1y, z2 - b1z, r, g, b, a);
-        vert(buf, m, x1 - b2x, y1 - b2y, z1 - b2z, r, g, b, a);
-        vert(buf, m, x1 + b2x, y1 + b2y, z1 + b2z, r, g, b, a);
-        vert(buf, m, x2 + b2x, y2 + b2y, z2 + b2z, r, g, b, a);
-        vert(buf, m, x1 - b2x, y1 - b2y, z1 - b2z, r, g, b, a);
-        vert(buf, m, x2 + b2x, y2 + b2y, z2 + b2z, r, g, b, a);
-        vert(buf, m, x2 - b2x, y2 - b2y, z2 - b2z, r, g, b, a);
-    }
-
-    private void drawPointIndicator(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a) {
-        float radius = Math.max(0.5f, Math.min(light.radius, 16.0f));
-        int seg = 64;
-        float hw = 0.015f;
-        Matrix4f m = e.getPositionMatrix();
-        for (int i = 0; i < seg; i++) {
-            double a1 = Math.PI * 2.0 * i / seg;
-            double a2 = Math.PI * 2.0 * (i + 1) / seg;
-            float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
-            float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
-            lineQuadCross(m, buf, radius * c1, 0, radius * s1, radius * c2, 0, radius * s2, hw, r, g, b, a);
-            lineQuadCross(m, buf, radius * c1, radius * s1, 0, radius * c2, radius * s2, 0, hw, r, g, b, a);
-            lineQuadCross(m, buf, 0, radius * c1, radius * s1, 0, radius * c2, radius * s2, hw, r, g, b, a);
+            drawPointIndicator(buf, entry, camPos, light, color);
         }
     }
 
-    private void drawSpotIndicator(VertexConsumer buf, MatrixStack.Entry e, LightInstance light, float r, float g, float b, float a) {
-        float dx = light.dx, dy = light.dy, dz = light.dz;
-        float dlen = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dlen < 1e-4f) { dx = 0f; dy = -1f; dz = 0f; dlen = 1f; }
-        dx /= dlen; dy /= dlen; dz /= dlen;
+    private void drawPointIndicator(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, int color) {
+        float radius = light.radius;
+        int segments = 64;
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) (2.0 * Math.PI * i / segments);
+            float a2 = (float) (2.0 * Math.PI * (i + 1) / segments);
+            lineWorld(buf, entry, camPos, light.x + radius * Math.cos(a1), light.y, light.z + radius * Math.sin(a1),
+                light.x + radius * Math.cos(a2), light.y, light.z + radius * Math.sin(a2), color);
+            lineWorld(buf, entry, camPos, light.x + radius * Math.cos(a1), light.y + radius * Math.sin(a1), light.z,
+                light.x + radius * Math.cos(a2), light.y + radius * Math.sin(a2), light.z, color);
+            lineWorld(buf, entry, camPos, light.x, light.y + radius * Math.cos(a1), light.z + radius * Math.sin(a1),
+                light.x, light.y + radius * Math.cos(a2), light.z + radius * Math.sin(a2), color);
+        }
+    }
 
-        float len = Math.max(1f, Math.min(light.distance, 32f));
-        float outerRad = (float) (len * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
-        float cx = dx * len, cy = dy * len, cz = dz * len;
+    private void drawSpotIndicator(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, int color) {
+        float dx = light.dx;
+        float dy = light.dy;
+        float dz = light.dz;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.0001f) {
+            dx = 0f;
+            dy = -1f;
+            dz = 0f;
+            len = 1f;
+        }
+        float ndx = dx / len;
+        float ndy = dy / len;
+        float ndz = dz / len;
 
-        float rx, ry, rz;
-        if (Math.abs(dy) < 0.99f) { rx = 0f; ry = 1f; rz = 0f; }
-        else { rx = 1f; ry = 0f; rz = 0f; }
-        float ux = dy * rz - dz * ry, uy = dz * rx - dx * rz, uz = dx * ry - dy * rx;
-        float ul = (float) Math.sqrt(ux * ux + uy * uy + uz * uz);
-        ux /= ul; uy /= ul; uz /= ul;
-        float vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
+        float wx = Math.abs(ndx) > 0.9f ? 0f : 1f;
+        float wy = Math.abs(ndx) > 0.9f ? 1f : 0f;
+        float wz = 0f;
 
-        Matrix4f m = e.getPositionMatrix();
-        int seg = 64;
-        float hw = 0.015f;
+        float ux = ndy * wz - ndz * wy;
+        float uy = ndz * wx - ndx * wz;
+        float uz = ndx * wy - ndy * wx;
+        float uLen = (float) Math.sqrt(ux * ux + uy * uy + uz * uz);
+        if (uLen > 0.0001f) {
+            ux /= uLen;
+            uy /= uLen;
+            uz /= uLen;
+        }
+        float vx = ndy * uz - ndz * uy;
+        float vy = ndz * ux - ndx * uz;
+        float vz = ndx * uy - ndy * ux;
 
-        for (int i = 0; i < seg; i++) {
-            double a1 = Math.PI * 2.0 * i / seg;
-            double a2 = Math.PI * 2.0 * (i + 1) / seg;
-            float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
-            float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
-            float p1x = cx + outerRad * (c1 * ux + s1 * vx), p1y = cy + outerRad * (c1 * uy + s1 * vy), p1z = cz + outerRad * (c1 * uz + s1 * vz);
-            float p2x = cx + outerRad * (c2 * ux + s2 * vx), p2y = cy + outerRad * (c2 * uy + s2 * vy), p2z = cz + outerRad * (c2 * uz + s2 * vz);
-            lineQuadCross(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, a);
+        float dist = light.distance;
+        float outerRad = (float) (dist * Math.tan(Math.toRadians(light.getOuterAngleDeg() * 0.5f)));
+        float innerRad = (float) (dist * Math.tan(Math.toRadians(light.getInnerAngleDeg() * 0.5f)));
+        float cx = light.x + ndx * dist;
+        float cy = light.y + ndy * dist;
+        float cz = light.z + ndz * dist;
+
+        int segments = 64;
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) (2.0 * Math.PI * i / segments);
+            float a2 = (float) (2.0 * Math.PI * (i + 1) / segments);
+            float cos1 = (float) Math.cos(a1);
+            float sin1 = (float) Math.sin(a1);
+            float cos2 = (float) Math.cos(a2);
+            float sin2 = (float) Math.sin(a2);
+
+            float p1x = cx + outerRad * (cos1 * ux + sin1 * vx);
+            float p1y = cy + outerRad * (cos1 * uy + sin1 * vy);
+            float p1z = cz + outerRad * (cos1 * uz + sin1 * vz);
+            float p2x = cx + outerRad * (cos2 * ux + sin2 * vx);
+            float p2y = cy + outerRad * (cos2 * uy + sin2 * vy);
+            float p2z = cz + outerRad * (cos2 * uz + sin2 * vz);
+            lineWorld(buf, entry, camPos, p1x, p1y, p1z, p2x, p2y, p2z, color);
         }
 
         if (light.soft > 0.1f) {
-            float innerRad = (float) (len * Math.tan(Math.toRadians(light.getInnerAngleDeg() * 0.5f)));
-            float innerA = a * 0.4f;
-            for (int i = 0; i < seg; i++) {
-                double a1 = Math.PI * 2.0 * i / seg;
-                double a2 = Math.PI * 2.0 * (i + 1) / seg;
-                float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
-                float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
-                float p1x = cx + innerRad * (c1 * ux + s1 * vx), p1y = cy + innerRad * (c1 * uy + s1 * vy), p1z = cz + innerRad * (c1 * uz + s1 * vz);
-                float p2x = cx + innerRad * (c2 * ux + s2 * vx), p2y = cy + innerRad * (c2 * uy + s2 * vy), p2z = cz + innerRad * (c2 * uz + s2 * vz);
-                lineQuadCross(m, buf, p1x, p1y, p1z, p2x, p2y, p2z, hw, r, g, b, innerA);
+            int innerColor = (color & 0x00FFFFFF) | 0x66000000;
+            for (int i = 0; i < segments; i++) {
+                float a1 = (float) (2.0 * Math.PI * i / segments);
+                float a2 = (float) (2.0 * Math.PI * (i + 1) / segments);
+                float cos1 = (float) Math.cos(a1);
+                float sin1 = (float) Math.sin(a1);
+                float cos2 = (float) Math.cos(a2);
+                float sin2 = (float) Math.sin(a2);
+                float p1x = cx + innerRad * (cos1 * ux + sin1 * vx);
+                float p1y = cy + innerRad * (cos1 * uy + sin1 * vy);
+                float p1z = cz + innerRad * (cos1 * uz + sin1 * vz);
+                float p2x = cx + innerRad * (cos2 * ux + sin2 * vx);
+                float p2y = cy + innerRad * (cos2 * uy + sin2 * vy);
+                float p2z = cz + innerRad * (cos2 * uz + sin2 * vz);
+                lineWorld(buf, entry, camPos, p1x, p1y, p1z, p2x, p2y, p2z, innerColor);
             }
         }
 
         float[] angles = {0f, (float) (Math.PI / 2.0), (float) Math.PI, (float) (3.0 * Math.PI / 2.0)};
         for (float angle : angles) {
-            float cos = (float) Math.cos(angle), sin = (float) Math.sin(angle);
+            float cos = (float) Math.cos(angle);
+            float sin = (float) Math.sin(angle);
             float px = cx + outerRad * (cos * ux + sin * vx);
             float py = cy + outerRad * (cos * uy + sin * vy);
             float pz = cz + outerRad * (cos * uz + sin * vz);
-            lineQuadCross(m, buf, 0, 0, 0, px, py, pz, hw, r, g, b, a);
+            lineWorld(buf, entry, camPos, light.x, light.y, light.z, px, py, pz, color);
         }
     }
 
-    private void fillBox(VertexConsumer buf, MatrixStack.Entry entry, float x1, float y1, float z1, float x2, float y2,
-            float z2, float r, float g, float b, float a) {
-        Matrix4f m = entry.getPositionMatrix();
-        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a);
-        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x1, y1, z1, r, g, b, a);
-        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
-        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a);
-        vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a);
-        vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a); vert(buf, m, x1, y1, z2, r, g, b, a);
-        vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a);
-        vert(buf, m, x2, y2, z1, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
-        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x1, y1, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a);
-        vert(buf, m, x2, y1, z1, r, g, b, a); vert(buf, m, x1, y2, z1, r, g, b, a); vert(buf, m, x2, y2, z1, r, g, b, a);
-        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x2, y1, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a);
-        vert(buf, m, x1, y1, z2, r, g, b, a); vert(buf, m, x2, y2, z2, r, g, b, a); vert(buf, m, x1, y2, z2, r, g, b, a);
+    private void lineWorld(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos,
+                           double x1, double y1, double z1, double x2, double y2, double z2, int color) {
+        float ax = (float) (x1 - camPos.x);
+        float ay = (float) (y1 - camPos.y);
+        float az = (float) (z1 - camPos.z);
+        float bx = (float) (x2 - camPos.x);
+        float by = (float) (y2 - camPos.y);
+        float bz = (float) (z2 - camPos.z);
+
+        float nx = bx - ax;
+        float ny = by - ay;
+        float nz = bz - az;
+        float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        if (nl < 1e-5f) {
+            nx = 0f;
+            ny = 1f;
+            nz = 0f;
+        } else {
+            nx /= nl;
+            ny /= nl;
+            nz /= nl;
+        }
+
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        float a = ((color >>> 24) & 0xFF) / 255f;
+
+        buf.vertex(entry.getPositionMatrix(), ax, ay, az).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(LINE_WIDTH);
+        buf.vertex(entry.getPositionMatrix(), bx, by, bz).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(LINE_WIDTH);
+    }
+
+    private ScreenPoint project(float wx, float wy, float wz) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        Camera camera = client.gameRenderer == null ? null : client.gameRenderer.getCamera();
+        if (camera == null) {
+            return null;
+        }
+
+        Vec3d cp = camera.getCameraPos();
+        Vector4f clip = new Vector4f((float) (wx - cp.x), (float) (wy - cp.y), (float) (wz - cp.z), 1.0f);
+        clip.mul(overlayView).mul(overlayProj);
+        if (clip.w <= 0.0f) {
+            return null;
+        }
+
+        float ndcX = clip.x / clip.w;
+        float ndcY = clip.y / clip.w;
+        float screenX = (ndcX * 0.5f + 0.5f) * client.getWindow().getScaledWidth();
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * client.getWindow().getScaledHeight();
+        return new ScreenPoint(screenX, screenY);
+    }
+
+    private static int argb(float a, float r, float g, float b) {
+        int ai = Math.max(0, Math.min(255, Math.round(a * 255f)));
+        int ri = Math.max(0, Math.min(255, Math.round(r * 255f)));
+        int gi = Math.max(0, Math.min(255, Math.round(g * 255f)));
+        int bi = Math.max(0, Math.min(255, Math.round(b * 255f)));
+        return (ai << 24) | (ri << 16) | (gi << 8) | bi;
     }
 
     public boolean onMouseClicked(double mouseX, double mouseY, int btn) {
-        if (btn != 0)
+        if (btn != 0) {
             return false;
+        }
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null)
+        if (client.world == null) {
             return false;
+        }
 
         Camera camera = client.gameRenderer.getCamera();
         Vec3d rayDir = getRayDirection(mouseX, mouseY);
@@ -480,16 +505,16 @@ public class LightGizmo {
                     selectedLight.y = ny;
                 } else if (activeAxis == 2) {
                     selectedLight.z = nz;
-                } else if (activeAxis == 3) { // XZ Plane
+                } else if (activeAxis == 3) {
                     selectedLight.x = nx;
                     selectedLight.z = nz;
-                } else if (activeAxis == 4) { // XY Plane
+                } else if (activeAxis == 4) {
                     selectedLight.x = nx;
                     selectedLight.y = ny;
-                } else if (activeAxis == 5) { // ZY Plane
+                } else if (activeAxis == 5) {
                     selectedLight.z = nz;
                     selectedLight.y = ny;
-                } else if (activeAxis == 6) { // FREE
+                } else if (activeAxis == 6) {
                     selectedLight.x = nx;
                     selectedLight.y = ny;
                     selectedLight.z = nz;
@@ -504,25 +529,27 @@ public class LightGizmo {
         MinecraftClient client = MinecraftClient.getInstance();
         int width = client.getWindow().getScaledWidth();
         int height = client.getWindow().getScaledHeight();
+        Camera camera = client.gameRenderer == null ? null : client.gameRenderer.getCamera();
+        if (camera == null) {
+            return Vec3d.ZERO;
+        }
+
+        rebuildOverlayMatrices(client, camera);
 
         float x = (2.0f * (float) mouseX) / width - 1.0f;
         float y = 1.0f - (2.0f * (float) mouseY) / height;
 
-        Matrix4f invProj = new Matrix4f(projectionMatrix).invert();
-
-        // Unproject from clip space to camera space
+        Matrix4f invProj = new Matrix4f(overlayProj).invert();
         Vector4f rayClip = new Vector4f(x, y, -1.0f, 1.0f);
         rayClip.mul(invProj);
 
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
+        Matrix4f invView = new Matrix4f(overlayView).invert();
+        Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f);
+        rayWorld4.mul(invView);
 
-        // Transform from camera space to world space using the camera rotation.
-        // In 1.21.11 the projection/view are GPU-internal, so we reconstruct the
-        // view transform from the camera's orientation quaternion.
-        Camera camera = client.gameRenderer.getCamera();
-        rayEye.rotate(camera.getRotation());
-
-        return new Vec3d(rayEye.x, rayEye.y, rayEye.z).normalize();
+        Vector3f rayWorld = new Vector3f(rayWorld4.x, rayWorld4.y, rayWorld4.z).normalize();
+        return new Vec3d(rayWorld.x, rayWorld.y, rayWorld.z);
     }
 
     public LightInstance checkBillboardClickExternal(Vec3d rayStart, Vec3d rayDir) {
@@ -545,6 +572,7 @@ public class LightGizmo {
                 bestMatch = light;
             }
         }
+
         Collection<LightInstance> spots = LightManager.INSTANCE.getSpotLights();
         for (LightInstance light : spots) {
             Vec3d pos = new Vec3d(light.x, light.y, light.z);
@@ -572,13 +600,10 @@ public class LightGizmo {
         float sy = this.lastSy;
         float sz = this.lastSz;
 
-        // 1. Check FREE translation (Center box) -> index 6
         if (intersectAABB(localRayStart, localRayDir, -0.04, -0.04, -0.04, 0.04, 0.04, 0.04)) {
             return 6;
         }
 
-        // 2. Check Plane handles
-        // XZ Plane (index 3)
         if (Math.abs(localRayDir.y) > 0.0001) {
             double t = -localRayStart.y / localRayDir.y;
             if (t >= 0) {
@@ -592,7 +617,7 @@ public class LightGizmo {
                 }
             }
         }
-        // XY Plane (index 4)
+
         if (Math.abs(localRayDir.z) > 0.0001) {
             double t = -localRayStart.z / localRayDir.z;
             if (t >= 0) {
@@ -606,7 +631,7 @@ public class LightGizmo {
                 }
             }
         }
-        // ZY Plane (index 5)
+
         if (Math.abs(localRayDir.x) > 0.0001) {
             double t = -localRayStart.x / localRayDir.x;
             if (t >= 0) {
@@ -621,24 +646,20 @@ public class LightGizmo {
             }
         }
 
-        // 3. Check Axis handles (0: X, 1: Y, 2: Z)
         double dX = getDistanceToSegment(localRayStart, localRayDir, new Vec3d(0, 0, 0), new Vec3d(0.35 * sx, 0, 0));
         double dY = getDistanceToSegment(localRayStart, localRayDir, new Vec3d(0, 0, 0), new Vec3d(0, 0.35 * sy, 0));
         double dZ = getDistanceToSegment(localRayStart, localRayDir, new Vec3d(0, 0, 0), new Vec3d(0, 0, 0.35 * sz));
 
         double threshold = 0.04;
-        if (dX < threshold && dX < dY && dX < dZ)
-            return 0;
-        if (dY < threshold && dY < dX && dY < dZ)
-            return 1;
-        if (dZ < threshold && dZ < dX && dZ < dY)
-            return 2;
+        if (dX < threshold && dX < dY && dX < dZ) return 0;
+        if (dY < threshold && dY < dX && dY < dZ) return 1;
+        if (dZ < threshold && dZ < dX && dZ < dY) return 2;
 
         return -1;
     }
 
     private boolean intersectAABB(Vec3d rayStart, Vec3d rayDir, double minX, double minY, double minZ, double maxX,
-            double maxY, double maxZ) {
+                                  double maxY, double maxZ) {
         double tx1 = (minX - rayStart.x) / rayDir.x;
         double tx2 = (maxX - rayStart.x) / rayDir.x;
         double tmin = Math.min(tx1, tx2);
@@ -668,8 +689,9 @@ public class LightGizmo {
         double p12v2 = p12.dotProduct(axisDir);
 
         double denom = v1v1 * v2v2 - v1v2 * v1v2;
-        if (Math.abs(denom) < 0.0001)
+        if (Math.abs(denom) < 0.0001) {
             return origin;
+        }
 
         double t2 = (p12v2 * v1v1 - p12v1 * v1v2) / denom;
         return origin.add(axisDir.multiply(t2));
@@ -677,17 +699,14 @@ public class LightGizmo {
 
     private Vec3d getMouseProjectionOnPlane(Vec3d rayStart, Vec3d rayDir, Vec3d origin, int planeIndex) {
         double t;
-        if (planeIndex == 3) { // XZ Plane
-            if (Math.abs(rayDir.y) < 0.0001)
-                return origin;
+        if (planeIndex == 3) {
+            if (Math.abs(rayDir.y) < 0.0001) return origin;
             t = (origin.y - rayStart.y) / rayDir.y;
-        } else if (planeIndex == 4) { // XY Plane
-            if (Math.abs(rayDir.z) < 0.0001)
-                return origin;
+        } else if (planeIndex == 4) {
+            if (Math.abs(rayDir.z) < 0.0001) return origin;
             t = (origin.z - rayStart.z) / rayDir.z;
-        } else { // 5 ZY Plane
-            if (Math.abs(rayDir.x) < 0.0001)
-                return origin;
+        } else {
+            if (Math.abs(rayDir.x) < 0.0001) return origin;
             t = (origin.x - rayStart.x) / rayDir.x;
         }
         return rayStart.add(rayDir.multiply(t));
@@ -695,8 +714,9 @@ public class LightGizmo {
 
     private Vec3d getMouseProjectionFree(Vec3d rayStart, Vec3d rayDir, Vec3d origin, Vec3d normal) {
         double denom = rayDir.dotProduct(normal);
-        if (Math.abs(denom) < 0.0001)
+        if (Math.abs(denom) < 0.0001) {
             return origin;
+        }
         double t = origin.subtract(rayStart).dotProduct(normal) / denom;
         return rayStart.add(rayDir.multiply(t));
     }
@@ -704,8 +724,9 @@ public class LightGizmo {
     private double getDistanceToPoint(Vec3d rayStart, Vec3d rayDir, Vec3d point) {
         Vec3d toPoint = point.subtract(rayStart);
         double projection = toPoint.dotProduct(rayDir);
-        if (projection < 0)
+        if (projection < 0) {
             return Double.MAX_VALUE;
+        }
         Vec3d closestPoint = rayStart.add(rayDir.multiply(projection));
         return closestPoint.distanceTo(point);
     }
@@ -732,4 +753,5 @@ public class LightGizmo {
         return getDistanceToPoint(rayStart, rayDir, closestOnSegment);
     }
 
+    private record ScreenPoint(float x, float y) {}
 }
