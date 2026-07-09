@@ -1320,7 +1320,7 @@ public class CALEditorPanel extends CLUIElement {
                             (float) rightClickWorldPos.x, 
                             (float) rightClickWorldPos.y, 
                             (float) rightClickWorldPos.z, 
-                            1f, 1f, 1f, 1.0f, 10.0f
+                            1f, 1f, 1f, 1.0f, 6.0f
                         );
                         light.persistent = true;
                         LightGizmo.INSTANCE.setSelectedLight(light);
@@ -1333,7 +1333,7 @@ public class CALEditorPanel extends CLUIElement {
                             (float) rightClickWorldPos.x, 
                             (float) rightClickWorldPos.y, 
                             (float) rightClickWorldPos.z, 
-                            0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f
+                            0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f
                         );
                         light.persistent = true;
                         LightGizmo.INSTANCE.setSelectedLight(light);
@@ -1786,7 +1786,7 @@ public class CALEditorPanel extends CLUIElement {
                 CALUndoManager.pushState();
                 Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
-                LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 10.0f);
+                LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 6.0f);
                 light.persistent = true;
                 LightGizmo.INSTANCE.setSelectedLight(light);
                 rebuildSettings();
@@ -1798,7 +1798,7 @@ public class CALEditorPanel extends CLUIElement {
                 CALUndoManager.pushState();
                 Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
-                LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f);
+                LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f);
                 light.persistent = true;
                 LightGizmo.INSTANCE.setSelectedLight(light);
                 rebuildSettings();
