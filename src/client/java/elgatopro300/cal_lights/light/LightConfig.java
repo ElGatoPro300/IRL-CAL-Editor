@@ -11,7 +11,6 @@ public final class LightConfig {
         .shadowBlockRadius(LightConfig::shadowBlockRadius)
         .build();
 
-    public static boolean showGuides = false;
     public static int shadowQuality = 1;
     public static boolean shadowCache = true;
     public static boolean shadowBlocks = true;
@@ -28,10 +27,6 @@ public final class LightConfig {
     public static int autoLightMax = 200;
 
     private LightConfig() {}
-
-    public static boolean showGuides() {
-        return showGuides;
-    }
 
     public static boolean shadowCache() {
         return shadowCache;

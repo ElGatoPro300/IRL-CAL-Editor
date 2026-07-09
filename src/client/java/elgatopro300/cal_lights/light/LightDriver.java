@@ -1,7 +1,7 @@
 package elgatopro300.cal_lights.light;
 
 import elgatopro300.cal_lights.light.auto.AutoLightManager;
-import elgatopro300.cal_lights.manager.GoboManager;
+import elgatopro300.cal_lights.light.cookie.CookieArray;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 
@@ -98,7 +98,7 @@ public final class LightDriver {
         float[] dir = LightMath.normalizeDir(l.dx, l.dy, l.dz, 0f, -1f, 0f, new float[3]);
         LightMath.Cone cone = LightMath.cone(l.getOuterAngleDeg(), l.getInnerAngleDeg());
 
-        int cookieLayer = GoboManager.INSTANCE.getGoboIndex(l.goboName);
+        int cookieLayer = CookieArray.resolve(l.goboName);
         float cookieRot = (float) Math.toRadians(l.goboRotation);
         float cookieFlags = l.cookieInvert ? 1.0f : 0.0f;
         float beamStrength = l.fogEnabled ? l.beamStrength : 0.0f;

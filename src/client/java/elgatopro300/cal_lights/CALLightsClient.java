@@ -4,7 +4,7 @@ import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
 import elgatopro300.cal_lights.light.LightConfig;
 import elgatopro300.cal_lights.light.auto.AutoLightManager;
-import elgatopro300.cal_lights.manager.GoboManager;
+import elgatopro300.cal_lights.light.cookie.CookieArray;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.manager.LightSaveManager;
@@ -48,7 +48,7 @@ public class CALLightsClient implements ClientModInitializer {
         // dir / Iris shaderpacks dir / bundled .irlights patches.
         Patcher.install(new CALPatcherHost());
         ShadowEngine.install(new RedactorEntityCasterSource(), LightConfig.SHADOW);
-        IrlSamplers.register("irl_cookieArray", GoboManager.INSTANCE::getTextureArrayId, GL30.GL_TEXTURE_2D_ARRAY);
+        IrlSamplers.register("irl_cookieArray", CookieArray::getGlTextureId, GL30.GL_TEXTURE_2D_ARRAY);
 
         editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cal.editor",
@@ -71,8 +71,8 @@ public class CALLightsClient implements ClientModInitializer {
             LOGGER.info("Initializing IRL CAL Editor 3D Gizmo...");
             LightGizmo.INSTANCE.init();
 
-            LOGGER.info("Initializing IRL CAL Editor Gobo Manager...");
-            GoboManager.INSTANCE.init();
+            LOGGER.info("Initializing IRL CAL Editor cookie array...");
+            CookieArray.init();
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
