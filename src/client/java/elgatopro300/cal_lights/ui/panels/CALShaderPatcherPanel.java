@@ -152,7 +152,7 @@ public class CALShaderPatcherPanel extends CLUIElement {
             logResult("validate", result);
             applyResult(true, result, null);
         } else {
-            String outName = outputName(packName);
+            String outName = Shaderpacks.outputName(parsed, packName, newPackEachTime);
             Path source = Shaderpacks.packPath(packName);
             Path output = Shaderpacks.dir().resolve(outName);
             PatchResult result = IrlPatchApplier.apply(source, output, parsed);
@@ -160,28 +160,6 @@ public class CALShaderPatcherPanel extends CLUIElement {
             applyResult(false, result, outName);
             reload();
         }
-    }
-
-    private String outputName(String packName) {
-        String base = packName;
-        if (base.toLowerCase().endsWith(".zip")) {
-            base = base.substring(0, base.length() - 4);
-        }
-        base = base + "_IRLights";
-
-        if (!newPackEachTime) {
-            return base;
-        }
-        if (!Files.exists(Shaderpacks.dir().resolve(base))) {
-            return base;
-        }
-        for (int i = 2; i < 1000; i++) {
-            String candidate = base + "_" + i;
-            if (!Files.exists(Shaderpacks.dir().resolve(candidate))) {
-                return candidate;
-            }
-        }
-        return base;
     }
 
     private static void logResult(String tag, PatchResult result) {
@@ -210,18 +188,24 @@ public class CALShaderPatcherPanel extends CLUIElement {
             return;
         }
 
-        String s = result.summary == null ? "" : result.summary.toLowerCase(Locale.ROOT);
         String key;
-        if (s.contains("already patched") || s.contains("already exists")) {
-            key = "cal.ui.patcher_result_failalreadypatched";
-        } else if (s.contains("contract")) {
-            key = "cal.ui.patcher_result_failversion";
-        } else if (s.contains("not a folder or .zip") || s.contains("no shaders/")) {
-            key = "cal.ui.patcher_result_failbadpack";
-        } else if (s.contains("io error")) {
-            key = "cal.ui.patcher_result_failio";
-        } else {
-            key = "cal.ui.patcher_result_failnofit";
+        switch (result.outcome) {
+            case ALREADY_PATCHED:
+            case ADD_FILE_EXISTS:
+                key = "cal.ui.patcher_result_failalreadypatched";
+                break;
+            case CONTRACT_MISMATCH:
+                key = "cal.ui.patcher_result_failversion";
+                break;
+            case BAD_SOURCE:
+                key = "cal.ui.patcher_result_failbadpack";
+                break;
+            case IO_ERROR:
+                key = "cal.ui.patcher_result_failio";
+                break;
+            default:
+                key = "cal.ui.patcher_result_failnofit";
+                break;
         }
         setStatus(ST_ERR, key, null);
     }

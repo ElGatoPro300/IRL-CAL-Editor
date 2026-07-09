@@ -3,8 +3,8 @@ package elgatopro300.cal_lights.ui.panels;
 import elgatopro300.cal_lights.animation.LightAnimation;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
 import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.cookie.CookieArray;
 import elgatopro300.cal_lights.manager.CALUndoManager;
-import elgatopro300.cal_lights.manager.GoboManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
@@ -282,7 +282,7 @@ public class LightInspectorPanel extends CLUIElement {
         float targetAnimationH = animationExpanded ? (16 + 3) : 0;
 
         boolean showGobo = light.isSpot;
-        int numGobos = 1 + GoboManager.INSTANCE.getGoboNames().size();
+        int numGobos = 1 + CookieArray.available().size();
         float targetGoboH = showGobo ? (goboExpanded ? ((16 + 3) + (goboSelectorExpanded ? numGobos * (16 + 3) : 0) + (16 + 3) + (16 + 3) + (16 + 3) + (16 + 3) + (16 + 3)) : 0) : 0;
 
         if (transformAnimH < 0) transformAnimH = targetTransformH;
@@ -695,7 +695,7 @@ public class LightInspectorPanel extends CLUIElement {
                 if (goboSelectorExpanded) {
                     List<String> names = new ArrayList<>();
                     names.add("None");
-                    names.addAll(GoboManager.INSTANCE.getGoboNames());
+                    names.addAll(CookieArray.available());
 
                     for (String name : names) {
                         boolean hoverItem = ctx.mouseX >= x + 12 && ctx.mouseX < x + w - 12 && ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
@@ -982,7 +982,7 @@ public class LightInspectorPanel extends CLUIElement {
                 if (goboSelectorExpanded) {
                     List<String> names = new ArrayList<>();
                     names.add("None");
-                    names.addAll(GoboManager.INSTANCE.getGoboNames());
+                    names.addAll(CookieArray.available());
 
                     for (String name : names) {
                         if (mx >= x + 12 && mx < x + w - 12 && relativeMy >= drawY && relativeMy < drawY + elementH) {
@@ -1009,7 +1009,7 @@ public class LightInspectorPanel extends CLUIElement {
 
                 // Click Refresh button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                    GoboManager.INSTANCE.scanAndBuild();
+                    CookieArray.reload();
                     if (onUpdate != null) onUpdate.run();
                     return true;
                 }
@@ -1018,8 +1018,7 @@ public class LightInspectorPanel extends CLUIElement {
                 // Click Folder button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
                     try {
-                        Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
-                        Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
+                        Path gobosDir = CookieArray.dir();
                         if (!Files.exists(gobosDir)) {
                             Files.createDirectories(gobosDir);
                         }

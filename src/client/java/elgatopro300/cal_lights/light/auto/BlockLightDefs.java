@@ -14,16 +14,20 @@ public final class BlockLightDefs {
         public final float intensity;
         public final float radius;
         public final boolean shadows;
+        public final int mergeCells;
 
-        Def(float r, float g, float b, float intensity, float radius, boolean shadows) {
+        Def(float r, float g, float b, float intensity, float radius, boolean shadows, int mergeCells) {
             this.r = r;
             this.g = g;
             this.b = b;
             this.intensity = intensity;
             this.radius = radius;
             this.shadows = shadows;
+            this.mergeCells = mergeCells;
         }
     }
+
+    public static final int CLUSTER_MERGE_CELLS = 4;
 
     private static final Map<Block, Def> DEFS = new IdentityHashMap<>();
     private static final Def[] REDSTONE_BY_POWER = new Def[16];
@@ -31,7 +35,11 @@ public final class BlockLightDefs {
     private BlockLightDefs() {}
 
     private static void put(Block block, float r, float g, float b, float intensity, float radius) {
-        DEFS.put(block, new Def(r, g, b, intensity, radius, true));
+        DEFS.put(block, new Def(r, g, b, intensity, radius, true, 0));
+    }
+
+    private static void putMerged(Block block, float r, float g, float b, float intensity, float radius, int mergeCells) {
+        DEFS.put(block, new Def(r, g, b, intensity, radius, true, mergeCells));
     }
 
     public static Def get(Block block) {
@@ -71,15 +79,15 @@ public final class BlockLightDefs {
         put(Blocks.SOUL_LANTERN,          0.40f, 0.80f, 1.00f, 1.1f, 11f);
 
         // --- full-block emitters --------------------------------------------
-        put(Blocks.GLOWSTONE,             1.00f, 0.86f, 0.60f, 1.5f, 14f);
-        put(Blocks.SEA_LANTERN,           0.80f, 0.95f, 1.00f, 1.4f, 13f);
-        put(Blocks.SHROOMLIGHT,           1.00f, 0.55f, 0.25f, 1.3f, 13f);
+        putMerged(Blocks.GLOWSTONE,       1.00f, 0.86f, 0.60f, 1.5f, 14f, CLUSTER_MERGE_CELLS);
+        putMerged(Blocks.SEA_LANTERN,     0.80f, 0.95f, 1.00f, 1.4f, 13f, CLUSTER_MERGE_CELLS);
+        putMerged(Blocks.SHROOMLIGHT,     1.00f, 0.55f, 0.25f, 1.3f, 13f, CLUSTER_MERGE_CELLS);
         put(Blocks.JACK_O_LANTERN,        1.00f, 0.70f, 0.30f, 1.3f, 13f);
         put(Blocks.REDSTONE_LAMP,         1.00f, 0.76f, 0.42f, 1.3f, 13f);
-        put(Blocks.MAGMA_BLOCK,           1.00f, 0.45f, 0.15f, 0.7f,  6f);
-        put(Blocks.OCHRE_FROGLIGHT,       1.00f, 0.85f, 0.50f, 1.5f, 15f);
-        put(Blocks.VERDANT_FROGLIGHT,     0.80f, 1.00f, 0.70f, 1.5f, 15f);
-        put(Blocks.PEARLESCENT_FROGLIGHT, 1.00f, 0.85f, 0.95f, 1.5f, 15f);
+        putMerged(Blocks.MAGMA_BLOCK,     1.00f, 0.45f, 0.15f, 0.7f,  6f, CLUSTER_MERGE_CELLS);
+        putMerged(Blocks.OCHRE_FROGLIGHT,       1.00f, 0.85f, 0.50f, 1.5f, 15f, CLUSTER_MERGE_CELLS);
+        putMerged(Blocks.VERDANT_FROGLIGHT,     0.80f, 1.00f, 0.70f, 1.5f, 15f, CLUSTER_MERGE_CELLS);
+        putMerged(Blocks.PEARLESCENT_FROGLIGHT, 1.00f, 0.85f, 0.95f, 1.5f, 15f, CLUSTER_MERGE_CELLS);
 
         // --- shaped / decorative emitters -----------------------------------
         put(Blocks.END_ROD,               0.95f, 0.95f, 1.00f, 1.2f, 12f);
@@ -87,7 +95,7 @@ public final class BlockLightDefs {
         put(Blocks.SOUL_CAMPFIRE,         0.40f, 0.80f, 1.00f, 1.1f, 11f);
         put(Blocks.FIRE,                  1.00f, 0.60f, 0.25f, 1.3f, 12f);
         put(Blocks.SOUL_FIRE,             0.40f, 0.80f, 1.00f, 1.1f, 11f);
-        put(Blocks.LAVA,                  1.00f, 0.42f, 0.12f, 1.4f, 12f);
+        putMerged(Blocks.LAVA,            1.00f, 0.42f, 0.12f, 1.4f, 12f, CLUSTER_MERGE_CELLS);
         put(Blocks.BEACON,                0.90f, 0.97f, 1.00f, 1.6f, 16f);
         put(Blocks.CONDUIT,               0.60f, 0.90f, 1.00f, 1.4f, 14f);
         put(Blocks.GLOW_LICHEN,           0.45f, 0.85f, 0.55f, 0.7f,  7f);
@@ -129,7 +137,7 @@ public final class BlockLightDefs {
         for (int p = 1; p <= 15; p++) {
             float t = p / 15f;
             REDSTONE_BY_POWER[p] = new Def(1.0f, 0.06f, 0.0f,
-                0.06f + 0.12f * t, 2.0f + 2.5f * t, false);
+                0.06f + 0.12f * t, 2.0f + 2.5f * t, false, 0);
         }
     }
 }

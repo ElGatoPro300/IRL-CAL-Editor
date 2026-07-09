@@ -83,7 +83,7 @@ dependencies {
 	
 	// Local dependencies (Put these jars in 'libs' folder)
 
-	modImplementation files('libs/irl-core-1.0-obt.jar')
+	modImplementation files('libs/irl-core-1.1.jar')
 }
 
 processResources {
