@@ -16,8 +16,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
@@ -26,6 +29,8 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.SequencedMap;
 
 public class LightGizmo {
     public static final LightGizmo INSTANCE = new LightGizmo();
@@ -35,9 +40,9 @@ public class LightGizmo {
     private static final int AXIS_Z_COLOR = 0xFF2659FF;
     private static final int ACTIVE_COLOR = 0xFFFFFF00;
     private static final int FREE_COLOR = 0xFFFFFFFF;
-    private static final float LINE_WIDTH = 2.0f;
-    private static final float ICON_BASE_SIZE = 18.0f;
-    private static final float ICON_SELECTED_SIZE = 22.0f;
+    private static final float LINE_WIDTH = 2.5f;
+    private static final float ICON_BASE_SIZE = 28.0f;
+    private static final float ICON_SELECTED_SIZE = 34.0f;
 
     private LightInstance selectedLight = null;
     private int activeAxis = -1; // -1: none, 0: X, 1: Y, 2: Z, 3: XZ, 4: XY, 5: ZY, 6: FREE
@@ -56,7 +61,7 @@ public class LightGizmo {
     public static boolean snapToGrid = false;
 
     public void init() {
-        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::renderWorldOverlay);
+        WorldRenderEvents.END_MAIN.register(this::renderWorldOverlay);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -102,10 +107,20 @@ public class LightGizmo {
 
         Vec3d camPos = cam.getCameraPos();
         MatrixStack.Entry entry = ms.peek();
-        VertexConsumer buf = ctx.consumers().getBuffer(RenderLayers.lines());
 
-        drawLightIndicators(buf, entry, camPos, selectedLight);
-        drawAxes(buf, entry, camPos, selectedLight);
+        RenderLayer lineLayer = RenderLayers.lines();
+        RenderLayer quadLayer = RenderLayers.lightning();
+        SequencedMap<RenderLayer, BufferAllocator> layerBuffers = new LinkedHashMap<>();
+        layerBuffers.put(lineLayer, new BufferAllocator(4096));
+        layerBuffers.put(quadLayer, new BufferAllocator(4096));
+
+        VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(layerBuffers, new BufferAllocator(256));
+        VertexConsumer lineBuf = immediate.getBuffer(lineLayer);
+        VertexConsumer quadBuf = immediate.getBuffer(quadLayer);
+
+        drawLightIndicators(lineBuf, entry, camPos, selectedLight);
+        drawAxes(lineBuf, quadBuf, entry, camPos, selectedLight);
+        immediate.draw();
     }
 
     private void rebuildOverlayMatrices(MinecraftClient client, Camera camera) {
@@ -138,8 +153,8 @@ public class LightGizmo {
 
             double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
             float base = light == selectedLight ? ICON_SELECTED_SIZE : ICON_BASE_SIZE;
-            int size = Math.round(base + (float) Math.min(10.0, Math.sqrt(dist) * 1.25));
-            size = Math.max(Math.round(base), Math.min(32, size));
+            int size = Math.round(base + (float) Math.min(14.0, Math.sqrt(dist) * 1.7));
+            size = Math.max(Math.round(base), Math.min(48, size));
             int x = Math.round(p.x) - size / 2;
             int y = Math.round(p.y) - size / 2;
 
@@ -161,9 +176,9 @@ public class LightGizmo {
         context.drawTexture(RenderPipelines.GUI_TEXTURED, texture.identifier, x, y, texX, texY, w, h, texW, texH, texture.width, texture.height, color);
     }
 
-    private void drawAxes(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light) {
+    private void drawAxes(VertexConsumer lineBuf, VertexConsumer quadBuf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light) {
         double dist = camPos.distanceTo(new Vec3d(light.x, light.y, light.z));
-        float scale = (float) (0.4f * Math.max(0.5, dist * 0.12) * CalSettings.INSTANCE.gizmoSize);
+        float scale = (float) (0.48f * Math.max(0.55, dist * 0.13) * CalSettings.INSTANCE.gizmoSize);
 
         float sx = (camPos.x - light.x) >= 0 ? 1.0f : -1.0f;
         float sy = (camPos.y - light.y) >= 0 ? 1.0f : -1.0f;
@@ -179,55 +194,87 @@ public class LightGizmo {
             sz = lastSz;
         }
 
-        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x + 0.30f * scale * sx, light.y, light.z, colorForAxis(0, AXIS_X_COLOR));
-        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x, light.y + 0.30f * scale * sy, light.z, colorForAxis(1, AXIS_Y_COLOR));
-        lineWorld(buf, entry, camPos, light.x, light.y, light.z, light.x, light.y, light.z + 0.30f * scale * sz, colorForAxis(2, AXIS_Z_COLOR));
+        drawAxisBar(lineBuf, quadBuf, entry, camPos, light.x, light.y, light.z,
+            light.x + 0.34f * scale * sx, light.y, light.z,
+            0.015f * scale, colorForAxis(0, AXIS_X_COLOR));
+        drawAxisBar(lineBuf, quadBuf, entry, camPos, light.x, light.y, light.z,
+            light.x, light.y + 0.34f * scale * sy, light.z,
+            0.015f * scale, colorForAxis(1, AXIS_Y_COLOR));
+        drawAxisBar(lineBuf, quadBuf, entry, camPos, light.x, light.y, light.z,
+            light.x, light.y, light.z + 0.34f * scale * sz,
+            0.015f * scale, colorForAxis(2, AXIS_Z_COLOR));
 
-        drawPlaneHandle(buf, entry, camPos, light, scale, sx, sz, 3, 0xFF26FF99);
-        drawPlaneHandle(buf, entry, camPos, light, scale, sx, sy, 4, 0xFF9926FF);
-        drawPlaneHandle(buf, entry, camPos, light, scale, sz, sy, 5, 0xFFFF7A26);
-        drawCenterCube(buf, entry, camPos, light, 0.04f * scale, colorForAxis(6, FREE_COLOR));
+        drawPlaneHandle(lineBuf, quadBuf, entry, camPos, light, scale, sx, sz, 3, 0xAA26FF99);
+        drawPlaneHandle(lineBuf, quadBuf, entry, camPos, light, scale, sx, sy, 4, 0xAA9926FF);
+        drawPlaneHandle(lineBuf, quadBuf, entry, camPos, light, scale, sz, sy, 5, 0xAAFF7A26);
+        drawCenterCube(lineBuf, quadBuf, entry, camPos, light, 0.042f * scale, colorForAxis(6, FREE_COLOR));
     }
 
-    private void drawPlaneHandle(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float scale, float sa, float sb, int plane, int color) {
-        float inner = 0.08f * scale;
-        float outer = 0.20f * scale;
+    private void drawPlaneHandle(VertexConsumer lineBuf, VertexConsumer quadBuf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float scale, float sa, float sb, int plane, int color) {
+        float inner = 0.095f * scale;
+        float outer = 0.205f * scale;
         int c = colorForAxis(plane, color);
 
         if (plane == 3) { // XZ
-            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + inner * sb, c);
-            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + outer * sb, c);
-            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + outer * sb, c);
-            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + inner * sb, c);
+            quadWorldDoubleSided(quadBuf, entry, camPos,
+                light.x + inner * sa, light.y, light.z + inner * sb,
+                light.x + outer * sa, light.y, light.z + inner * sb,
+                light.x + outer * sa, light.y, light.z + outer * sb,
+                light.x + inner * sa, light.y, light.z + outer * sb,
+                c);
+            lineWorld(lineBuf, entry, camPos, light.x + inner * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + inner * sb, c);
+            lineWorld(lineBuf, entry, camPos, light.x + outer * sa, light.y, light.z + inner * sb, light.x + outer * sa, light.y, light.z + outer * sb, c);
+            lineWorld(lineBuf, entry, camPos, light.x + outer * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + outer * sb, c);
+            lineWorld(lineBuf, entry, camPos, light.x + inner * sa, light.y, light.z + outer * sb, light.x + inner * sa, light.y, light.z + inner * sb, c);
         } else if (plane == 4) { // XY
-            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + inner * sb, light.z, c);
-            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + outer * sb, light.z, c);
-            lineWorld(buf, entry, camPos, light.x + outer * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + outer * sb, light.z, c);
-            lineWorld(buf, entry, camPos, light.x + inner * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + inner * sb, light.z, c);
+            quadWorldDoubleSided(quadBuf, entry, camPos,
+                light.x + inner * sa, light.y + inner * sb, light.z,
+                light.x + outer * sa, light.y + inner * sb, light.z,
+                light.x + outer * sa, light.y + outer * sb, light.z,
+                light.x + inner * sa, light.y + outer * sb, light.z,
+                c);
+            lineWorld(lineBuf, entry, camPos, light.x + inner * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + inner * sb, light.z, c);
+            lineWorld(lineBuf, entry, camPos, light.x + outer * sa, light.y + inner * sb, light.z, light.x + outer * sa, light.y + outer * sb, light.z, c);
+            lineWorld(lineBuf, entry, camPos, light.x + outer * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + outer * sb, light.z, c);
+            lineWorld(lineBuf, entry, camPos, light.x + inner * sa, light.y + outer * sb, light.z, light.x + inner * sa, light.y + inner * sb, light.z, c);
         } else { // ZY
-            lineWorld(buf, entry, camPos, light.x, light.y + inner * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + inner * sa, c);
-            lineWorld(buf, entry, camPos, light.x, light.y + outer * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + outer * sa, c);
-            lineWorld(buf, entry, camPos, light.x, light.y + outer * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + outer * sa, c);
-            lineWorld(buf, entry, camPos, light.x, light.y + inner * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + inner * sa, c);
+            quadWorldDoubleSided(quadBuf, entry, camPos,
+                light.x, light.y + inner * sb, light.z + inner * sa,
+                light.x, light.y + outer * sb, light.z + inner * sa,
+                light.x, light.y + outer * sb, light.z + outer * sa,
+                light.x, light.y + inner * sb, light.z + outer * sa,
+                c);
+            lineWorld(lineBuf, entry, camPos, light.x, light.y + inner * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + inner * sa, c);
+            lineWorld(lineBuf, entry, camPos, light.x, light.y + outer * sb, light.z + inner * sa, light.x, light.y + outer * sb, light.z + outer * sa, c);
+            lineWorld(lineBuf, entry, camPos, light.x, light.y + outer * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + outer * sa, c);
+            lineWorld(lineBuf, entry, camPos, light.x, light.y + inner * sb, light.z + outer * sa, light.x, light.y + inner * sb, light.z + inner * sa, c);
         }
     }
 
-    private void drawCenterCube(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float half, int color) {
+    private void drawCenterCube(VertexConsumer lineBuf, VertexConsumer quadBuf, MatrixStack.Entry entry, Vec3d camPos, LightInstance light, float half, int color) {
         double x = light.x;
         double y = light.y;
         double z = light.z;
-        lineWorld(buf, entry, camPos, x - half, y - half, z - half, x + half, y - half, z - half, color);
-        lineWorld(buf, entry, camPos, x + half, y - half, z - half, x + half, y - half, z + half, color);
-        lineWorld(buf, entry, camPos, x + half, y - half, z + half, x - half, y - half, z + half, color);
-        lineWorld(buf, entry, camPos, x - half, y - half, z + half, x - half, y - half, z - half, color);
-        lineWorld(buf, entry, camPos, x - half, y + half, z - half, x + half, y + half, z - half, color);
-        lineWorld(buf, entry, camPos, x + half, y + half, z - half, x + half, y + half, z + half, color);
-        lineWorld(buf, entry, camPos, x + half, y + half, z + half, x - half, y + half, z + half, color);
-        lineWorld(buf, entry, camPos, x - half, y + half, z + half, x - half, y + half, z - half, color);
-        lineWorld(buf, entry, camPos, x - half, y - half, z - half, x - half, y + half, z - half, color);
-        lineWorld(buf, entry, camPos, x + half, y - half, z - half, x + half, y + half, z - half, color);
-        lineWorld(buf, entry, camPos, x + half, y - half, z + half, x + half, y + half, z + half, color);
-        lineWorld(buf, entry, camPos, x - half, y - half, z + half, x - half, y + half, z + half, color);
+        int fill = (color & 0x00FFFFFF) | 0x44FFFFFF;
+        quadWorldDoubleSided(quadBuf, entry, camPos, x - half, y - half, z - half, x + half, y - half, z - half, x + half, y + half, z - half, x - half, y + half, z - half, fill);
+        quadWorldDoubleSided(quadBuf, entry, camPos, x - half, y - half, z + half, x + half, y - half, z + half, x + half, y + half, z + half, x - half, y + half, z + half, fill);
+        quadWorldDoubleSided(quadBuf, entry, camPos, x - half, y - half, z - half, x - half, y - half, z + half, x - half, y + half, z + half, x - half, y + half, z - half, fill);
+        quadWorldDoubleSided(quadBuf, entry, camPos, x + half, y - half, z - half, x + half, y - half, z + half, x + half, y + half, z + half, x + half, y + half, z - half, fill);
+        quadWorldDoubleSided(quadBuf, entry, camPos, x - half, y - half, z - half, x + half, y - half, z - half, x + half, y - half, z + half, x - half, y - half, z + half, fill);
+        quadWorldDoubleSided(quadBuf, entry, camPos, x - half, y + half, z - half, x + half, y + half, z - half, x + half, y + half, z + half, x - half, y + half, z + half, fill);
+
+        lineWorld(lineBuf, entry, camPos, x - half, y - half, z - half, x + half, y - half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y - half, z - half, x + half, y - half, z + half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y - half, z + half, x - half, y - half, z + half, color);
+        lineWorld(lineBuf, entry, camPos, x - half, y - half, z + half, x - half, y - half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x - half, y + half, z - half, x + half, y + half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y + half, z - half, x + half, y + half, z + half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y + half, z + half, x - half, y + half, z + half, color);
+        lineWorld(lineBuf, entry, camPos, x - half, y + half, z + half, x - half, y + half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x - half, y - half, z - half, x - half, y + half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y - half, z - half, x + half, y + half, z - half, color);
+        lineWorld(lineBuf, entry, camPos, x + half, y - half, z + half, x + half, y + half, z + half, color);
+        lineWorld(lineBuf, entry, camPos, x - half, y - half, z + half, x - half, y + half, z + half, color);
     }
 
     private int colorForAxis(int axis, int baseColor) {
@@ -385,6 +432,90 @@ public class LightGizmo {
 
         buf.vertex(entry.getPositionMatrix(), ax, ay, az).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(LINE_WIDTH);
         buf.vertex(entry.getPositionMatrix(), bx, by, bz).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(LINE_WIDTH);
+    }
+
+    private void drawAxisBar(VertexConsumer lineBuf, VertexConsumer quadBuf, MatrixStack.Entry entry, Vec3d camPos,
+                             double x1, double y1, double z1, double x2, double y2, double z2, float halfWidth, int color) {
+        lineWorld(lineBuf, entry, camPos, x1, y1, z1, x2, y2, z2, color);
+
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double dz = z2 - z1;
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1.0e-5) {
+            return;
+        }
+
+        double nx = dx / len;
+        double ny = dy / len;
+        double nz = dz / len;
+
+        double ax = Math.abs(nx);
+        double ay = Math.abs(ny);
+        double az = Math.abs(nz);
+
+        if (ax >= ay && ax >= az) {
+            drawBoxWorld(lineBuf, quadBuf, entry, camPos, x1, y1 - halfWidth, z1 - halfWidth, x2, y2 + halfWidth, z2 + halfWidth, color);
+        } else if (ay >= ax && ay >= az) {
+            drawBoxWorld(lineBuf, quadBuf, entry, camPos, x1 - halfWidth, y1, z1 - halfWidth, x2 + halfWidth, y2, z2 + halfWidth, color);
+        } else {
+            drawBoxWorld(lineBuf, quadBuf, entry, camPos, x1 - halfWidth, y1 - halfWidth, z1, x2 + halfWidth, y2 + halfWidth, z2, color);
+        }
+    }
+
+    private void drawBoxWorld(VertexConsumer lineBuf, VertexConsumer quadBuf, MatrixStack.Entry entry, Vec3d camPos,
+                              double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int edgeColor) {
+        int fillColor = (edgeColor & 0x00FFFFFF) | 0x38FFFFFF;
+        quadWorldDoubleSided(quadBuf, entry, camPos, minX, minY, minZ, maxX, minY, minZ, maxX, maxY, minZ, minX, maxY, minZ, fillColor);
+        quadWorldDoubleSided(quadBuf, entry, camPos, minX, minY, maxZ, maxX, minY, maxZ, maxX, maxY, maxZ, minX, maxY, maxZ, fillColor);
+        quadWorldDoubleSided(quadBuf, entry, camPos, minX, minY, minZ, minX, minY, maxZ, minX, maxY, maxZ, minX, maxY, minZ, fillColor);
+        quadWorldDoubleSided(quadBuf, entry, camPos, maxX, minY, minZ, maxX, minY, maxZ, maxX, maxY, maxZ, maxX, maxY, minZ, fillColor);
+        quadWorldDoubleSided(quadBuf, entry, camPos, minX, minY, minZ, maxX, minY, minZ, maxX, minY, maxZ, minX, minY, maxZ, fillColor);
+        quadWorldDoubleSided(quadBuf, entry, camPos, minX, maxY, minZ, maxX, maxY, minZ, maxX, maxY, maxZ, minX, maxY, maxZ, fillColor);
+
+        lineWorld(lineBuf, entry, camPos, minX, minY, minZ, maxX, minY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, minY, minZ, maxX, minY, maxZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, minY, maxZ, minX, minY, maxZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, minX, minY, maxZ, minX, minY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, minX, maxY, minZ, maxX, maxY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, maxY, minZ, maxX, maxY, maxZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, maxY, maxZ, minX, maxY, maxZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, minX, maxY, maxZ, minX, maxY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, minX, minY, minZ, minX, maxY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, minY, minZ, maxX, maxY, minZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, maxX, minY, maxZ, maxX, maxY, maxZ, edgeColor);
+        lineWorld(lineBuf, entry, camPos, minX, minY, maxZ, minX, maxY, maxZ, edgeColor);
+    }
+
+    private void quadWorld(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos,
+                           double x1, double y1, double z1,
+                           double x2, double y2, double z2,
+                           double x3, double y3, double z3,
+                           double x4, double y4, double z4,
+                           int color) {
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        float a = ((color >>> 24) & 0xFF) / 255f;
+        vertexColor(buf, entry, camPos, x1, y1, z1, r, g, b, a);
+        vertexColor(buf, entry, camPos, x2, y2, z2, r, g, b, a);
+        vertexColor(buf, entry, camPos, x3, y3, z3, r, g, b, a);
+        vertexColor(buf, entry, camPos, x4, y4, z4, r, g, b, a);
+    }
+
+    private void quadWorldDoubleSided(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos,
+                                      double x1, double y1, double z1,
+                                      double x2, double y2, double z2,
+                                      double x3, double y3, double z3,
+                                      double x4, double y4, double z4,
+                                      int color) {
+        quadWorld(buf, entry, camPos, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, color);
+    }
+
+    private void vertexColor(VertexConsumer buf, MatrixStack.Entry entry, Vec3d camPos,
+                             double x, double y, double z, float r, float g, float b, float a) {
+        buf.vertex(entry.getPositionMatrix(), (float) (x - camPos.x), (float) (y - camPos.y), (float) (z - camPos.z))
+            .color(r, g, b, a);
     }
 
     private ScreenPoint project(float wx, float wy, float wz) {
