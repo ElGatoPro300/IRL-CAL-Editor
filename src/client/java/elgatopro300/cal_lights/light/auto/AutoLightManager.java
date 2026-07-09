@@ -263,7 +263,7 @@ public final class AutoLightManager {
         if (BlockLightDefs.resolve(n) != null) {
             return false;
         }
-        return !n.isOpaqueFullCube(world, pos);
+        return !n.isOpaqueFullCube();
     }
 
     private static long neighborSweep(ClientWorld world, ChunkSection sec, Block self,
