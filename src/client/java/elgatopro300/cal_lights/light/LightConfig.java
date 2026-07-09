@@ -1,6 +1,15 @@
 package elgatopro300.cal_lights.light;
 
+import org.qualet.irl.light.shadow.ShadowConfig;
+
 public final class LightConfig {
+    public static final ShadowConfig SHADOW = ShadowConfig.builder()
+        .shadowQuality(LightConfig::shadowQuality)
+        .shadowCache(LightConfig::shadowCache)
+        .shadowBakeBudget(LightConfig::shadowBakeBudget)
+        .shadowBlocks(LightConfig::shadowBlocks)
+        .shadowBlockRadius(LightConfig::shadowBlockRadius)
+        .build();
 
     public static int shadowQuality = 1;
     public static boolean shadowCache = true;
@@ -10,6 +19,7 @@ public final class LightConfig {
 
     // --- Auto block-lights ---
     public static boolean autoLights = false;
+    public static boolean autoLightCulling = true;
     public static boolean autoLightShadows = false;
     public static float autoLightIntensity = 1.0f;
     public static float autoLightReach = 1.0f;
@@ -17,7 +27,6 @@ public final class LightConfig {
     public static int autoLightMax = 200;
 
     private LightConfig() {}
-
 
     public static boolean shadowCache() {
         return shadowCache;
@@ -41,6 +50,10 @@ public final class LightConfig {
 
     public static boolean autoLights() {
         return autoLights;
+    }
+
+    public static boolean autoLightCulling() {
+        return autoLightCulling;
     }
 
     public static boolean autoLightShadows() {

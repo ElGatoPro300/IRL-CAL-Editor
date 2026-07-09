@@ -305,6 +305,7 @@
   "cal.ui.shadow_block_radius": "Shadow Block Radius",
   "cal.ui.auto_lights": "Auto Block-Lights",
   "cal.ui.auto_lights_sub": "Generate dynamic lights from emissive blocks (torches, etc.)",
+  "cal.ui.auto_light_culling": "Surface Culling",
   "cal.ui.auto_light_shadows": "Auto-Lights Shadows",
   "cal.ui.auto_light_intensity": "Auto-Lights Intensity",
   "cal.ui.auto_light_reach": "Auto-Lights Reach Scale",

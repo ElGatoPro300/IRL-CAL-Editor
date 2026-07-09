@@ -1,6 +1,8 @@
 package elgatopro300.cal_lights.client.mixin;
 
-import elgatopro300.cal_lights.light.shadow.BlockShadowCache;
+import org.qualet.irl.light.shadow.BlockShadowCache;
+
+import net.fabricmc.loader.api.FabricLoader;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
@@ -20,7 +22,7 @@ public class WorldBlockChangeMixin {
     private void irlite$invalidateBlockShadows(
         BlockPos pos, BlockState state, int flags, int maxUpdateDepth,
         CallbackInfoReturnable<Boolean> cir) {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
             return;
         }
         World self = (World) (Object) this;

@@ -1,8 +1,6 @@
 package elgatopro300.cal_lights.client.mixin.iris;
 
-import elgatopro300.cal_lights.light.shadow.PointShadowArray;
-import elgatopro300.cal_lights.light.shadow.SpotlightDepthAtlas;
-import elgatopro300.cal_lights.manager.GoboManager;
+import org.qualet.irl.light.iris.IrlSamplersBind;
 
 import net.irisshaders.iris.gl.program.ProgramSamplers;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,12 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ProgramSamplersBuilderMixin {
     @Inject(method = "build", at = @At("HEAD"))
     private void irlite$bindShadowSamplers(CallbackInfoReturnable<ProgramSamplers> cir) {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
-            return;
-        }
-        ProgramSamplers.Builder self = (ProgramSamplers.Builder) (Object) this;
-        self.addDynamicSampler(SpotlightDepthAtlas::getGlTextureId, "irl_spotShadowAtlas");
-        self.addDynamicSampler(PointShadowArray::getGlTextureId, "irl_pointShadowArray");
-        self.addDynamicSampler(GoboManager.INSTANCE::getTextureArrayId, "irl_cookieArray");
+        IrlSamplersBind.bindAll((ProgramSamplers.Builder) (Object) this);
     }
 }

@@ -22,6 +22,7 @@ public final class CALPatcherHost implements PatcherHost {
         "bsl.irlights",
         "complementaryreimagined.irlights",
         "photon.irlights",
+        "rethinkingvoxels.irlights",
         "solas.irlights"
     );
 
