@@ -1,6 +1,8 @@
 package elgatopro300.cal_lights.client.mixin;
 
-import elgatopro300.cal_lights.light.shadow.BlockShadowCache;
+import org.qualet.irl.light.shadow.BlockShadowCache;
+
+import net.fabricmc.loader.api.FabricLoader;
 
 import net.fabricmc.loader.api.FabricLoader;
 

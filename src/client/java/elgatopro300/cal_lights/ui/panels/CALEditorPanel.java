@@ -932,8 +932,31 @@ public class CALEditorPanel extends CLUIElement {
                 }
                 curY += itemSpacing;
 
-                // Auto Lights Shadows Checkbox (Only enabled / clickable if autoLights is true)
                 boolean autoLightsOn = LightConfig.autoLights;
+
+                // Auto Lights Culling Checkbox
+                {
+                    int boxSize = 10;
+                    if (!autoLightsOn) {
+                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF111115);
+                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF282830, 1);
+                        if (LightConfig.autoLightCulling) {
+                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFF555555);
+                        }
+                        ctx.batcher.text(CALKeys.AUTO_LIGHT_CULLING.get(), rightColX + boxSize + 6, curY + 2, 0xFF666666);
+                    } else {
+                        boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                        if (LightConfig.autoLightCulling) {
+                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                        }
+                        ctx.batcher.text(CALKeys.AUTO_LIGHT_CULLING.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    }
+                }
+                curY += itemSpacing;
+
+                // Auto Lights Shadows Checkbox (Only enabled / clickable if autoLights is true)
                 {
                     int boxSize = 10;
                     if (!autoLightsOn) {
@@ -999,7 +1022,7 @@ public class CALEditorPanel extends CLUIElement {
                 }
 
                 // Active lights diagnostics string
-                int activeCount = AutoLightManager.count();
+                int activeCount = AutoLightManager.activeCount();
                 ctx.batcher.text(CALKeys.AUTO_LIGHT_ACTIVE.get(activeCount), rightColX, curY, 0xFF888899);
             }
 
@@ -1297,7 +1320,7 @@ public class CALEditorPanel extends CLUIElement {
                             (float) rightClickWorldPos.x, 
                             (float) rightClickWorldPos.y, 
                             (float) rightClickWorldPos.z, 
-                            1f, 1f, 1f, 1.0f, 10.0f
+                            1f, 1f, 1f, 1.0f, 6.0f
                         );
                         light.persistent = true;
                         LightGizmo.INSTANCE.setSelectedLight(light);
@@ -1310,7 +1333,7 @@ public class CALEditorPanel extends CLUIElement {
                             (float) rightClickWorldPos.x, 
                             (float) rightClickWorldPos.y, 
                             (float) rightClickWorldPos.z, 
-                            0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f
+                            0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f
                         );
                         light.persistent = true;
                         LightGizmo.INSTANCE.setSelectedLight(light);
@@ -1620,9 +1643,17 @@ public class CALEditorPanel extends CLUIElement {
                     return true;
                 }
                 curY += itemSpacing;
+                boolean autoLightsOn = LightConfig.autoLights;
+
+                if (autoLightsOn) {
+                    if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                        LightConfig.autoLightCulling = !LightConfig.autoLightCulling;
+                        return true;
+                    }
+                }
+                curY += itemSpacing;
 
                 // Auto Lights Shadows Checkbox click
-                boolean autoLightsOn = LightConfig.autoLights;
                 if (autoLightsOn) {
                     if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
                         LightConfig.autoLightShadows = !LightConfig.autoLightShadows;
@@ -1755,7 +1786,7 @@ public class CALEditorPanel extends CLUIElement {
                 CALUndoManager.pushState();
                 Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
-                LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 10.0f);
+                LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 6.0f);
                 light.persistent = true;
                 LightGizmo.INSTANCE.setSelectedLight(light);
                 rebuildSettings();
@@ -1767,7 +1798,7 @@ public class CALEditorPanel extends CLUIElement {
                 CALUndoManager.pushState();
                 Vec3d p = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
-                LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 15.0f, 30.0f, 15.0f);
+                LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f);
                 light.persistent = true;
                 LightGizmo.INSTANCE.setSelectedLight(light);
                 rebuildSettings();
