@@ -5,7 +5,7 @@
     "name": "IRL CAL Editor",
     "description": "a lighting graphics engine created specifically for animation",
     "authors": [
-        "ElGatoPro300"
+        "ElGatoPro300, qualet"
     ],
     "contact": {
         "homepage": "https://discord.gg/MAHVQBSce6"
@@ -39,5 +39,8 @@
         "java": ">=17",
         "fabric-api": "*",
         "irl-core": "*"
+    },
+    "suggests": {
+        "irlite": "*"
     }
 }
