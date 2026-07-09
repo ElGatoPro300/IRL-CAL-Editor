@@ -33,8 +33,26 @@ public final class CookieArray extends CookieArrayBase {
     /** Four built-in masks + up to sixteen custom files. */
     public static final int MAX_LAYERS = 20;
 
+    /**
+     * Optional bridge from irlite when both mods are installed. Routes all cookie
+     * lookups to the shared {@code irl_cookieArray} texture.
+     */
+    public interface Host {
+        void init();
+
+        int resolveName(String name);
+
+        int textureId();
+
+        List<String> catalog();
+
+        void reload();
+    }
+
     private static final CookieArray INSTANCE = new CookieArray();
     private static final String[] BUILTINS = {"Window", "Blinds", "Circle", "Noise"};
+
+    private static Host host;
 
     private final Map<String, Integer> nameToLayer = new HashMap<>();
     private final Map<String, Path> nameToPath = new HashMap<>();
@@ -54,29 +72,54 @@ public final class CookieArray extends CookieArrayBase {
         return FabricLoader.getInstance().getConfigDir().resolve("irl-redactor").resolve("cookies");
     }
 
+    public static void installHost(Host bridge) {
+        host = bridge;
+    }
+
     public static void init() {
+        if (host != null) {
+            host.init();
+            return;
+        }
         INSTANCE.initBuiltins();
         INSTANCE.scanCatalog();
     }
 
     public static int getGlTextureId() {
+        if (host != null) {
+            return host.textureId();
+        }
         return INSTANCE.textureId();
     }
 
     public static List<String> available() {
+        if (host != null) {
+            return host.catalog();
+        }
         INSTANCE.ensureCatalog();
         return List.copyOf(INSTANCE.catalog);
     }
 
     public static int resolve(String name) {
+        if (host != null) {
+            return host.resolveName(name);
+        }
         return INSTANCE.resolve0(name);
     }
 
     public static void reload() {
+        if (host != null) {
+            host.reload();
+            return;
+        }
         INSTANCE.reload0();
     }
 
     public static void delete() {
+        if (host != null) {
+            host.reload();
+            return;
+        }
         INSTANCE.deleteTexture();
     }
 
