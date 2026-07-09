@@ -24,7 +24,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-
 import java.util.Collection;
 
 public class LightGizmo {

@@ -23,7 +23,7 @@ public class GameRendererLightMixin {
             return;
         }
 
-        float tickDelta = tickCounter.getTickDelta(true);
+        float tickDelta = tickCounter.getTickProgress(true);
         FramePipeline.frame(
             tickDelta,
             IrisShadersState::shadersDisabled,

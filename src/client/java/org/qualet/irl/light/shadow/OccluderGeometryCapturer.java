@@ -1,4 +1,4 @@
-package elgatopro300.cal_lights.light.shadow;
+package org.qualet.irl.light.shadow;
 
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
