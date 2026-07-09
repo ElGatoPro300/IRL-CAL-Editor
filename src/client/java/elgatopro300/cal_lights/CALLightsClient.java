@@ -44,11 +44,18 @@ public class CALLightsClient implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("IRL CAL Editor mod initialized on Client!");
 
-        // Install the patcher host so the shared irl-core patcher can reach the game
-        // dir / Iris shaderpacks dir / bundled .irlights patches.
-        Patcher.install(new CALPatcherHost());
-        ShadowEngine.install(new RedactorEntityCasterSource(), LightConfig.SHADOW);
-        IrlSamplers.register("irl_cookieArray", CookieArray::getGlTextureId, GL30.GL_TEXTURE_2D_ARRAY);
+        boolean irlitePresent = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite");
+
+        // When irlite is present it owns the shared irl-core singletons with composite
+        // adapters that also feed CAL lights/shadows/patches. Installing again here
+        // would overwrite BBS integration and mute the addon.
+        if (!irlitePresent) {
+            Patcher.install(new CALPatcherHost());
+            ShadowEngine.install(new RedactorEntityCasterSource(), LightConfig.SHADOW);
+            IrlSamplers.register("irl_cookieArray", CookieArray::getGlTextureId, GL30.GL_TEXTURE_2D_ARRAY);
+        } else {
+            LOGGER.info("irlite detected — deferring shared irl-core wiring to the BBS addon.");
+        }
 
         editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cal.editor",
@@ -72,7 +79,18 @@ public class CALLightsClient implements ClientModInitializer {
             LightGizmo.INSTANCE.init();
 
             LOGGER.info("Initializing IRL CAL Editor cookie array...");
-            CookieArray.init();
+            if (irlitePresent) {
+                try {
+                    Class.forName("qualet.irlite.client.compat.IrliteCalCompat")
+                        .getMethod("ensureCookiesReady")
+                        .invoke(null);
+                } catch (ReflectiveOperationException e) {
+                    LOGGER.warn("Could not init unified cookies with irlite; using CAL-only array.", e);
+                    CookieArray.init();
+                }
+            } else {
+                CookieArray.init();
+            }
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
