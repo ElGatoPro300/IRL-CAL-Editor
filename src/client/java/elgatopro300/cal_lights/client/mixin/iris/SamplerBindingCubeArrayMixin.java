@@ -1,14 +1,9 @@
 package elgatopro300.cal_lights.client.mixin.iris;
 
-import elgatopro300.cal_lights.light.shadow.PointShadowArray;
-import elgatopro300.cal_lights.manager.GoboManager;
-
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL40;
+import org.qualet.irl.light.iris.IrlSamplersBind;
 
 import java.util.function.IntSupplier;
 
-import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.sampler.SamplerBinding;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,24 +24,7 @@ public abstract class SamplerBindingCubeArrayMixin {
 
     @Inject(method = "updateSampler", at = @At("HEAD"), cancellable = true)
     private void irlite$bindCubeArrayInsteadOf2D(CallbackInfo ci) {
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite")) {
-            return;
-        }
-        int id = this.texture.getAsInt();
-        if (id == 0) {
-            return;
-        }
-
-        int cubeArrayId = PointShadowArray.getGlTextureId();
-        if (cubeArrayId != 0 && id == cubeArrayId) {
-            IrisRenderSystem.bindTextureToUnit(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, this.textureUnit, id);
-            ci.cancel();
-            return;
-        }
-
-        int cookieArrayId = GoboManager.INSTANCE.getTextureArrayId();
-        if (cookieArrayId != 0 && id == cookieArrayId) {
-            IrisRenderSystem.bindTextureToUnit(GL30.GL_TEXTURE_2D_ARRAY, this.textureUnit, id);
+        if (IrlSamplersBind.tryRebind(this.texture.getAsInt(), this.textureUnit)) {
             ci.cancel();
         }
     }

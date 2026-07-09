@@ -305,6 +305,7 @@
   "cal.ui.shadow_block_radius": "Radio de Bloques",
   "cal.ui.auto_lights": "Auto-Luces de Bloques",
   "cal.ui.auto_lights_sub": "Generar luces dinámicas desde bloques emisores (antorchas, etc.)",
+  "cal.ui.auto_light_culling": "Ocultacion de Superficie",
   "cal.ui.auto_light_shadows": "Sombras Auto-Luces",
   "cal.ui.auto_light_intensity": "Intensidad Auto-Luces",
   "cal.ui.auto_light_reach": "Escala Alcance Auto-Luces",
