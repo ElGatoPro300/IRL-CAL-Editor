@@ -35,7 +35,7 @@ public class GameRendererLightMixin {
             shift = At.Shift.AFTER
         )
     )
-    private void irlite$flushPendingSSBO(RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void irlite$uploadLights(float tickDelta, long limitTime, MatrixStack matrices, CallbackInfo ci) {
         if (FabricLoader.getInstance().isModLoaded("irlite")) {
             return;
         }
