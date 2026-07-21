@@ -98,12 +98,12 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        CALEditorPanel.lastScrollX = horizontalAmount;
-        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, verticalAmount)) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        CALEditorPanel.lastScrollX = 0;
+        if (this.root != null && this.root.scroll((int) mouseX, (int) mouseY, amount)) {
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override
