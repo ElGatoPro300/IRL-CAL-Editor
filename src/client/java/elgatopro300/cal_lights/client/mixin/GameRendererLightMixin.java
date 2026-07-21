@@ -26,4 +26,19 @@ public class GameRendererLightMixin {
         FramePipeline.frame(tickDelta, IrisShadersState::shadersDisabled, LightDriver::collect,
             LightDriver::resetAutoShadowRamp);
     }
+
+    @Inject(
+        method = "renderWorld",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/Camera;update(Lnet/minecraft/world/BlockView;Lnet/minecraft/entity/Entity;ZZF)V",
+            shift = At.Shift.AFTER
+        )
+    )
+    private void irlite$uploadLights(float tickDelta, long limitTime, MatrixStack matrices, CallbackInfo ci) {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
+        FramePipeline.uploadIfPending();
+    }
 }

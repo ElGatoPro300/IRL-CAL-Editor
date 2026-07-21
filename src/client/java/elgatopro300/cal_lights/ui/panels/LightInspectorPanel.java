@@ -111,15 +111,15 @@ public class LightInspectorPanel extends CLUIElement {
         this.onUpdate = onUpdate;
 
         // Position coordinates (Red, Green, Blue colored badges inside CLUITrackpad)
-        this.trackX = new CLUITrackpad("X", light.x, -10000, 10000, val -> {
+        this.trackX = new CLUITrackpad("X", (float) light.x, -10000, 10000, val -> {
             light.x = val;
             if (onUpdate != null) onUpdate.run();
         });
-        this.trackY = new CLUITrackpad("Y", light.y, -10000, 10000, val -> {
+        this.trackY = new CLUITrackpad("Y", (float) light.y, -10000, 10000, val -> {
             light.y = val;
             if (onUpdate != null) onUpdate.run();
         });
-        this.trackZ = new CLUITrackpad("Z", light.z, -10000, 10000, val -> {
+        this.trackZ = new CLUITrackpad("Z", (float) light.z, -10000, 10000, val -> {
             light.z = val;
             if (onUpdate != null) onUpdate.run();
         });
@@ -381,15 +381,15 @@ public class LightInspectorPanel extends CLUIElement {
             int colW = (w - 20 - iconW - 4 - 4) / 3;
             
             trackX.resize(startX, currentY, colW, elementH);
-            trackX.setValue(light.x);
+            trackX.setValue((float) light.x);
             trackX.render(ctx);
 
             trackY.resize(startX + colW + 2, currentY, colW, elementH);
-            trackY.setValue(light.y);
+            trackY.setValue((float) light.y);
             trackY.render(ctx);
 
             trackZ.resize(startX + (colW + 2) * 2, currentY, colW, elementH);
-            trackZ.setValue(light.z);
+            trackZ.setValue((float) light.z);
             trackZ.render(ctx);
 
             int drawY = currentY + elementH + gap;

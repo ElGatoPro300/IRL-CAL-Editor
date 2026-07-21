@@ -177,7 +177,7 @@ public class LightSaveManager {
         public int id;
         public String name = "";
         public boolean isSpot;
-        public float x, y, z;
+        public double x, y, z;
         public float r, g, b;
         public float intensity;
         public float radius;
