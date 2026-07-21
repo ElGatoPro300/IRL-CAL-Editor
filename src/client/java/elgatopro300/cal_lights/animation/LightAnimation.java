@@ -34,7 +34,7 @@ public class LightAnimation {
     private transient boolean baseCaptured = false;
     private transient float baseR, baseG, baseB;
     private transient float baseIntensity;
-    private transient float baseX, baseY, baseZ;
+    private transient double baseX, baseY, baseZ;
     private transient float baseRx, baseRy, baseRz;
     private transient float baseRadius;
     private transient float baseInnerAngle, baseOuterAngle, baseDistance;
@@ -71,27 +71,23 @@ public class LightAnimation {
     }
 
     /**
-     * Applies all enabled animation tracks to the light at the given world time.
-     * Call this every tick from {@link LightManager#tick()}.
+     * Applies keyframes for the given timestamp to the light.
      */
-    public void apply(LightInstance light, long worldTimeMs) {
+    public void apply(LightInstance light, long currentWorldTimeMs) {
         if (!enabled || tracks == null || tracks.isEmpty()) return;
 
         if (!baseCaptured) {
             captureBase(light);
         }
 
+        // Advance time if playing
         if (isPlaying) {
-            if (lastTickTimeMs == -1) {
-                lastTickTimeMs = worldTimeMs;
+            if (lastTickTimeMs > 0) {
+                playbackTimeMs += (currentWorldTimeMs - lastTickTimeMs);
             }
-            long delta = worldTimeMs - lastTickTimeMs;
-            if (delta > 0) {
-                playbackTimeMs += delta;
-            }
-            lastTickTimeMs = worldTimeMs;
+            lastTickTimeMs = currentWorldTimeMs;
         } else {
-            lastTickTimeMs = worldTimeMs;
+            lastTickTimeMs = currentWorldTimeMs;
         }
 
         // Compute each track and write to the light
@@ -99,7 +95,7 @@ public class LightAnimation {
             if (track == null) continue;
 
             if (track.property.equals("transform")) {
-                float[] base = new float[]{ baseX, baseY, baseZ };
+                float[] base = new float[]{ (float) baseX, (float) baseY, (float) baseZ };
                 float[] val = track.evaluateVector(playbackTimeMs, base);
                 light.x = val[0];
                 light.y = val[1];
@@ -151,9 +147,9 @@ public class LightAnimation {
             case "g"               -> baseG;
             case "b"               -> baseB;
             case "intensity"       -> baseIntensity;
-            case "x"               -> baseX;
-            case "y"               -> baseY;
-            case "z"               -> baseZ;
+            case "x"               -> (float) baseX;
+            case "y"               -> (float) baseY;
+            case "z"               -> (float) baseZ;
             case "rx"              -> baseRx;
             case "ry"              -> baseRy;
             case "rz"              -> baseRz;

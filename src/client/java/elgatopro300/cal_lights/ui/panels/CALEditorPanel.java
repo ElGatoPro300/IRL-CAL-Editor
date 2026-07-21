@@ -2040,8 +2040,8 @@ public class CALEditorPanel extends CLUIElement {
             if (copiedLight != null) {
                 CALUndoManager.pushState();
                 int newId = ThreadLocalRandom.current().nextInt(100000, 999999);
-                float posX = copiedLight.x + 1f;
-                float posZ = copiedLight.z + 1f;
+                double posX = copiedLight.x + 1.0;
+                double posZ = copiedLight.z + 1.0;
                 LightInstance newLight;
                 if (copiedLight.isSpot) {
                     newLight = LightManager.INSTANCE.updateSpot(

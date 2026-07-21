@@ -31,4 +31,19 @@ public class GameRendererLightMixin {
             LightDriver::resetAutoShadowRamp
         );
     }
+
+    @Inject(
+        method = "renderWorld",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/Camera;update(Lnet/minecraft/world/BlockView;Lnet/minecraft/entity/Entity;ZZF)V",
+            shift = At.Shift.AFTER
+        )
+    )
+    private void irlite$flushPendingSSBO(RenderTickCounter tickCounter, CallbackInfo ci) {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
+        FramePipeline.uploadIfPending();
+    }
 }
