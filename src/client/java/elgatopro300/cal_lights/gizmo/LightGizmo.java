@@ -580,14 +580,14 @@ public class LightGizmo {
 
             if (currentProj != null && dragStartMousePos != null) {
                 Vec3d delta = currentProj.subtract(dragStartMousePos);
-                float nx = (float) (dragStartLightPos.x + delta.x);
-                float ny = (float) (dragStartLightPos.y + delta.y);
-                float nz = (float) (dragStartLightPos.z + delta.z);
+                double nx = dragStartLightPos.x + delta.x;
+                double ny = dragStartLightPos.y + delta.y;
+                double nz = dragStartLightPos.z + delta.z;
 
                 if (snapToGrid) {
-                    nx = Math.round(nx * 2.0f) / 2.0f;
-                    ny = Math.round(ny * 2.0f) / 2.0f;
-                    nz = Math.round(nz * 2.0f) / 2.0f;
+                    nx = Math.round(nx * 2.0) / 2.0;
+                    ny = Math.round(ny * 2.0) / 2.0;
+                    nz = Math.round(nz * 2.0) / 2.0;
                 }
 
                 if (activeAxis == 0) {

@@ -10,14 +10,14 @@ public class LightManager {
     private final Map<Integer, LightInstance> pointLights = new LinkedHashMap<>();
     private final Map<Integer, LightInstance> spotLights = new LinkedHashMap<>();
 
-    public LightInstance updatePoint(int id, float x, float y, float z, float r, float g, float b, float intensity, float radius) {
+    public LightInstance updatePoint(int id, double x, double y, double z, float r, float g, float b, float intensity, float radius) {
         LightInstance inst = pointLights.computeIfAbsent(id, k -> new LightInstance(id));
         inst.mark();
         inst.setPoint(x, y, z, r, g, b, intensity, radius);
         return inst;
     }
 
-    public LightInstance updateSpot(int id, float x, float y, float z, float dx, float dy, float dz, float r, float g, float b, float intensity, float innerAngle, float outerAngle, float distance) {
+    public LightInstance updateSpot(int id, double x, double y, double z, float dx, float dy, float dz, float r, float g, float b, float intensity, float innerAngle, float outerAngle, float distance) {
         LightInstance inst = spotLights.computeIfAbsent(id, k -> new LightInstance(id));
         inst.mark();
         inst.setSpot(x, y, z, dx, dy, dz, r, g, b, intensity, innerAngle, outerAngle, distance);
