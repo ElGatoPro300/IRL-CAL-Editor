@@ -118,7 +118,7 @@ public final class LightDriver {
 
     private static void emitAutoPoint(PlacedLight l) {
         LightRegistry.registerPoint(
-            (float) l.x, (float) l.y, (float) l.z,
+            l.x, l.y, l.z,
             l.r, l.g, l.b,
             l.intensity, l.radius,
             l.entitiesOnly, l.blocksOnly,
