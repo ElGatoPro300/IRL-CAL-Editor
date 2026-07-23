@@ -1024,7 +1024,7 @@ public class LightGizmo {
         Vec3d rayDir = getRayDirection(mouseX, mouseY);
         Vec3d rayStart = camera.getPos();
 
-        int picked = checkAxisClickLocal(rayStart, rayDir, selectedLight);
+        int picked = checkAxisClickLocal(rayStart, rayDir, selectedLight, mouseX, mouseY);
         this.hoveredHandle = picked;
     }
 
@@ -1038,7 +1038,7 @@ public class LightGizmo {
         Vec3d rayStart = camera.getPos();
 
         if (selectedLight != null) {
-            int clickedAxis = checkAxisClickLocal(rayStart, rayDir, selectedLight);
+            int clickedAxis = checkAxisClickLocal(rayStart, rayDir, selectedLight, mouseX, mouseY);
             if (clickedAxis != STENCIL_NONE) {
                 this.activeHandle = clickedAxis;
                 CALUndoManager.pushState();
@@ -1146,31 +1146,54 @@ public class LightGizmo {
                     else if (activeHandle == STENCIL_FREE) { selectedLight.x = nx; selectedLight.y = ny; selectedLight.z = nz; }
                 }
             } else if (isRotateHandle(activeHandle)) {
-                double deltaDeg = 0.0;
-                if (activeHandle == STENCIL_VIEW || activeHandle == STENCIL_TRACKBALL) {
+                if (activeHandle == STENCIL_VIEW) {
                     double currentAngle = getMouseAngleAroundLight(mouseX, mouseY, selectedLight);
-                    deltaDeg = currentAngle - dragStartMouseAngle;
+                    double deltaDeg = currentAngle - dragStartMouseAngle;
                     while (deltaDeg > 180.0) deltaDeg -= 360.0;
                     while (deltaDeg < -180.0) deltaDeg += 360.0;
                     dragStartMouseAngle = currentAngle;
+
+                    arcSweep += (float) deltaDeg;
+
+                    Vec3d camFwd = new Vec3d(-this.lastCamDir.x, -this.lastCamDir.y, -this.lastCamDir.z);
+
+                    Quaternionf rot = new Quaternionf().rotationAxis(
+                        (float) Math.toRadians(deltaDeg),
+                        (float) camFwd.x, (float) camFwd.y, (float) camFwd.z
+                    );
+                    Vector3f d = new Vector3f(selectedLight.dx, selectedLight.dy, selectedLight.dz).rotate(rot);
+                    selectedLight.dx = d.x; selectedLight.dy = d.y; selectedLight.dz = d.z;
+                    updateEulerFromSpotDirection(selectedLight);
+                } else if (activeHandle == STENCIL_TRACKBALL) {
+                    float yawRad = (float) Math.toRadians(camera.getYaw());
+                    float pitchRad = (float) Math.toRadians(camera.getPitch());
+                    Vec3d camRight = new Vec3d(-Math.cos(yawRad), 0, -Math.sin(yawRad));
+                    Vec3d camUp = new Vec3d(-Math.sin(pitchRad) * Math.sin(yawRad), Math.cos(pitchRad), Math.sin(pitchRad) * Math.cos(yawRad));
+
+                    double rotX = dy * 0.4;
+                    double rotY = dx * 0.4;
+
+                    Quaternionf qY = new Quaternionf().rotationAxis((float) Math.toRadians(rotY), (float) camUp.x, (float) camUp.y, (float) camUp.z);
+                    Quaternionf qX = new Quaternionf().rotationAxis((float) Math.toRadians(rotX), (float) camRight.x, (float) camRight.y, (float) camRight.z);
+
+                    Vector3f d = new Vector3f(selectedLight.dx, selectedLight.dy, selectedLight.dz).rotate(qY).rotate(qX);
+                    selectedLight.dx = d.x; selectedLight.dy = d.y; selectedLight.dz = d.z;
+                    updateEulerFromSpotDirection(selectedLight);
                 } else {
                     double currentAngle = get3DRingAngle(rayStart, rayDir, selectedLight, this.arcAxis);
-                    deltaDeg = currentAngle - dragStart3DAngle;
+                    double deltaDeg = currentAngle - dragStart3DAngle;
                     while (deltaDeg > 180.0) deltaDeg -= 360.0;
                     while (deltaDeg < -180.0) deltaDeg += 360.0;
                     dragStart3DAngle = currentAngle;
+
+                    arcSweep += (float) deltaDeg;
+
+                    if (activeHandle == STENCIL_ROTATE_X) selectedLight.rx += (float) deltaDeg;
+                    else if (activeHandle == STENCIL_ROTATE_Y) selectedLight.ry += (float) deltaDeg;
+                    else if (activeHandle == STENCIL_ROTATE_Z) selectedLight.rz += (float) deltaDeg;
+
+                    recalculateSpotDirection(selectedLight);
                 }
-
-                arcSweep += (float) deltaDeg;
-
-                if (activeHandle == STENCIL_ROTATE_X) selectedLight.rx += (float) deltaDeg;
-                else if (activeHandle == STENCIL_ROTATE_Y) selectedLight.ry += (float) deltaDeg;
-                else if (activeHandle == STENCIL_ROTATE_Z) selectedLight.rz += (float) deltaDeg;
-                else if (activeHandle == STENCIL_VIEW || activeHandle == STENCIL_TRACKBALL) {
-                    selectedLight.ry += (float) deltaDeg;
-                }
-
-                recalculateSpotDirection(selectedLight);
             } else if (isScaleHandle(activeHandle)) {
                 int axisIdx = activeHandle == STENCIL_SCALE_X ? 0 : activeHandle == STENCIL_SCALE_Y ? 1 : 2;
                 Vec3d currentProj = getMouseProjectionOnAxis(rayStart, rayDir, dragStartLightPos, axisIdx);
@@ -1219,6 +1242,12 @@ public class LightGizmo {
         float z3 = z2;
 
         light.dx = x3; light.dy = y3; light.dz = z3;
+    }
+
+    private void updateEulerFromSpotDirection(LightInstance light) {
+        float dy = Math.max(-1.0f, Math.min(1.0f, light.dy));
+        light.rx = (float) Math.toDegrees(Math.asin(dy));
+        light.ry = (float) Math.toDegrees(Math.atan2(-light.dx, -light.dz));
     }
 
     private boolean isTranslateHandle(int handle) {
@@ -1289,7 +1318,7 @@ public class LightGizmo {
         return bestMatch;
     }
 
-    private int checkAxisClickLocal(Vec3d rayStart, Vec3d rayDir, LightInstance light) {
+    private int checkAxisClickLocal(Vec3d rayStart, Vec3d rayDir, LightInstance light, double mouseX, double mouseY) {
         Vec3d pos = new Vec3d(light.x, light.y, light.z);
         double dist = rayStart.distanceTo(pos);
         double distanceFactor = dist * 0.12;
@@ -1301,6 +1330,26 @@ public class LightGizmo {
         float sx = this.lastSx;
         float sy = this.lastSy;
         float sz = this.lastSz;
+
+        // 2D Screen Space check for View Ring (STENCIL_VIEW)
+        if (mode == Mode.ROTATE || mode == Mode.COMBINED) {
+            Vector2d center2D = getLightScreenPos(pos);
+            if (center2D != null) {
+                Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+                float yawRad = (float) Math.toRadians(camera.getYaw());
+                Vec3d camRight = new Vec3d(-Math.cos(yawRad), 0, -Math.sin(yawRad));
+                double viewRingWorldR = 0.22 * COMBINED_ROTATE_SCALE * VIEW_RING_SCALE * scale;
+                Vector2d edge2D = getLightScreenPos(pos.add(camRight.multiply(viewRingWorldR)));
+
+                if (edge2D != null) {
+                    double ringScreenRadius = center2D.distance(edge2D);
+                    double mouseDist = center2D.distance(new Vector2d(mouseX, mouseY));
+                    if (Math.abs(mouseDist - ringScreenRadius) <= 14.0) {
+                        return STENCIL_VIEW;
+                    }
+                }
+            }
+        }
 
         // Center Free Translate Box
         if ((mode == Mode.TRANSLATE || mode == Mode.COMBINED || mode == Mode.SCALE) &&
@@ -1353,7 +1402,9 @@ public class LightGizmo {
         if (mode == Mode.ROTATE || mode == Mode.COMBINED || mode == Mode.TOP) {
             double ringR = 0.22 * COMBINED_ROTATE_SCALE;
             double ringT = 0.04;
+            double viewRingR = ringR * VIEW_RING_SCALE;
 
+            if (intersectViewRing(localRayStart, localRayDir, viewRingR, ringT)) return STENCIL_VIEW;
             if (intersectTorus(localRayStart, localRayDir, Axis.X, ringR, ringT)) return STENCIL_ROTATE_X;
             if (intersectTorus(localRayStart, localRayDir, Axis.Y, ringR, ringT)) return STENCIL_ROTATE_Y;
             if (intersectTorus(localRayStart, localRayDir, Axis.Z, ringR, ringT)) return STENCIL_ROTATE_Z;
@@ -1375,6 +1426,19 @@ public class LightGizmo {
                 0D, 0D, 0D,
                 radius * radius, hit
         );
+    }
+
+    private boolean intersectViewRing(Vec3d localRayStart, Vec3d localRayDir, double radius, double thickness) {
+        Vec3d normal = new Vec3d(this.lastCamDir.x, this.lastCamDir.y, this.lastCamDir.z);
+        double denom = normal.dotProduct(localRayDir);
+        if (Math.abs(denom) < 1e-6) return false;
+
+        double t = -localRayStart.dotProduct(normal) / denom;
+        if (t < 0) return false;
+
+        Vec3d hit = localRayStart.add(localRayDir.multiply(t));
+        double dist = hit.length();
+        return Math.abs(dist - radius) <= thickness * 1.5;
     }
 
     private boolean intersectTorus(Vec3d rayStart, Vec3d rayDir, Axis axis, double majorR, double minorR) {
@@ -1459,8 +1523,8 @@ public class LightGizmo {
         return rayStart.add(rayDir.multiply(t));
     }
 
-    private double getMouseAngleAroundLight(double mouseX, double mouseY, LightInstance light) {
-        if (light == null) return 0.0;
+    private Vector2d getLightScreenPos(Vec3d lightPos) {
+        if (lightPos == null) return null;
         MinecraftClient client = MinecraftClient.getInstance();
         int width = client.getWindow().getScaledWidth();
         int height = client.getWindow().getScaledHeight();
@@ -1469,14 +1533,14 @@ public class LightGizmo {
         Vec3d camPos = camera.getPos();
 
         Vector4f eye = new Vector4f(
-            (float)(light.x - camPos.x),
-            (float)(light.y - camPos.y),
-            (float)(light.z - camPos.z),
+            (float)(lightPos.x - camPos.x),
+            (float)(lightPos.y - camPos.y),
+            (float)(lightPos.z - camPos.z),
             1.0f
         ).mul(capturedModelView);
 
         Vector4f clip = new Vector4f(eye).mul(lastProjectionMatrix);
-        if (clip.w <= 1e-6f) return 0.0;
+        if (clip.w <= 1e-6f) return null;
 
         double ndcX = clip.x / clip.w;
         double ndcY = clip.y / clip.w;
@@ -1484,7 +1548,14 @@ public class LightGizmo {
         double centerX = (ndcX * 0.5 + 0.5) * width;
         double centerY = (0.5 - ndcY * 0.5) * height;
 
-        return Math.toDegrees(Math.atan2(mouseY - centerY, mouseX - centerX));
+        return new Vector2d(centerX, centerY);
+    }
+
+    private double getMouseAngleAroundLight(double mouseX, double mouseY, LightInstance light) {
+        if (light == null) return 0.0;
+        Vector2d center = getLightScreenPos(new Vec3d(light.x, light.y, light.z));
+        if (center == null) return 0.0;
+        return Math.toDegrees(Math.atan2(mouseY - center.y, mouseX - center.x));
     }
 
     private double get3DRingAngle(Vec3d rayStart, Vec3d rayDir, LightInstance light, Axis axis) {
