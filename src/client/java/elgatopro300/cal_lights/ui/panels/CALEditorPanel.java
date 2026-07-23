@@ -381,12 +381,12 @@ public class CALEditorPanel extends CLUIElement {
         ctx.batcher.icon(showTime ? CalLightsIcons.GEAR : CalLightsIcons.FILM, animLeftPanelW + 119, topY + topMenuH + 2, 0xFFFFAA00);
         ctx.batcher.text(showTime ? CALKeys.INSPECTOR.get() : CALKeys.TIMELINE.get(), animLeftPanelW + 137, topY + topMenuH + 5, 0xFFFFFFFF);
 
-        // Gizmo Mode Switcher Buttons (Move, Rotate, Scale, Combined)
+        // Gizmo Mode Switcher Buttons (Move, Rotate, Combined)
         int modeStartX = animLeftPanelW + 235;
         LightGizmo.Mode currentMode = LightGizmo.INSTANCE.getMode();
-        LightGizmo.Mode[] modes = { LightGizmo.Mode.TRANSLATE, LightGizmo.Mode.ROTATE, LightGizmo.Mode.SCALE, LightGizmo.Mode.COMBINED };
-        String[] modeLabels = { "Move", "Rotate", "Scale", "Combined" };
-        int modeBtnW = 54;
+        LightGizmo.Mode[] modes = { LightGizmo.Mode.TRANSLATE, LightGizmo.Mode.ROTATE, LightGizmo.Mode.COMBINED };
+        String[] modeLabels = { "Move", "Rotate", "Combined" };
+        int modeBtnW = 60;
 
         for (int i = 0; i < modes.length; i++) {
             int btnX = modeStartX + i * (modeBtnW + 4);
@@ -397,7 +397,7 @@ public class CALEditorPanel extends CLUIElement {
 
             ctx.batcher.box(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, bg);
             ctx.batcher.outline(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, border, 1);
-            ctx.batcher.text(modeLabels[i], btnX + 6, topY + topMenuH + 5, isSelected ? 0xFFFFFFFF : (hoverMode ? 0xFFFFAA00 : 0xFFCCCCCC));
+            ctx.batcher.text(modeLabels[i], btnX + 8, topY + topMenuH + 5, isSelected ? 0xFFFFFFFF : (hoverMode ? 0xFFFFAA00 : 0xFFCCCCCC));
         }
 
         // --- RENDER LEFT SIDEBAR (ESQUEMA / LIST) ---
@@ -1886,8 +1886,8 @@ public class CALEditorPanel extends CLUIElement {
 
         // Gizmo Mode Buttons click
         int modeStartX = leftPanelW + 235;
-        LightGizmo.Mode[] modes = { LightGizmo.Mode.TRANSLATE, LightGizmo.Mode.ROTATE, LightGizmo.Mode.SCALE, LightGizmo.Mode.COMBINED };
-        int modeBtnW = 54;
+        LightGizmo.Mode[] modes = { LightGizmo.Mode.TRANSLATE, LightGizmo.Mode.ROTATE, LightGizmo.Mode.COMBINED };
+        int modeBtnW = 60;
         for (int i = 0; i < modes.length; i++) {
             int btnX = modeStartX + i * (modeBtnW + 4);
             if (mx >= btnX && mx < btnX + modeBtnW && my >= topMenuH + 2 && my < topMenuH + 18) {

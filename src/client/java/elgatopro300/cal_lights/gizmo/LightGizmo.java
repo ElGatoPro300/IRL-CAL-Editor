@@ -43,7 +43,7 @@ public class LightGizmo {
     public static final LightGizmo INSTANCE = new LightGizmo();
 
     public enum Mode {
-        TRANSLATE, ROTATE, SCALE, COMBINED, TOP
+        TRANSLATE, ROTATE, COMBINED, TOP
     }
 
     public enum Axis {
@@ -501,7 +501,6 @@ public class LightGizmo {
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         if (this.mode == Mode.ROTATE) drawRotate(builder, stack, scale);
-        else if (this.mode == Mode.SCALE) drawScale(builder, stack, scale);
         else if (this.mode == Mode.COMBINED) drawCombined(builder, stack, scale);
         else if (this.mode == Mode.TOP) drawTop(builder, stack, scale);
         else drawTranslate(builder, stack, scale);
@@ -559,81 +558,34 @@ public class LightGizmo {
         float planeOuter = 0.18F * moveScale;
         float offset = 0.001F * moveScale;
 
-        drawMoveBars(builder, stack, axisSize, axisOffset, false, 0f, 0f);
+        drawMoveBars(builder, stack, axisSize, axisOffset);
         drawMovePlanes(builder, stack, planeInner, planeOuter, offset);
         drawScreenCube(builder, stack, axisOffset);
     }
 
-    private void drawMoveBars(BufferBuilder builder, MatrixStack stack, float axisSize, float axisOffset, boolean scaleCubesAtTip, float cubeHalf, float rotateCageRadius) {
+    private void drawMoveBars(BufferBuilder builder, MatrixStack stack, float axisSize, float axisOffset) {
         float[] xCol = pickColor(STENCIL_X, COLOR_X_IDLE, COLOR_X_HOVER);
         float[] yCol = pickColor(STENCIL_Y, COLOR_Y_IDLE, COLOR_Y_HOVER);
         float[] zCol = pickColor(STENCIL_Z, COLOR_Z_IDLE, COLOR_Z_HOVER);
 
-        float tipLength = Math.abs(axisSize) * (scaleCubesAtTip ? 0.18F : 0.35F);
+        float tipLength = Math.abs(axisSize) * 0.35F;
         float tipRadius = axisOffset * 2.4F;
         int coneSegments = 10;
 
-        if (showHandle(STENCIL_X) || (scaleCubesAtTip && showHandle(STENCIL_SCALE_X))) {
-            if (showHandle(STENCIL_X)) {
-                fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize * this.lastSx, axisOffset, axisOffset, xCol[0], xCol[1], xCol[2], 1F);
-            }
-            if (scaleCubesAtTip) {
-                drawCombinedAxisTip(builder, stack, Axis.X, axisSize * this.lastSx, tipRadius, tipLength, cubeHalf, coneSegments, xCol, rotateCageRadius);
-            } else if (showHandle(STENCIL_X)) {
-                cone(builder, stack, (axisSize + tipLength) * this.lastSx, 0, 0, axisSize * this.lastSx, 0, 0, tipRadius, coneSegments, xCol[0], xCol[1], xCol[2], 1F);
-            }
+        if (showHandle(STENCIL_X)) {
+            fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize * this.lastSx, axisOffset, axisOffset, xCol[0], xCol[1], xCol[2], 1F);
+            cone(builder, stack, (axisSize + tipLength) * this.lastSx, 0, 0, axisSize * this.lastSx, 0, 0, tipRadius, coneSegments, xCol[0], xCol[1], xCol[2], 1F);
         }
 
-        if (showHandle(STENCIL_Y) || (scaleCubesAtTip && showHandle(STENCIL_SCALE_Y))) {
-            if (showHandle(STENCIL_Y)) {
-                fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize * this.lastSy, axisOffset, yCol[0], yCol[1], yCol[2], 1F);
-            }
-            if (scaleCubesAtTip) {
-                drawCombinedAxisTip(builder, stack, Axis.Y, axisSize * this.lastSy, tipRadius, tipLength, cubeHalf, coneSegments, yCol, rotateCageRadius);
-            } else if (showHandle(STENCIL_Y)) {
-                cone(builder, stack, 0, (axisSize + tipLength) * this.lastSy, 0, 0, axisSize * this.lastSy, 0, tipRadius, coneSegments, yCol[0], yCol[1], yCol[2], 1F);
-            }
+        if (showHandle(STENCIL_Y)) {
+            fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize * this.lastSy, axisOffset, yCol[0], yCol[1], yCol[2], 1F);
+            cone(builder, stack, 0, (axisSize + tipLength) * this.lastSy, 0, 0, axisSize * this.lastSy, 0, tipRadius, coneSegments, yCol[0], yCol[1], yCol[2], 1F);
         }
 
-        if (showHandle(STENCIL_Z) || (scaleCubesAtTip && showHandle(STENCIL_SCALE_Z))) {
-            if (showHandle(STENCIL_Z)) {
-                fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize * this.lastSz, zCol[0], zCol[1], zCol[2], 1F);
-            }
-            if (scaleCubesAtTip) {
-                drawCombinedAxisTip(builder, stack, Axis.Z, axisSize * this.lastSz, tipRadius, tipLength, cubeHalf, coneSegments, zCol, rotateCageRadius);
-            } else if (showHandle(STENCIL_Z)) {
-                cone(builder, stack, 0, 0, (axisSize + tipLength) * this.lastSz, 0, 0, axisSize * this.lastSz, tipRadius, coneSegments, zCol[0], zCol[1], zCol[2], 1F);
-            }
+        if (showHandle(STENCIL_Z)) {
+            fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize * this.lastSz, zCol[0], zCol[1], zCol[2], 1F);
+            cone(builder, stack, 0, 0, (axisSize + tipLength) * this.lastSz, 0, 0, axisSize * this.lastSz, tipRadius, coneSegments, zCol[0], zCol[1], zCol[2], 1F);
         }
-    }
-
-    private void drawCombinedAxisTip(BufferBuilder builder, MatrixStack stack, Axis axis, float shaftEnd, float tipRadius, float tipLength, float cubeHalf, int coneSegments, float[] translateColor, float rotateCageRadius) {
-        float sign = shaftEnd >= 0F ? 1F : -1F;
-        float absEnd = Math.abs(shaftEnd);
-        float coneBase = absEnd;
-        float coneApex = absEnd + tipLength;
-        float tipCubeGap = cubeHalf * 1.35F;
-        float cubeCenter = coneApex + tipCubeGap + cubeHalf;
-
-        if (this.showHandle(axis == Axis.X ? STENCIL_X : axis == Axis.Y ? STENCIL_Y : STENCIL_Z)) {
-            if (axis == Axis.X) cone(builder, stack, coneApex * sign, 0, 0, coneBase * sign, 0, 0, tipRadius, coneSegments, translateColor[0], translateColor[1], translateColor[2], 1F);
-            else if (axis == Axis.Y) cone(builder, stack, 0, coneApex * sign, 0, 0, coneBase * sign, 0, tipRadius, coneSegments, translateColor[0], translateColor[1], translateColor[2], 1F);
-            else cone(builder, stack, 0, 0, coneApex * sign, 0, 0, coneBase * sign, tipRadius, coneSegments, translateColor[0], translateColor[1], translateColor[2], 1F);
-        }
-
-        drawScaleTipCube(builder, stack, axis, cubeCenter * sign, cubeHalf);
-    }
-
-    private void drawScaleTipCube(BufferBuilder builder, MatrixStack stack, Axis axis, float tip, float half) {
-        int id = axis == Axis.X ? STENCIL_SCALE_X : axis == Axis.Y ? STENCIL_SCALE_Y : STENCIL_SCALE_Z;
-        if (!showHandle(id)) return;
-
-        float[] color = pickColor(id, axis == Axis.X ? COLOR_X_IDLE : axis == Axis.Y ? COLOR_Y_IDLE : COLOR_Z_IDLE,
-                axis == Axis.X ? COLOR_X_HOVER : axis == Axis.Y ? COLOR_Y_HOVER : COLOR_Z_HOVER);
-
-        if (axis == Axis.X) fillBox(builder, stack, tip - half, -half, -half, tip + half, half, half, color[0], color[1], color[2], 1F);
-        else if (axis == Axis.Y) fillBox(builder, stack, -half, tip - half, -half, half, tip + half, half, color[0], color[1], color[2], 1F);
-        else fillBox(builder, stack, -half, -half, tip - half, half, half, tip + half, color[0], color[1], color[2], 1F);
     }
 
     private void drawMovePlanes(BufferBuilder builder, MatrixStack stack, float planeInner, float planeOuter, float offset) {
@@ -761,7 +713,7 @@ public class LightGizmo {
 
         drawTrackball(builder, stack, rotateRadius * 1.85F * 0.5F);
 
-        drawMoveBars(builder, stack, axisSize, axisOffset, true, cubeHalf, rotateRadius);
+        drawMoveBars(builder, stack, axisSize, axisOffset);
         drawMovePlanes(builder, stack, planeInner, planeOuter, offset);
         drawScreenCube(builder, stack, axisOffset);
 
@@ -1352,7 +1304,7 @@ public class LightGizmo {
         }
 
         // Center Free Translate Box
-        if ((mode == Mode.TRANSLATE || mode == Mode.COMBINED || mode == Mode.SCALE) &&
+        if ((mode == Mode.TRANSLATE || mode == Mode.COMBINED) &&
                 intersectAABB(localRayStart, localRayDir, -0.05, -0.05, -0.05, 0.05, 0.05, 0.05)) {
             return STENCIL_FREE;
         }
@@ -1374,19 +1326,7 @@ public class LightGizmo {
             }
         }
 
-        // Scale Cubes at Tip (Combined or Scale mode)
-        if (mode == Mode.SCALE || mode == Mode.COMBINED) {
-            double rotateRadius = 0.22 * COMBINED_ROTATE_SCALE;
-            double axisLength = rotateRadius * 0.50;
-            double half = 0.03;
-            double tipPos = (axisLength + 0.05) * sx;
 
-            if (intersectAABB(localRayStart, localRayDir, tipPos - half, -half, -half, tipPos + half, half, half)) return STENCIL_SCALE_X;
-            tipPos = (axisLength + 0.05) * sy;
-            if (intersectAABB(localRayStart, localRayDir, -half, tipPos - half, -half, half, tipPos + half, half)) return STENCIL_SCALE_Y;
-            tipPos = (axisLength + 0.05) * sz;
-            if (intersectAABB(localRayStart, localRayDir, -half, -half, tipPos - half, half, half, tipPos + half)) return STENCIL_SCALE_Z;
-        }
 
         // Translate Axis Bars / Cones
         if (mode == Mode.TRANSLATE || mode == Mode.COMBINED) {
