@@ -697,10 +697,11 @@ public class LightGizmo {
     }
 
     private void drawRotate(BufferBuilder builder, MatrixStack stack, float scale) {
-        float radius = 0.30F * scale;
+        float rotateRadius = 0.22F * scale * COMBINED_ROTATE_SCALE;
         float ringThickness = 0.010F * scale;
-        drawTrackball(builder, stack, radius * 1.85F * 0.5F);
-        drawRings(builder, stack, radius, ringThickness, STENCIL_X, STENCIL_Y, STENCIL_Z);
+        drawTrackball(builder, stack, rotateRadius * 1.85F * 0.5F);
+        drawRings(builder, stack, rotateRadius, ringThickness, STENCIL_ROTATE_X, STENCIL_ROTATE_Y, STENCIL_ROTATE_Z);
+        drawViewRing(builder, stack, rotateRadius * VIEW_RING_SCALE, ringThickness);
     }
 
     private void drawRings(BufferBuilder builder, MatrixStack stack, float radius, float ringThickness, int idX, int idY, int idZ) {
