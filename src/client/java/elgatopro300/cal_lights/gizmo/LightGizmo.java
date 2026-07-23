@@ -128,6 +128,7 @@ public class LightGizmo {
     // Drag start states
     private Vec3d dragStartMousePos = null;
     private double dragStartMouseAngle = 0.0;
+    private double dragStart3DAngle = 0.0;
     private Vec3d dragStartLightPos = null;
     private float dragStartRadius = 6.0f;
     private float dragStartDistance = 12.0f;
@@ -929,7 +930,7 @@ public class LightGizmo {
 
         stack.push();
         if (axis == Axis.X) stack.multiply(RotationAxis.POSITIVE_Z.rotation((float) (Math.PI / 2F)));
-        if (axis == Axis.Z) stack.multiply(RotationAxis.POSITIVE_X.rotation((float) (Math.PI / 2F)));
+        if (axis == Axis.Z) stack.multiply(RotationAxis.NEGATIVE_X.rotation((float) (Math.PI / 2F)));
 
         float tubeR = thickness * 0.5F;
         Matrix4f mat = stack.peek().getPositionMatrix();
@@ -1064,8 +1065,12 @@ public class LightGizmo {
                     else if (activeHandle == STENCIL_ROTATE_Z) { this.arcAxis = Axis.Z; this.arcView = false; }
                     else if (activeHandle == STENCIL_VIEW) { this.arcAxis = Axis.Y; this.arcView = true; }
 
-                    this.dragStartMousePos = new Vec3d(mouseX, mouseY, 0);
-                    this.dragStartMouseAngle = getMouseAngleAroundLight(mouseX, mouseY, selectedLight);
+                    if (activeHandle == STENCIL_VIEW || activeHandle == STENCIL_TRACKBALL) {
+                        this.dragStartMouseAngle = getMouseAngleAroundLight(mouseX, mouseY, selectedLight);
+                    } else {
+                        this.dragStart3DAngle = get3DRingAngle(rayStart, rayDir, selectedLight, this.arcAxis);
+                        this.arcStartU = (float) this.dragStart3DAngle;
+                    }
                 } else if (isScaleHandle(activeHandle)) {
                     int axisIdx = activeHandle == STENCIL_SCALE_X ? 0 : activeHandle == STENCIL_SCALE_Y ? 1 : 2;
                     dragStartMousePos = getMouseProjectionOnAxis(rayStart, rayDir, dragStartLightPos, axisIdx);
@@ -1140,11 +1145,20 @@ public class LightGizmo {
                     else if (activeHandle == STENCIL_FREE) { selectedLight.x = nx; selectedLight.y = ny; selectedLight.z = nz; }
                 }
             } else if (isRotateHandle(activeHandle)) {
-                double currentAngle = getMouseAngleAroundLight(mouseX, mouseY, selectedLight);
-                double deltaDeg = currentAngle - dragStartMouseAngle;
-                while (deltaDeg > 180.0) deltaDeg -= 360.0;
-                while (deltaDeg < -180.0) deltaDeg += 360.0;
-                dragStartMouseAngle = currentAngle;
+                double deltaDeg = 0.0;
+                if (activeHandle == STENCIL_VIEW || activeHandle == STENCIL_TRACKBALL) {
+                    double currentAngle = getMouseAngleAroundLight(mouseX, mouseY, selectedLight);
+                    deltaDeg = currentAngle - dragStartMouseAngle;
+                    while (deltaDeg > 180.0) deltaDeg -= 360.0;
+                    while (deltaDeg < -180.0) deltaDeg += 360.0;
+                    dragStartMouseAngle = currentAngle;
+                } else {
+                    double currentAngle = get3DRingAngle(rayStart, rayDir, selectedLight, this.arcAxis);
+                    deltaDeg = currentAngle - dragStart3DAngle;
+                    while (deltaDeg > 180.0) deltaDeg -= 360.0;
+                    while (deltaDeg < -180.0) deltaDeg += 360.0;
+                    dragStart3DAngle = currentAngle;
+                }
 
                 arcSweep += (float) deltaDeg;
 
@@ -1470,5 +1484,29 @@ public class LightGizmo {
         double centerY = (0.5 - ndcY * 0.5) * height;
 
         return Math.toDegrees(Math.atan2(mouseY - centerY, mouseX - centerX));
+    }
+
+    private double get3DRingAngle(Vec3d rayStart, Vec3d rayDir, LightInstance light, Axis axis) {
+        if (light == null) return 0.0;
+        Vec3d lightPos = new Vec3d(light.x, light.y, light.z);
+        Vec3d normal;
+
+        if (axis == Axis.X) normal = new Vec3d(1, 0, 0);
+        else if (axis == Axis.Y) normal = new Vec3d(0, 1, 0);
+        else normal = new Vec3d(0, 0, 1);
+
+        double denom = normal.dotProduct(rayDir);
+        if (Math.abs(denom) < 1e-6) return 0.0;
+
+        double t = lightPos.subtract(rayStart).dotProduct(normal) / denom;
+        Vec3d hitPoint = rayStart.add(rayDir.multiply(t));
+        Vec3d local = hitPoint.subtract(lightPos);
+
+        double rad;
+        if (axis == Axis.X) rad = Math.atan2(local.z, local.y);
+        else if (axis == Axis.Y) rad = Math.atan2(local.z, local.x);
+        else rad = Math.atan2(local.y, local.x);
+
+        return Math.toDegrees(rad);
     }
 }
