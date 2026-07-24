@@ -26,8 +26,13 @@ public class WorldBlockChangeMixin {
             return;
         }
         World self = (World) (Object) this;
-        if (self.isClient()) {
-            BlockShadowCache.invalidateAt(pos);
+        if (!self.isClient() || self.isOutOfHeightLimit(pos)) {
+            return;
         }
+        BlockState old = self.getBlockState(pos);
+        if (old == state) {
+            return;
+        }
+        BlockShadowCache.invalidateChange(self, pos, old, state);
     }
 }

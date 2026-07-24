@@ -3,6 +3,7 @@ package elgatopro300.cal_lights;
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
 import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.LightGuideRenderer;
 import elgatopro300.cal_lights.light.auto.AutoLightManager;
 import elgatopro300.cal_lights.light.cookie.CookieArray;
 import elgatopro300.cal_lights.manager.LightInstance;
@@ -43,6 +44,7 @@ public class CALLightsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("IRL CAL Editor mod initialized on Client!");
+        LightGuideRenderer.register();
 
         boolean irlitePresent = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite");
 

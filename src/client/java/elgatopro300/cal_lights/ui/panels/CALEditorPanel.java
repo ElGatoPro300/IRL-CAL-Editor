@@ -5,6 +5,7 @@ import elgatopro300.cal_lights.animation.LightAnimation;
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
 import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.SettingsPresets;
 import elgatopro300.cal_lights.light.auto.AutoLightManager;
 import elgatopro300.cal_lights.manager.CALUndoManager;
 import elgatopro300.cal_lights.manager.LightInstance;
@@ -72,6 +73,23 @@ public class CALEditorPanel extends CLUIElement {
 
     // Motor Settings Trackpads
     private final CLUITrackpad trackShadowBlockRadius;
+    private final CLUITrackpad trackShadowSoftness;
+    private final CLUITrackpad trackVlIntensity;
+    private final CLUITrackpad trackVlSteps;
+    private final CLUITrackpad trackVlMaxDist;
+    private final CLUITrackpad trackVlTipBoost;
+    private final CLUITrackpad trackVlTipRadius;
+    private final CLUITrackpad trackVlNoiseAmount;
+    private final CLUITrackpad trackVlNoiseScale;
+    private final CLUITrackpad trackVlNoiseSpeed;
+    private final CLUITrackpad trackVlNoiseMorph;
+    
+    private final CLUITrackpad trackOutlineStrength;
+    private final CLUITrackpad trackOutlinePixelSize;
+    private final CLUITrackpad trackOutlineFresnelPower;
+    private final CLUITrackpad trackOutlineBack;
+    private final CLUITrackpad trackOutlineFrontStrength;
+    private final CLUITrackpad trackOutlineGlowStrength;
     private final CLUITrackpad trackAutoLightIntensity;
     private final CLUITrackpad trackAutoLightReach;
     private final CLUITrackpad trackAutoLightRadius;
@@ -142,6 +160,57 @@ public class CALEditorPanel extends CLUIElement {
         this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), LightConfig.shadowBlockRadius, 4f, 96f, val -> {
             LightConfig.shadowBlockRadius = Math.round(val);
         }).setArrowStep(1f);
+        this.trackShadowSoftness = new CLUITrackpad("Suavizado sombras", LightConfig.shadowSoftness, 0.0f, 0.8f, val -> {
+            LightConfig.shadowSoftness = val;
+        }).setArrowStep(0.01f);
+
+        this.trackVlIntensity = new CLUITrackpad("Intensidad VL", LightConfig.vlIntensity, 0.0f, 5.0f, val -> {
+            LightConfig.vlIntensity = val;
+        }).setArrowStep(0.05f);
+        this.trackVlSteps = new CLUITrackpad("Pasos raymarch", LightConfig.vlSteps, 1f, 96f, val -> {
+            LightConfig.vlSteps = Math.round(val);
+        }).setArrowStep(1f);
+        this.trackVlMaxDist = new CLUITrackpad("Distancia max VL", LightConfig.vlMaxDist, 10f, 300f, val -> {
+            LightConfig.vlMaxDist = val;
+        }).setArrowStep(5f);
+        this.trackVlTipBoost = new CLUITrackpad("Boost punta", LightConfig.vlTipBoost, 0.0f, 10.0f, val -> {
+            LightConfig.vlTipBoost = val;
+        }).setArrowStep(0.1f);
+        this.trackVlTipRadius = new CLUITrackpad("Radio punta", LightConfig.vlTipRadius, 0.0f, 10.0f, val -> {
+            LightConfig.vlTipRadius = val;
+        }).setArrowStep(0.1f);
+        this.trackVlNoiseAmount = new CLUITrackpad("Cantidad ruido", LightConfig.vlNoiseAmount, 0.0f, 1.0f, val -> {
+            LightConfig.vlNoiseAmount = val;
+        }).setArrowStep(0.05f);
+        this.trackVlNoiseScale = new CLUITrackpad("Escala ruido", LightConfig.vlNoiseScale, 0.1f, 10.0f, val -> {
+            LightConfig.vlNoiseScale = val;
+        }).setArrowStep(0.1f);
+        this.trackVlNoiseSpeed = new CLUITrackpad("Velocidad viento", LightConfig.vlNoiseSpeed, 0.0f, 5.0f, val -> {
+            LightConfig.vlNoiseSpeed = val;
+        }).setArrowStep(0.25f);
+        this.trackVlNoiseMorph = new CLUITrackpad("Velocidad morph", LightConfig.vlNoiseMorph, 0.0f, 3.0f, val -> {
+            LightConfig.vlNoiseMorph = val;
+        }).setArrowStep(0.25f);
+
+        this.trackOutlineStrength = new CLUITrackpad("Fuerza contorno", LightConfig.outlineStrength, 0.0f, 3.0f, val -> {
+            LightConfig.outlineStrength = val;
+        }).setArrowStep(0.05f);
+        this.trackOutlinePixelSize = new CLUITrackpad("Grosor contorno", LightConfig.outlinePixelSize, 1f, 6f, val -> {
+            LightConfig.outlinePixelSize = Math.round(val);
+        }).setArrowStep(1f);
+        this.trackOutlineFresnelPower = new CLUITrackpad("Exp. Fresnel", LightConfig.outlineFresnelPower, 0.1f, 10.0f, val -> {
+            LightConfig.outlineFresnelPower = val;
+        }).setArrowStep(0.1f);
+        this.trackOutlineBack = new CLUITrackpad("Brillo posterior", LightConfig.outlineBack, 0.0f, 2.0f, val -> {
+            LightConfig.outlineBack = val;
+        }).setArrowStep(0.05f);
+        this.trackOutlineFrontStrength = new CLUITrackpad("Fuerza frontal", LightConfig.outlineFrontStrength, 0.0f, 1.5f, val -> {
+            LightConfig.outlineFrontStrength = val;
+        }).setArrowStep(0.05f);
+        this.trackOutlineGlowStrength = new CLUITrackpad("Fuerza brillo", LightConfig.outlineGlowStrength, 0.0f, 1.0f, val -> {
+            LightConfig.outlineGlowStrength = val;
+        }).setArrowStep(0.05f);
+
         this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
             LightConfig.autoLightIntensity = val;
         }).setArrowStep(0.05f);
@@ -678,40 +747,27 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(pX, pY + headerH, pX + sideW, pY + pH, 0xFF111115);
             ctx.batcher.outline(pX, pY + headerH, pX + sideW, pY + pH, 0xFF22222A, 1);
 
-            // Category 1: General
-            boolean hoverCat0 = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= pY + headerH + 6 && ctx.mouseY < pY + headerH + 24;
-            int cat0Bg = (selectedSettingsCategory == 0) ? 0xFF1D1D26 : (hoverCat0 ? 0xFF181820 : 0xFF111115);
-            ctx.batcher.box(pX + 2, pY + headerH + 6, pX + sideW - 2, pY + headerH + 24, cat0Bg);
-            ctx.batcher.text(CALKeys.GENERAL.get(), pX + 10, pY + headerH + 11, (selectedSettingsCategory == 0) ? 0xFFFFAA00 : 0xFFCCCCCC);
-            if (selectedSettingsCategory == 0) {
-                ctx.batcher.box(pX + 2, pY + headerH + 6, pX + 5, pY + headerH + 24, 0xFF1976D2);
-            }
-
-            // Category 2: Interfaz
-            boolean hoverCat1 = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= pY + headerH + 28 && ctx.mouseY < pY + headerH + 46;
-            int cat1Bg = (selectedSettingsCategory == 1) ? 0xFF1D1D26 : (hoverCat1 ? 0xFF181820 : 0xFF111115);
-            ctx.batcher.box(pX + 2, pY + headerH + 28, pX + sideW - 2, pY + headerH + 46, cat1Bg);
-            ctx.batcher.text(CALKeys.INTERFACE.get(), pX + 10, pY + headerH + 33, (selectedSettingsCategory == 1) ? 0xFFFFAA00 : 0xFFCCCCCC);
-            if (selectedSettingsCategory == 1) {
-                ctx.batcher.box(pX + 2, pY + headerH + 28, pX + 5, pY + headerH + 46, 0xFF1976D2);
-            }
-
-            // Category 3: Teclas
-            boolean hoverCat2 = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= pY + headerH + 50 && ctx.mouseY < pY + headerH + 68;
-            int cat2Bg = (selectedSettingsCategory == 2) ? 0xFF1D1D26 : (hoverCat2 ? 0xFF181820 : 0xFF111115);
-            ctx.batcher.box(pX + 2, pY + headerH + 50, pX + sideW - 2, pY + headerH + 68, cat2Bg);
-            ctx.batcher.text(CALKeys.KEYBINDS.get(), pX + 10, pY + headerH + 55, (selectedSettingsCategory == 2) ? 0xFFFFAA00 : 0xFFCCCCCC);
-            if (selectedSettingsCategory == 2) {
-                ctx.batcher.box(pX + 2, pY + headerH + 50, pX + 5, pY + headerH + 68, 0xFF1976D2);
-            }
-
-            // Category 4: Motor
-            boolean hoverCat3 = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= pY + headerH + 72 && ctx.mouseY < pY + headerH + 90;
-            int cat3Bg = (selectedSettingsCategory == 3) ? 0xFF1D1D26 : (hoverCat3 ? 0xFF181820 : 0xFF111115);
-            ctx.batcher.box(pX + 2, pY + headerH + 72, pX + sideW - 2, pY + headerH + 90, cat3Bg);
-            ctx.batcher.text(CALKeys.MOTOR.get(), pX + 10, pY + headerH + 77, (selectedSettingsCategory == 3) ? 0xFFFFAA00 : 0xFFCCCCCC);
-            if (selectedSettingsCategory == 3) {
-                ctx.batcher.box(pX + 2, pY + headerH + 72, pX + 5, pY + headerH + 90, 0xFF1976D2);
+            // Render 7 categories dynamically
+            int categoryStartY = pY + headerH + 6;
+            int categoryRowH = 22;
+            String[] categoryNames = {
+                CALKeys.GENERAL.get(),
+                CALKeys.INTERFACE.get(),
+                CALKeys.KEYBINDS.get(),
+                "Presets",
+                "Sombras",
+                "Volumetría",
+                "Contornos",
+                "Auto Luces"
+            };
+            for (int i = 0; i < categoryNames.length; i++) {
+                boolean hover = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= categoryStartY + i * categoryRowH && ctx.mouseY < categoryStartY + i * categoryRowH + 18;
+                int bg = (selectedSettingsCategory == i) ? 0xFF1D1D26 : (hover ? 0xFF181820 : 0xFF111115);
+                ctx.batcher.box(pX + 2, categoryStartY + i * categoryRowH, pX + sideW - 2, categoryStartY + i * categoryRowH + 18, bg);
+                ctx.batcher.text(categoryNames[i], pX + 10, categoryStartY + i * categoryRowH + 5, (selectedSettingsCategory == i) ? 0xFFFFAA00 : 0xFFCCCCCC);
+                if (selectedSettingsCategory == i) {
+                    ctx.batcher.box(pX + 2, categoryStartY + i * categoryRowH, pX + 5, categoryStartY + i * categoryRowH + 18, 0xFF1976D2);
+                }
             }
 
             // Content Area Rendering
@@ -875,23 +931,90 @@ public class CALEditorPanel extends CLUIElement {
                     ctx.batcher.text(keyLabel, btnX + (btnW3 - keyTextW) / 2, rowY + 3, isRebindable ? 0xFFFFFFFF : 0xFF888899);
                 }
             } else if (selectedSettingsCategory == 3) {
-                // MOTOR SETTINGS CONTENTS (Two-column layout)
-                int colW = 200;
-                int leftColX = contentX;
-                int rightColX = contentX + 215;
+                // PRESETS SETTINGS
                 int startY = pY + headerH + 10;
-                int itemSpacing = 20;
-
-                // --- COLUMNA IZQUIERDA: SOMBRAS & GENERAL ---
                 int curY = startY;
-                ctx.batcher.text(CALKeys.SHADOW_QUALITY.get(), leftColX, curY, 0xFFCCCCCC);
+                int fullW = 400;
+
+                // Quality Presets
+                ctx.batcher.text("Ajustes Preestablecidos de Calidad (Sombras + Pasos VL)", contentX, curY, 0xFFCCCCCC);
+                curY += 12;
+                String[] qLabels = SettingsPresets.QUALITY_LABELS;
+                int qActive = SettingsPresets.quality();
+                int qSegW = (fullW - 12) / 5;
+                for (int i = 0; i < qLabels.length; i++) {
+                    int btnX = contentX + i * (qSegW + 3);
+                    boolean hoverQ = ctx.mouseX >= btnX && ctx.mouseX < btnX + qSegW && ctx.mouseY >= curY && ctx.mouseY < curY + 16;
+                    boolean isCurrentQ = (qActive == i);
+                    int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
+                    ctx.batcher.box(btnX, curY, btnX + qSegW, curY + 16, qBg);
+                    ctx.batcher.outline(btnX, curY, btnX + qSegW, curY + 16, isCurrentQ ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
+                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(qLabels[i]);
+                    ctx.batcher.text(qLabels[i], btnX + (qSegW - textW) / 2, curY + 4, isCurrentQ ? 0xFFFFFFFF : 0xFFBBBBBB);
+                }
+                curY += 32;
+
+                // Style Presets
+                ctx.batcher.text("Estilo de Haz de Luz (Ruido + Boost)", contentX, curY, 0xFFCCCCCC);
+                curY += 12;
+                String[] sLabels = SettingsPresets.STYLE_LABELS;
+                int sActive = SettingsPresets.style();
+                int sSegW = (fullW - 9) / 4;
+                for (int i = 0; i < sLabels.length; i++) {
+                    int btnX = contentX + i * (sSegW + 3);
+                    boolean hoverS = ctx.mouseX >= btnX && ctx.mouseX < btnX + sSegW && ctx.mouseY >= curY && ctx.mouseY < curY + 16;
+                    boolean isCurrentS = (sActive == i);
+                    int sBg = isCurrentS ? 0xFF1976D2 : (hoverS ? 0xFF2A2A35 : 0xFF1E1E24);
+                    ctx.batcher.box(btnX, curY, btnX + sSegW, curY + 16, sBg);
+                    ctx.batcher.outline(btnX, curY, btnX + sSegW, curY + 16, isCurrentS ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
+                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(sLabels[i]);
+                    ctx.batcher.text(sLabels[i], btnX + (sSegW - textW) / 2, curY + 4, isCurrentS ? 0xFFFFFFFF : 0xFFBBBBBB);
+                }
+                curY += 32;
+
+                // Dev debug presets: hold bake toggle + show guides toggle
+                ctx.batcher.text("Desarrollo y Rendimiento", contentX, curY, 0xFFCCCCCC);
                 curY += 12;
 
-                // Segmented button for shadow quality: LOW, MED, HIGH, ULTRA
+                // Hold Bake (Pausar primer bakeado) Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + 200 && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.holdBake) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Pausar bakeado inicial (Hold Bake)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += 20;
+
+                // Hold Bake On Join Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + 200 && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.holdBakeOnJoin) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Pausar al entrar al mundo", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+
+            } else if (selectedSettingsCategory == 4) {
+                // SOMBRAS SETTINGS
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
+
+                // Calidad de sombras
+                ctx.batcher.text(CALKeys.SHADOW_QUALITY.get(), contentX, curY, 0xFFCCCCCC);
+                curY += 12;
                 String[] qLabels = {"LOW", "MED", "HIGH", "ULTRA"};
                 int segW = (colW - 9) / 4;
                 for (int i = 0; i < qLabels.length; i++) {
-                    int btnX = leftColX + i * (segW + 3);
+                    int btnX = contentX + i * (segW + 3);
                     boolean hoverQ = ctx.mouseX >= btnX && ctx.mouseX < btnX + segW && ctx.mouseY >= curY && ctx.mouseY < curY + 14;
                     boolean isCurrentQ = (LightConfig.shadowQuality == i);
                     int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
@@ -902,123 +1025,353 @@ public class CALEditorPanel extends CLUIElement {
                 }
                 curY += 20;
 
-                // Shadow Cache
+                // Shadows Live Checkbox
                 {
                     int boxSize = 10;
-                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.shadowsLive) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Habilitar sombras (Live)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Shadow Cache Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
                     if (LightConfig.shadowCache) {
-                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text(CALKeys.SHADOW_CACHE.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.SHADOW_CACHE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
-                // Shadow Blocks
+                // Shadow Blocks Checkbox
                 {
                     int boxSize = 10;
-                    boolean hover = ctx.mouseX >= leftColX && ctx.mouseX < leftColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                    ctx.batcher.box(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                    ctx.batcher.outline(leftColX, curY + 1, leftColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
                     if (LightConfig.shadowBlocks) {
-                        ctx.batcher.box(leftColX + 2, curY + 3, leftColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text(CALKeys.SHADOW_BLOCKS.get(), leftColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.SHADOW_BLOCKS.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
-                // Shadow Block Radius Trackpad
-                trackShadowBlockRadius.resize(leftColX, curY, colW, 14);
+                // Hold Bake Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.holdBake) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Pausar bakeado inicial (Hold)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Right column for trackpads
+                int rightColX = contentX + 215;
+                curY = startY;
+
+                trackShadowBlockRadius.resize(rightColX, curY, colW, 14);
                 trackShadowBlockRadius.setValue(LightConfig.shadowBlockRadius);
                 trackShadowBlockRadius.render(ctx);
                 curY += itemSpacing;
 
+                trackShadowSoftness.resize(rightColX, curY, colW, 14);
+                trackShadowSoftness.setValue(LightConfig.shadowSoftness);
+                trackShadowSoftness.render(ctx);
+                curY += itemSpacing;
 
-                // --- COLUMNA DERECHA: AUTO-LUCES ---
+            } else if (selectedSettingsCategory == 5) {
+                // VOLUMETRIC SETTINGS
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
+
+                // Column 1 (Left) - Volumetric controls
+                trackVlIntensity.resize(contentX, curY, colW, 14);
+                trackVlIntensity.setValue(LightConfig.vlIntensity);
+                trackVlIntensity.render(ctx);
+                curY += itemSpacing;
+
+                trackVlSteps.resize(contentX, curY, colW, 14);
+                trackVlSteps.setValue(LightConfig.vlSteps);
+                trackVlSteps.render(ctx);
+                curY += itemSpacing;
+
+                trackVlMaxDist.resize(contentX, curY, colW, 14);
+                trackVlMaxDist.setValue(LightConfig.vlMaxDist);
+                trackVlMaxDist.render(ctx);
+                curY += itemSpacing;
+
+                trackVlTipBoost.resize(contentX, curY, colW, 14);
+                trackVlTipBoost.setValue(LightConfig.vlTipBoost);
+                trackVlTipBoost.render(ctx);
+                curY += itemSpacing;
+
+                trackVlTipRadius.resize(contentX, curY, colW, 14);
+                trackVlTipRadius.setValue(LightConfig.vlTipRadius);
+                trackVlTipRadius.render(ctx);
+                curY += itemSpacing;
+
+                // Column 2 (Right) - Volumetric Noise & Toggles
+                int rightColX = contentX + 215;
                 curY = startY;
 
+                trackVlNoiseAmount.resize(rightColX, curY, colW, 14);
+                trackVlNoiseAmount.setValue(LightConfig.vlNoiseAmount);
+                trackVlNoiseAmount.render(ctx);
+                curY += itemSpacing;
+
+                trackVlNoiseScale.resize(rightColX, curY, colW, 14);
+                trackVlNoiseScale.setValue(LightConfig.vlNoiseScale);
+                trackVlNoiseScale.render(ctx);
+                curY += itemSpacing;
+
+                trackVlNoiseSpeed.resize(rightColX, curY, colW, 14);
+                trackVlNoiseSpeed.setValue(LightConfig.vlNoiseSpeed);
+                trackVlNoiseSpeed.render(ctx);
+                curY += itemSpacing;
+
+                trackVlNoiseMorph.resize(rightColX, curY, colW, 14);
+                trackVlNoiseMorph.setValue(LightConfig.vlNoiseMorph);
+                trackVlNoiseMorph.render(ctx);
+                curY += itemSpacing;
+
+                // Toggles for Volumetrics
+                int togglesY = curY;
+                {
+                    // VL Shadows
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlShadows) {
+                        ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Sombras VL", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+                {
+                    // VL Noise
+                    int boxSize = 10;
+                    int xOff = 100;
+                    boolean hover = ctx.mouseX >= rightColX + xOff && ctx.mouseX < rightColX + xOff + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlNoise) {
+                        ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Ruido VL", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+                togglesY += 15;
+                {
+                    // Blue Noise
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlBlueNoise) {
+                        ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Ruido Azul", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+                {
+                    // Temporal Dither
+                    int boxSize = 10;
+                    int xOff = 100;
+                    boolean hover = ctx.mouseX >= rightColX + xOff && ctx.mouseX < rightColX + xOff + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlDitherTemporal) {
+                        ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Dither Temp.", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+                togglesY += 15;
+                {
+                    // Cluster Cull
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX, togglesY + 1, rightColX + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlClusterCull) {
+                        ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Cluster Cull", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+                {
+                    // Shadow Hi-Z
+                    int boxSize = 10;
+                    int xOff = 100;
+                    boolean hover = ctx.mouseX >= rightColX + xOff && ctx.mouseX < rightColX + xOff + 90 && ctx.mouseY >= togglesY && ctx.mouseY < togglesY + 12;
+                    ctx.batcher.box(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(rightColX + xOff, togglesY + 1, rightColX + xOff + boxSize, togglesY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.vlShadowHiz) {
+                        ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Hi-Z Cull", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                }
+
+            } else if (selectedSettingsCategory == 6) {
+                // OUTLINE SETTINGS
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
+
+                // Column 1 (Left) - Outline toggles & parameters
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.outline) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Habilitar contornos", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Target segmented: ALL, ENTITIES, BLOCKS
+                ctx.batcher.text("Objetivo", contentX, curY, 0xFFCCCCCC);
+                curY += 12;
+                String[] tLabels = {"ALL", "ENTITIES", "BLOCKS"};
+                int segW = (colW - 6) / 3;
+                for (int i = 0; i < tLabels.length; i++) {
+                    int btnX = contentX + i * (segW + 3);
+                    boolean hoverT = ctx.mouseX >= btnX && ctx.mouseX < btnX + segW && ctx.mouseY >= curY && ctx.mouseY < curY + 14;
+                    boolean isCurrentT = (LightConfig.outlineTarget == i);
+                    int tBg = isCurrentT ? 0xFF1976D2 : (hoverT ? 0xFF2A2A35 : 0xFF1E1E24);
+                    ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, tBg);
+                    ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentT ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
+                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(tLabels[i]);
+                    ctx.batcher.text(tLabels[i], btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
+                }
+                curY += 20;
+
+                // Outline Front Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.outlineFront) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Frente capturado", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Outline Glow Checkbox
+                {
+                    int boxSize = 10;
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.outlineGlow) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                    }
+                    ctx.batcher.text("Brillo interno (Bloom)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                }
+                curY += itemSpacing;
+
+                // Column 2 (Right) - Outline trackpads
+                int rightColX = contentX + 215;
+                curY = startY;
+
+                trackOutlineStrength.resize(rightColX, curY, colW, 14);
+                trackOutlineStrength.setValue(LightConfig.outlineStrength);
+                trackOutlineStrength.render(ctx);
+                curY += itemSpacing;
+
+                trackOutlinePixelSize.resize(rightColX, curY, colW, 14);
+                trackOutlinePixelSize.setValue(LightConfig.outlinePixelSize);
+                trackOutlinePixelSize.render(ctx);
+                curY += itemSpacing;
+
+                trackOutlineFresnelPower.resize(rightColX, curY, colW, 14);
+                trackOutlineFresnelPower.setValue(LightConfig.outlineFresnelPower);
+                trackOutlineFresnelPower.render(ctx);
+                curY += itemSpacing;
+
+                trackOutlineBack.resize(rightColX, curY, colW, 14);
+                trackOutlineBack.setValue(LightConfig.outlineBack);
+                trackOutlineBack.render(ctx);
+                curY += itemSpacing;
+
+                trackOutlineFrontStrength.resize(rightColX, curY, colW, 14);
+                trackOutlineFrontStrength.setValue(LightConfig.outlineFrontStrength);
+                trackOutlineFrontStrength.render(ctx);
+                curY += itemSpacing;
+
+                trackOutlineGlowStrength.resize(rightColX, curY, colW, 14);
+                trackOutlineGlowStrength.setValue(LightConfig.outlineGlowStrength);
+                trackOutlineGlowStrength.render(ctx);
+                curY += itemSpacing;
+
+            } else if (selectedSettingsCategory == 7) {
+                // AUTO LIGHTS SETTINGS
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
+
+                // Column 1 (Left) - Toggles
                 // Auto Lights Enable Checkbox
                 {
                     int boxSize = 10;
-                    boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                    ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                    ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
                     if (LightConfig.autoLights) {
-                        ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text(CALKeys.AUTO_LIGHTS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.AUTO_LIGHTS.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
-
                 boolean autoLightsOn = LightConfig.autoLights;
 
                 // Auto Lights Culling Checkbox
-                {
+                if (autoLightsOn) {
                     int boxSize = 10;
-                    if (!autoLightsOn) {
-                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF111115);
-                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF282830, 1);
-                        if (LightConfig.autoLightCulling) {
-                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFF555555);
-                        }
-                        ctx.batcher.text(CALKeys.AUTO_LIGHT_CULLING.get(), rightColX + boxSize + 6, curY + 2, 0xFF666666);
-                    } else {
-                        boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                        if (LightConfig.autoLightCulling) {
-                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
-                        }
-                        ctx.batcher.text(CALKeys.AUTO_LIGHT_CULLING.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.autoLightCulling) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_CULLING.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
-                // Auto Lights Shadows Checkbox (Only enabled / clickable if autoLights is true)
-                {
+                // Auto Lights Shadows Checkbox
+                if (autoLightsOn) {
                     int boxSize = 10;
-                    if (!autoLightsOn) {
-                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF111115);
-                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, 0xFF282830, 1);
-                        if (LightConfig.autoLightShadows) {
-                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFF555555);
-                        }
-                        ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFF666666);
-                    } else {
-                        boolean hover = ctx.mouseX >= rightColX && ctx.mouseX < rightColX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
-                        ctx.batcher.box(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
-                        ctx.batcher.outline(rightColX, curY + 1, rightColX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
-                        if (LightConfig.autoLightShadows) {
-                            ctx.batcher.box(rightColX + 2, curY + 3, rightColX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
-                        }
-                        ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), rightColX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    boolean hover = ctx.mouseX >= contentX && ctx.mouseX < contentX + colW && ctx.mouseY >= curY && ctx.mouseY < curY + 12;
+                    ctx.batcher.box(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFF2A2A35 : 0xFF141418);
+                    ctx.batcher.outline(contentX, curY + 1, contentX + boxSize, curY + 1 + boxSize, hover ? 0xFFFFAA00 : 0xFF3E3E4D, 1);
+                    if (LightConfig.autoLightShadows) {
+                        ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
+                    ctx.batcher.text(CALKeys.AUTO_LIGHT_SHADOWS.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
-                // Trackpads for Auto Lights (Disabled if autoLights is false)
-                if (!autoLightsOn) {
-                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
-                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_INTENSITY.get() + ": " + String.format("%.2f", LightConfig.autoLightIntensity), rightColX + 6, curY + 3, 0xFF666666);
-                    curY += itemSpacing;
+                // Column 2 (Right) - Trackpads
+                int rightColX = contentX + 215;
+                curY = startY;
 
-                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
-                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_REACH.get() + ": " + String.format("%.2f", LightConfig.autoLightReach), rightColX + 6, curY + 3, 0xFF666666);
-                    curY += itemSpacing;
-
-                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
-                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_RADIUS.get() + ": " + LightConfig.autoLightRadius, rightColX + 6, curY + 3, 0xFF666666);
-                    curY += itemSpacing;
-
-                    ctx.batcher.box(rightColX, curY, rightColX + colW, curY + 14, 0xFF111115);
-                    ctx.batcher.outline(rightColX, curY, rightColX + colW, curY + 14, 0xFF282830, 1);
-                    ctx.batcher.text(CALKeys.AUTO_LIGHT_MAX.get() + ": " + LightConfig.autoLightMax, rightColX + 6, curY + 3, 0xFF666666);
-                    curY += itemSpacing;
-                } else {
+                if (autoLightsOn) {
                     trackAutoLightIntensity.resize(rightColX, curY, colW, 14);
                     trackAutoLightIntensity.setValue(LightConfig.autoLightIntensity);
                     trackAutoLightIntensity.render(ctx);
@@ -1494,25 +1847,15 @@ public class CALEditorPanel extends CLUIElement {
 
             // Category list clicks (sidebar)
             if (mx >= pX + 2 && mx < pX + sideW - 2) {
-                if (my >= pY + headerH + 6 && my < pY + headerH + 24) {
-                    selectedSettingsCategory = 0;
-                    activeRebindingKeyIndex = -1;
-                    return true;
-                }
-                if (my >= pY + headerH + 28 && my < pY + headerH + 46) {
-                    selectedSettingsCategory = 1;
-                    activeRebindingKeyIndex = -1;
-                    return true;
-                }
-                if (my >= pY + headerH + 50 && my < pY + headerH + 68) {
-                    selectedSettingsCategory = 2;
-                    activeRebindingKeyIndex = -1;
-                    return true;
-                }
-                if (my >= pY + headerH + 72 && my < pY + headerH + 90) {
-                    selectedSettingsCategory = 3;
-                    activeRebindingKeyIndex = -1;
-                    return true;
+                int startCategoryY = pY + headerH + 6;
+                int categoryRowH = 22;
+                for (int i = 0; i <= 7; i++) {
+                    int catY = startCategoryY + i * categoryRowH;
+                    if (my >= catY && my < catY + 18) {
+                        selectedSettingsCategory = i;
+                        activeRebindingKeyIndex = -1;
+                        return true;
+                    }
                 }
             }
 
@@ -1611,13 +1954,48 @@ public class CALEditorPanel extends CLUIElement {
                     }
                 }
             } else if (selectedSettingsCategory == 3) {
+                int startY = pY + headerH + 10;
+                int fullW = 400;
+
+                // Quality Presets clicks
+                int qSegW = (fullW - 12) / 5;
+                for (int i = 0; i < 5; i++) {
+                    int presetBtnX = contentX + i * (qSegW + 3);
+                    if (mx >= presetBtnX && mx < presetBtnX + qSegW && my >= startY + 12 && my < startY + 12 + 16) {
+                        SettingsPresets.applyQuality(i);
+                        return true;
+                    }
+                }
+
+                // Style Presets clicks
+                int sSegW = (fullW - 9) / 4;
+                for (int i = 0; i < 4; i++) {
+                    int presetBtnX = contentX + i * (sSegW + 3);
+                    if (mx >= presetBtnX && mx < presetBtnX + sSegW && my >= startY + 56 && my < startY + 56 + 16) {
+                        SettingsPresets.applyStyle(i);
+                        return true;
+                    }
+                }
+
+                // Hold Bake click
+                int curY = startY + 100;
+                if (mx >= contentX && mx < contentX + 200 && my >= curY && my < curY + 12) {
+                    LightConfig.holdBake = !LightConfig.holdBake;
+                    return true;
+                }
+
+                // Hold Bake On Join click
+                curY += 20;
+                if (mx >= contentX && mx < contentX + 200 && my >= curY && my < curY + 12) {
+                    LightConfig.holdBakeOnJoin = !LightConfig.holdBakeOnJoin;
+                    return true;
+                }
+            } else if (selectedSettingsCategory == 4) {
                 int colW = 200;
-                int leftColX = contentX;
-                int rightColX = contentX + 215;
                 int startY = pY + headerH + 10;
                 int itemSpacing = 20;
 
-                // --- COLUMNA IZQUIERDA CLICKS ---
+                // Column 1 (Left) clicks
                 int curY = startY;
                 curY += 12; // Title label offset
 
@@ -1625,7 +2003,7 @@ public class CALEditorPanel extends CLUIElement {
                 String[] qLabels = {"LOW", "MED", "HIGH", "ULTRA"};
                 int segW = (colW - 9) / 4;
                 for (int i = 0; i < qLabels.length; i++) {
-                    int qBtnX = leftColX + i * (segW + 3);
+                    int qBtnX = contentX + i * (segW + 3);
                     if (mx >= qBtnX && mx < qBtnX + segW && my >= curY && my < curY + 14) {
                         LightConfig.shadowQuality = i;
                         return true;
@@ -1633,31 +2011,153 @@ public class CALEditorPanel extends CLUIElement {
                 }
                 curY += 20;
 
+                // Shadows Live Checkbox click
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
+                    LightConfig.shadowsLive = !LightConfig.shadowsLive;
+                    return true;
+                }
+                curY += itemSpacing;
+
                 // Shadow Cache Checkbox click
-                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
                     LightConfig.shadowCache = !LightConfig.shadowCache;
                     return true;
                 }
                 curY += itemSpacing;
 
                 // Shadow Blocks Checkbox click
-                if (mx >= leftColX && mx < leftColX + colW && my >= curY && my < curY + 12) {
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
                     LightConfig.shadowBlocks = !LightConfig.shadowBlocks;
                     return true;
                 }
                 curY += itemSpacing;
 
-                // Shadow Block Radius Trackpad click
-                if (trackShadowBlockRadius.mouseClicked(mx, my, btn)) {
+                // Hold Bake Checkbox click
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
+                    LightConfig.holdBake = !LightConfig.holdBake;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Column 2 (Right) clicks
+                int rightColX = contentX + 215;
+                if (trackShadowBlockRadius.mouseClicked(mx, my, btn) ||
+                    trackShadowSoftness.mouseClicked(mx, my, btn)) {
+                    return true;
+                }
+            } else if (selectedSettingsCategory == 5) {
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+
+                // Column 1 (Left) clicks
+                if (trackVlIntensity.mouseClicked(mx, my, btn) ||
+                    trackVlSteps.mouseClicked(mx, my, btn) ||
+                    trackVlMaxDist.mouseClicked(mx, my, btn) ||
+                    trackVlTipBoost.mouseClicked(mx, my, btn) ||
+                    trackVlTipRadius.mouseClicked(mx, my, btn)) {
                     return true;
                 }
 
+                // Column 2 (Right) clicks
+                int rightColX = contentX + 215;
+                if (trackVlNoiseAmount.mouseClicked(mx, my, btn) ||
+                    trackVlNoiseScale.mouseClicked(mx, my, btn) ||
+                    trackVlNoiseSpeed.mouseClicked(mx, my, btn) ||
+                    trackVlNoiseMorph.mouseClicked(mx, my, btn)) {
+                    return true;
+                }
 
-                // --- COLUMNA DERECHA CLICKS ---
-                curY = startY;
+                int togglesY = startY + 4 * itemSpacing;
+                // VL Shadows click
+                if (mx >= rightColX && mx < rightColX + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlShadows = !LightConfig.vlShadows;
+                    return true;
+                }
+                // VL Noise click
+                if (mx >= rightColX + 100 && mx < rightColX + 100 + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlNoise = !LightConfig.vlNoise;
+                    return true;
+                }
+                togglesY += 15;
+                // Blue Noise click
+                if (mx >= rightColX && mx < rightColX + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlBlueNoise = !LightConfig.vlBlueNoise;
+                    return true;
+                }
+                // Temporal Dither click
+                if (mx >= rightColX + 100 && mx < rightColX + 100 + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlDitherTemporal = !LightConfig.vlDitherTemporal;
+                    return true;
+                }
+                togglesY += 15;
+                // Cluster Cull click
+                if (mx >= rightColX && mx < rightColX + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlClusterCull = !LightConfig.vlClusterCull;
+                    return true;
+                }
+                // Shadow Hi-Z click
+                if (mx >= rightColX + 100 && mx < rightColX + 100 + 90 && my >= togglesY && my < togglesY + 12) {
+                    LightConfig.vlShadowHiz = !LightConfig.vlShadowHiz;
+                    return true;
+                }
+            } else if (selectedSettingsCategory == 6) {
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
+
+                // Outline Enabled click
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
+                    LightConfig.outline = !LightConfig.outline;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Target clicks
+                curY += 12;
+                String[] tLabels = {"ALL", "ENTITIES", "BLOCKS"};
+                int segW = (colW - 6) / 3;
+                for (int i = 0; i < tLabels.length; i++) {
+                    int targetBtnX = contentX + i * (segW + 3);
+                    if (mx >= targetBtnX && mx < targetBtnX + segW && my >= curY && my < curY + 14) {
+                        LightConfig.outlineTarget = i;
+                        return true;
+                    }
+                }
+                curY += 20;
+
+                // Front outline click
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
+                    LightConfig.outlineFront = !LightConfig.outlineFront;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Glow outline click
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
+                    LightConfig.outlineGlow = !LightConfig.outlineGlow;
+                    return true;
+                }
+                curY += itemSpacing;
+
+                // Right column trackpads
+                if (trackOutlineStrength.mouseClicked(mx, my, btn) ||
+                    trackOutlinePixelSize.mouseClicked(mx, my, btn) ||
+                    trackOutlineFresnelPower.mouseClicked(mx, my, btn) ||
+                    trackOutlineBack.mouseClicked(mx, my, btn) ||
+                    trackOutlineFrontStrength.mouseClicked(mx, my, btn) ||
+                    trackOutlineGlowStrength.mouseClicked(mx, my, btn)) {
+                    return true;
+                }
+            } else if (selectedSettingsCategory == 7) {
+                int colW = 200;
+                int startY = pY + headerH + 10;
+                int itemSpacing = 20;
+                int curY = startY;
 
                 // Auto Lights Enable Checkbox click
-                if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
                     LightConfig.autoLights = !LightConfig.autoLights;
                     return true;
                 }
@@ -1665,22 +2165,20 @@ public class CALEditorPanel extends CLUIElement {
                 boolean autoLightsOn = LightConfig.autoLights;
 
                 if (autoLightsOn) {
-                    if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                    if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
                         LightConfig.autoLightCulling = !LightConfig.autoLightCulling;
                         return true;
                     }
-                }
-                curY += itemSpacing;
+                    curY += itemSpacing;
 
-                // Auto Lights Shadows Checkbox click
-                if (autoLightsOn) {
-                    if (mx >= rightColX && mx < rightColX + colW && my >= curY && my < curY + 12) {
+                    // Auto Lights Shadows Checkbox click
+                    if (mx >= contentX && mx < contentX + colW && my >= curY && my < curY + 12) {
                         LightConfig.autoLightShadows = !LightConfig.autoLightShadows;
                         return true;
                     }
                 }
-                curY += itemSpacing;
 
+                // Right column trackpads
                 if (autoLightsOn) {
                     if (trackAutoLightIntensity.mouseClicked(mx, my, btn) ||
                         trackAutoLightReach.mouseClicked(mx, my, btn) ||
@@ -1912,9 +2410,28 @@ public class CALEditorPanel extends CLUIElement {
             }
         }
         if (showSettingsPopup) {
-            if (selectedSettingsCategory == 3) {
+            if (selectedSettingsCategory == 4) {
                 return trackShadowBlockRadius.mouseReleased(mx, my, btn) ||
-                       trackAutoLightIntensity.mouseReleased(mx, my, btn) ||
+                       trackShadowSoftness.mouseReleased(mx, my, btn);
+            } else if (selectedSettingsCategory == 5) {
+                return trackVlIntensity.mouseReleased(mx, my, btn) ||
+                       trackVlSteps.mouseReleased(mx, my, btn) ||
+                       trackVlMaxDist.mouseReleased(mx, my, btn) ||
+                       trackVlTipBoost.mouseReleased(mx, my, btn) ||
+                       trackVlTipRadius.mouseReleased(mx, my, btn) ||
+                       trackVlNoiseAmount.mouseReleased(mx, my, btn) ||
+                       trackVlNoiseScale.mouseReleased(mx, my, btn) ||
+                       trackVlNoiseSpeed.mouseReleased(mx, my, btn) ||
+                       trackVlNoiseMorph.mouseReleased(mx, my, btn);
+            } else if (selectedSettingsCategory == 6) {
+                return trackOutlineStrength.mouseReleased(mx, my, btn) ||
+                       trackOutlinePixelSize.mouseReleased(mx, my, btn) ||
+                       trackOutlineFresnelPower.mouseReleased(mx, my, btn) ||
+                       trackOutlineBack.mouseReleased(mx, my, btn) ||
+                       trackOutlineFrontStrength.mouseReleased(mx, my, btn) ||
+                       trackOutlineGlowStrength.mouseReleased(mx, my, btn);
+            } else if (selectedSettingsCategory == 7) {
+                return trackAutoLightIntensity.mouseReleased(mx, my, btn) ||
                        trackAutoLightReach.mouseReleased(mx, my, btn) ||
                        trackAutoLightRadius.mouseReleased(mx, my, btn) ||
                        trackAutoLightMax.mouseReleased(mx, my, btn);
@@ -1964,9 +2481,28 @@ public class CALEditorPanel extends CLUIElement {
                 t = Math.max(0.0f, Math.min(1.0f, t));
                 CalSettings.INSTANCE.gizmoSize = t * 10.0f;
                 CalSettings.INSTANCE.save();
-            } else if (selectedSettingsCategory == 3) {
+            } else if (selectedSettingsCategory == 4) {
                 return trackShadowBlockRadius.mouseDragged(mx, my, btn, dx, dy) ||
-                       trackAutoLightIntensity.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackShadowSoftness.mouseDragged(mx, my, btn, dx, dy);
+            } else if (selectedSettingsCategory == 5) {
+                return trackVlIntensity.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlSteps.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlMaxDist.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlTipBoost.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlTipRadius.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlNoiseAmount.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlNoiseScale.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlNoiseSpeed.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackVlNoiseMorph.mouseDragged(mx, my, btn, dx, dy);
+            } else if (selectedSettingsCategory == 6) {
+                return trackOutlineStrength.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackOutlinePixelSize.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackOutlineFresnelPower.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackOutlineBack.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackOutlineFrontStrength.mouseDragged(mx, my, btn, dx, dy) ||
+                       trackOutlineGlowStrength.mouseDragged(mx, my, btn, dx, dy);
+            } else if (selectedSettingsCategory == 7) {
+                return trackAutoLightIntensity.mouseDragged(mx, my, btn, dx, dy) ||
                        trackAutoLightReach.mouseDragged(mx, my, btn, dx, dy) ||
                        trackAutoLightRadius.mouseDragged(mx, my, btn, dx, dy) ||
                        trackAutoLightMax.mouseDragged(mx, my, btn, dx, dy);

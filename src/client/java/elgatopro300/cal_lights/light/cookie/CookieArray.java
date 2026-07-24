@@ -233,7 +233,7 @@ public final class CookieArray extends CookieArrayBase {
         try {
             int layer = nextLayer++;
             uploadLayer(pixels, layer);
-            CALLightsClient.LOGGER.info("Cookie loaded '{}' -> layer {}", key, layer);
+            CALLightsClient.LOGGER.debug("Cookie loaded '{}' -> layer {}", key, layer);
             return layer;
         } finally {
             MemoryUtil.memFree(pixels);
