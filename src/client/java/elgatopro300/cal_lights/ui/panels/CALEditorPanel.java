@@ -160,54 +160,54 @@ public class CALEditorPanel extends CLUIElement {
         this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), LightConfig.shadowBlockRadius, 4f, 96f, val -> {
             LightConfig.shadowBlockRadius = Math.round(val);
         }).setArrowStep(1f);
-        this.trackShadowSoftness = new CLUITrackpad("Suavizado sombras", LightConfig.shadowSoftness, 0.0f, 0.8f, val -> {
+        this.trackShadowSoftness = new CLUITrackpad(CALKeys.SHADOW_SOFTNESS.get(), LightConfig.shadowSoftness, 0.0f, 0.8f, val -> {
             LightConfig.shadowSoftness = val;
         }).setArrowStep(0.01f);
 
-        this.trackVlIntensity = new CLUITrackpad("Intensidad VL", LightConfig.vlIntensity, 0.0f, 5.0f, val -> {
+        this.trackVlIntensity = new CLUITrackpad(CALKeys.VL_INTENSITY.get(), LightConfig.vlIntensity, 0.0f, 5.0f, val -> {
             LightConfig.vlIntensity = val;
         }).setArrowStep(0.05f);
-        this.trackVlSteps = new CLUITrackpad("Pasos raymarch", LightConfig.vlSteps, 1f, 96f, val -> {
+        this.trackVlSteps = new CLUITrackpad(CALKeys.VL_STEPS.get(), LightConfig.vlSteps, 1f, 96f, val -> {
             LightConfig.vlSteps = Math.round(val);
         }).setArrowStep(1f);
-        this.trackVlMaxDist = new CLUITrackpad("Distancia max VL", LightConfig.vlMaxDist, 10f, 300f, val -> {
+        this.trackVlMaxDist = new CLUITrackpad(CALKeys.VL_MAX_DIST.get(), LightConfig.vlMaxDist, 10f, 300f, val -> {
             LightConfig.vlMaxDist = val;
         }).setArrowStep(5f);
-        this.trackVlTipBoost = new CLUITrackpad("Boost punta", LightConfig.vlTipBoost, 0.0f, 10.0f, val -> {
+        this.trackVlTipBoost = new CLUITrackpad(CALKeys.VL_TIP_BOOST.get(), LightConfig.vlTipBoost, 0.0f, 10.0f, val -> {
             LightConfig.vlTipBoost = val;
         }).setArrowStep(0.1f);
-        this.trackVlTipRadius = new CLUITrackpad("Radio punta", LightConfig.vlTipRadius, 0.0f, 10.0f, val -> {
+        this.trackVlTipRadius = new CLUITrackpad(CALKeys.VL_TIP_RADIUS.get(), LightConfig.vlTipRadius, 0.0f, 10.0f, val -> {
             LightConfig.vlTipRadius = val;
         }).setArrowStep(0.1f);
-        this.trackVlNoiseAmount = new CLUITrackpad("Cantidad ruido", LightConfig.vlNoiseAmount, 0.0f, 1.0f, val -> {
+        this.trackVlNoiseAmount = new CLUITrackpad(CALKeys.VL_NOISE_AMOUNT.get(), LightConfig.vlNoiseAmount, 0.0f, 1.0f, val -> {
             LightConfig.vlNoiseAmount = val;
         }).setArrowStep(0.05f);
-        this.trackVlNoiseScale = new CLUITrackpad("Escala ruido", LightConfig.vlNoiseScale, 0.1f, 10.0f, val -> {
+        this.trackVlNoiseScale = new CLUITrackpad(CALKeys.VL_NOISE_SCALE.get(), LightConfig.vlNoiseScale, 0.1f, 10.0f, val -> {
             LightConfig.vlNoiseScale = val;
         }).setArrowStep(0.1f);
-        this.trackVlNoiseSpeed = new CLUITrackpad("Velocidad viento", LightConfig.vlNoiseSpeed, 0.0f, 5.0f, val -> {
+        this.trackVlNoiseSpeed = new CLUITrackpad(CALKeys.VL_NOISE_SPEED.get(), LightConfig.vlNoiseSpeed, 0.0f, 5.0f, val -> {
             LightConfig.vlNoiseSpeed = val;
         }).setArrowStep(0.25f);
-        this.trackVlNoiseMorph = new CLUITrackpad("Velocidad morph", LightConfig.vlNoiseMorph, 0.0f, 3.0f, val -> {
+        this.trackVlNoiseMorph = new CLUITrackpad(CALKeys.VL_NOISE_MORPH.get(), LightConfig.vlNoiseMorph, 0.0f, 3.0f, val -> {
             LightConfig.vlNoiseMorph = val;
         }).setArrowStep(0.25f);
 
-        this.trackOutlineStrength = new CLUITrackpad("Fuerza contorno", LightConfig.outlineStrength, 0.0f, 3.0f, val -> {
+        this.trackOutlineStrength = new CLUITrackpad(CALKeys.OUTLINE_STRENGTH.get(), LightConfig.outlineStrength, 0.0f, 3.0f, val -> {
             LightConfig.outlineStrength = val;
         }).setArrowStep(0.05f);
-        this.trackOutlinePixelSize = new CLUITrackpad("Grosor contorno", LightConfig.outlinePixelSize, 1f, 6f, val -> {
+        this.trackOutlinePixelSize = new CLUITrackpad(CALKeys.OUTLINE_PIXEL_SIZE.get(), LightConfig.outlinePixelSize, 1f, 6f, val -> {
             LightConfig.outlinePixelSize = Math.round(val);
         }).setArrowStep(1f);
-        this.trackOutlineFresnelPower = new CLUITrackpad("Exp. Fresnel", LightConfig.outlineFresnelPower, 0.1f, 10.0f, val -> {
+        this.trackOutlineFresnelPower = new CLUITrackpad(CALKeys.OUTLINE_FRESNEL_POWER.get(), LightConfig.outlineFresnelPower, 0.1f, 10.0f, val -> {
             LightConfig.outlineFresnelPower = val;
         }).setArrowStep(0.1f);
-        this.trackOutlineBack = new CLUITrackpad("Brillo posterior", LightConfig.outlineBack, 0.0f, 2.0f, val -> {
+        this.trackOutlineBack = new CLUITrackpad(CALKeys.OUTLINE_BACK.get(), LightConfig.outlineBack, 0.0f, 2.0f, val -> {
             LightConfig.outlineBack = val;
         }).setArrowStep(0.05f);
-        this.trackOutlineFrontStrength = new CLUITrackpad("Fuerza frontal", LightConfig.outlineFrontStrength, 0.0f, 1.5f, val -> {
+        this.trackOutlineFrontStrength = new CLUITrackpad(CALKeys.OUTLINE_FRONT_STRENGTH.get(), LightConfig.outlineFrontStrength, 0.0f, 1.5f, val -> {
             LightConfig.outlineFrontStrength = val;
         }).setArrowStep(0.05f);
-        this.trackOutlineGlowStrength = new CLUITrackpad("Fuerza brillo", LightConfig.outlineGlowStrength, 0.0f, 1.0f, val -> {
+        this.trackOutlineGlowStrength = new CLUITrackpad(CALKeys.OUTLINE_GLOW_STRENGTH.get(), LightConfig.outlineGlowStrength, 0.0f, 1.0f, val -> {
             LightConfig.outlineGlowStrength = val;
         }).setArrowStep(0.05f);
 
@@ -754,11 +754,11 @@ public class CALEditorPanel extends CLUIElement {
                 CALKeys.GENERAL.get(),
                 CALKeys.INTERFACE.get(),
                 CALKeys.KEYBINDS.get(),
-                "Presets",
-                "Sombras",
-                "Volumetría",
-                "Contornos",
-                "Auto Luces"
+                CALKeys.PRESETS.get(),
+                CALKeys.SHADOWS.get(),
+                CALKeys.VOLUMETRICS.get(),
+                CALKeys.OUTLINE.get(),
+                CALKeys.AUTO_LIGHTS.get()
             };
             for (int i = 0; i < categoryNames.length; i++) {
                 boolean hover = ctx.mouseX >= pX + 2 && ctx.mouseX < pX + sideW - 2 && ctx.mouseY >= categoryStartY + i * categoryRowH && ctx.mouseY < categoryStartY + i * categoryRowH + 18;
@@ -937,7 +937,7 @@ public class CALEditorPanel extends CLUIElement {
                 int fullW = 400;
 
                 // Quality Presets
-                ctx.batcher.text("Ajustes Preestablecidos de Calidad (Sombras + Pasos VL)", contentX, curY, 0xFFCCCCCC);
+                ctx.batcher.text(CALKeys.PRESETS_QUALITY_TITLE.get(), contentX, curY, 0xFFCCCCCC);
                 curY += 12;
                 String[] qLabels = SettingsPresets.QUALITY_LABELS;
                 int qActive = SettingsPresets.quality();
@@ -955,7 +955,7 @@ public class CALEditorPanel extends CLUIElement {
                 curY += 32;
 
                 // Style Presets
-                ctx.batcher.text("Estilo de Haz de Luz (Ruido + Boost)", contentX, curY, 0xFFCCCCCC);
+                ctx.batcher.text(CALKeys.PRESETS_STYLE_TITLE.get(), contentX, curY, 0xFFCCCCCC);
                 curY += 12;
                 String[] sLabels = SettingsPresets.STYLE_LABELS;
                 int sActive = SettingsPresets.style();
@@ -973,7 +973,7 @@ public class CALEditorPanel extends CLUIElement {
                 curY += 32;
 
                 // Dev debug presets: hold bake toggle + show guides toggle
-                ctx.batcher.text("Desarrollo y Rendimiento", contentX, curY, 0xFFCCCCCC);
+                ctx.batcher.text(CALKeys.PRESETS_DEV_TITLE.get(), contentX, curY, 0xFFCCCCCC);
                 curY += 12;
 
                 // Hold Bake (Pausar primer bakeado) Checkbox
@@ -985,7 +985,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.holdBake) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Pausar bakeado inicial (Hold Bake)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.HOLD_BAKE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += 20;
 
@@ -998,7 +998,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.holdBakeOnJoin) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Pausar al entrar al mundo", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.HOLD_BAKE_ON_JOIN.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
 
             } else if (selectedSettingsCategory == 4) {
@@ -1034,7 +1034,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.shadowsLive) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Habilitar sombras (Live)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.SHADOWS_LIVE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
@@ -1073,7 +1073,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.holdBake) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Pausar bakeado inicial (Hold)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.HOLD_BAKE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
@@ -1159,7 +1159,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlShadows) {
                         ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Sombras VL", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_SHADOWS_TOGGLE.get(), rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
                 {
                     // VL Noise
@@ -1171,7 +1171,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlNoise) {
                         ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Ruido VL", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_NOISE_TOGGLE.get(), rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
                 togglesY += 15;
                 {
@@ -1183,7 +1183,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlBlueNoise) {
                         ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Ruido Azul", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_BLUE_NOISE.get(), rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
                 {
                     // Temporal Dither
@@ -1195,7 +1195,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlDitherTemporal) {
                         ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Dither Temp.", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_DITHER_TEMPORAL.get(), rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
                 togglesY += 15;
                 {
@@ -1207,7 +1207,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlClusterCull) {
                         ctx.batcher.box(rightColX + 2, togglesY + 3, rightColX + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Cluster Cull", rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_CLUSTER_CULL.get(), rightColX + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
                 {
                     // Shadow Hi-Z
@@ -1219,7 +1219,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.vlShadowHiz) {
                         ctx.batcher.box(rightColX + xOff + 2, togglesY + 3, rightColX + xOff + boxSize - 2, togglesY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Hi-Z Cull", rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.VL_HIZ_CULL.get(), rightColX + xOff + boxSize + 6, togglesY + 2, 0xFFE0E0E0);
                 }
 
             } else if (selectedSettingsCategory == 6) {
@@ -1238,12 +1238,12 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.outline) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Habilitar contornos", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.OUTLINE_ENABLED.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
                 // Target segmented: ALL, ENTITIES, BLOCKS
-                ctx.batcher.text("Objetivo", contentX, curY, 0xFFCCCCCC);
+                ctx.batcher.text(CALKeys.OUTLINE_TARGET.get(), contentX, curY, 0xFFCCCCCC);
                 curY += 12;
                 String[] tLabels = {"ALL", "ENTITIES", "BLOCKS"};
                 int segW = (colW - 6) / 3;
@@ -1268,7 +1268,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.outlineFront) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Frente capturado", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.OUTLINE_FRONT_TOGGLE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 
@@ -1281,7 +1281,7 @@ public class CALEditorPanel extends CLUIElement {
                     if (LightConfig.outlineGlow) {
                         ctx.batcher.box(contentX + 2, curY + 3, contentX + boxSize - 2, curY + boxSize - 1, 0xFFFFAA00);
                     }
-                    ctx.batcher.text("Brillo interno (Bloom)", contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
+                    ctx.batcher.text(CALKeys.OUTLINE_GLOW_TOGGLE.get(), contentX + boxSize + 6, curY + 2, 0xFFE0E0E0);
                 }
                 curY += itemSpacing;
 

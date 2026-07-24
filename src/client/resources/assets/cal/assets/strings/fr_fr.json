@@ -261,5 +261,9 @@
   "cal.bbs.outline_thickness": "Épaisseur",
   "cal.bbs.tooltip.outline_enabled": "Activer ou désactiver le contour de la lumière",
   "cal.bbs.tooltip.outline_intensity": "Ajuster l'intensité du contour de la lumière",
-  "cal.bbs.tooltip.outline_thickness": "Ajuster l'épaisseur du contour de la lumière"
+  "cal.bbs.tooltip.outline_thickness": "Ajuster l'épaisseur du contour de la lumière",
+  "cal.ui.presets": "Préréglages",
+  "cal.ui.shadows": "Ombres",
+  "cal.ui.volumetrics": "Volumétrie",
+  "cal.ui.outline": "Contours"
 }
