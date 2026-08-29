@@ -19,6 +19,7 @@ public class CalSettings {
     public boolean englishSelected = true; // false = Español, true = English
     public String language = "en_us";
     public float gizmoSize = 10.0f; // default is 1.0f, ranges from 0.0f to 10.0f
+    public int gizmoMode = 3; // 0: TRANSLATE, 1: ROTATE, 2: SCALE, 3: COMBINED, 4: TOP
     public boolean simplifyAnimations = false; // true = simple/no animation, false = premium visual slide transitions
     
     // Premium BBS-style Timeline preferences
@@ -68,6 +69,9 @@ public class CalSettings {
                 if (json.has("gizmoSize")) {
                     this.gizmoSize = json.get("gizmoSize").getAsFloat();
                 }
+                if (json.has("gizmoMode")) {
+                    this.gizmoMode = json.get("gizmoMode").getAsInt();
+                }
                 if (json.has("durationMode")) {
                     this.durationMode = json.get("durationMode").getAsString();
                 }
@@ -106,6 +110,7 @@ public class CalSettings {
             json.addProperty("englishSelected", this.englishSelected);
             json.addProperty("language", this.language);
             json.addProperty("gizmoSize", this.gizmoSize);
+            json.addProperty("gizmoMode", this.gizmoMode);
             json.addProperty("durationMode", this.durationMode);
             json.addProperty("simplifyAnimations", this.simplifyAnimations);
             

@@ -3,6 +3,7 @@ package elgatopro300.cal_lights.manager;
 import elgatopro300.cal_lights.CALLightsClient;
 import elgatopro300.cal_lights.animation.LightAnimation;
 
+import elgatopro300.cal_lights.light.LightConfig;
 import net.minecraft.client.MinecraftClient;
 
 import com.google.gson.Gson;
@@ -43,6 +44,7 @@ public class LightSaveManager {
             // Load new world lights
             lastWorldId = currentId;
             loadLights(currentId);
+            LightConfig.holdBake = LightConfig.holdBakeOnJoin;
         }
     }
 

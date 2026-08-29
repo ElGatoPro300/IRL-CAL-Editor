@@ -162,7 +162,14 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        LightGizmo.INSTANCE.updateHover(mouseX, mouseY);
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        LightGizmo.INSTANCE.updateHover(mouseX, mouseY);
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
             // Freeze the player and allow block clipping
