@@ -468,7 +468,7 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.box(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, bg);
             ctx.batcher.outline(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, border, 1);
             String labelStr = modeLabels[i].get();
-            int lblW = MinecraftClient.getInstance().textRenderer.getWidth(labelStr);
+            int lblW = Minecraft.getInstance().font.width(labelStr);
             ctx.batcher.text(labelStr, btnX + (modeBtnW - lblW) / 2, topY + topMenuH + 5, isSelected ? 0xFFFFFFFF : (hoverMode ? 0xFFFFAA00 : 0xFFCCCCCC));
         }
 
@@ -952,7 +952,7 @@ public class CALEditorPanel extends CLUIElement {
                     int qBg = isCurrentQ ? 0xFF1976D2 : (hoverQ ? 0xFF2A2A35 : 0xFF1E1E24);
                     ctx.batcher.box(btnX, curY, btnX + qSegW, curY + 16, qBg);
                     ctx.batcher.outline(btnX, curY, btnX + qSegW, curY + 16, isCurrentQ ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(qLabels[i]);
+                    int textW = Minecraft.getInstance().font.width(qLabels[i]);
                     ctx.batcher.text(qLabels[i], btnX + (qSegW - textW) / 2, curY + 4, isCurrentQ ? 0xFFFFFFFF : 0xFFBBBBBB);
                 }
                 curY += 32;
@@ -970,7 +970,7 @@ public class CALEditorPanel extends CLUIElement {
                     int sBg = isCurrentS ? 0xFF1976D2 : (hoverS ? 0xFF2A2A35 : 0xFF1E1E24);
                     ctx.batcher.box(btnX, curY, btnX + sSegW, curY + 16, sBg);
                     ctx.batcher.outline(btnX, curY, btnX + sSegW, curY + 16, isCurrentS ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(sLabels[i]);
+                    int textW = Minecraft.getInstance().font.width(sLabels[i]);
                     ctx.batcher.text(sLabels[i], btnX + (sSegW - textW) / 2, curY + 4, isCurrentS ? 0xFFFFFFFF : 0xFFBBBBBB);
                 }
                 curY += 32;
@@ -1258,7 +1258,7 @@ public class CALEditorPanel extends CLUIElement {
                     ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, tBg);
                     ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentT ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
                     String tStr = tLabels[i].get();
-                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(tStr);
+                    int textW = Minecraft.getInstance().font.width(tStr);
                     ctx.batcher.text(tStr, btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
                 }
                 curY += 20;
@@ -1879,6 +1879,7 @@ public class CALEditorPanel extends CLUIElement {
                         CalSettings.INSTANCE.guiScale = sc;
                         CalSettings.INSTANCE.save();
                         Minecraft.getInstance().options.guiScale().set(sc);
+                        Minecraft.getInstance().resizeDisplay();
                         return true;
                     }
                 }
@@ -2220,7 +2221,7 @@ public class CALEditorPanel extends CLUIElement {
                         LightSaveManager.forceSaveCurrent();
                         Minecraft mc = Minecraft.getInstance();
                         if (mc.player != null) {
-                            mc.player.sendSystemMessage(Component.literal(CALKeys.SAVED_SUCCESS.get()));
+                            mc.player.displayClientMessage(Component.literal(CALKeys.SAVED_SUCCESS.get()), false);
                         }
                     } else if (clickedIdx == 2) {
                         showPatcherPopup = true;

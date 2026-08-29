@@ -23,11 +23,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.KeyMapping;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL30;
@@ -39,8 +37,8 @@ import org.slf4j.LoggerFactory;
 
 public class CALLightsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("IRL CAL Editor Client");
-    public static KeyBinding editorKeyBinding;
-    public static KeyBinding createLightKeyBinding;
+    public static KeyMapping editorKeyBinding;
+    public static KeyMapping createLightKeyBinding;
 
     @Override
     public void onInitializeClient() {
@@ -60,18 +58,18 @@ public class CALLightsClient implements ClientModInitializer {
             LOGGER.info("irlite detected — deferring shared irl-core wiring to the BBS addon.");
         }
 
-        editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        editorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.cal.editor",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
-        createLightKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        createLightKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.cal.create_light",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F7,
-            KeyBinding.Category.MISC
+            KeyMapping.Category.MISC
         ));
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {

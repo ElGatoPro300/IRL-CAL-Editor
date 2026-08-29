@@ -5,13 +5,13 @@ import elgatopro300.cal_lights.light.PlacedLight;
 
 import org.qualet.irl.light.iris.IrisShadersState;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public final class AutoLightManager {
     private static final LongOpenHashSet seenThisPass = new LongOpenHashSet();
     private static final LongOpenHashSet claimedCellsThisPass = new LongOpenHashSet();
     private static final List<PlacedLight> feed = new ArrayList<>();
-    private static final BlockPos.Mutable NB = new BlockPos.Mutable();
+    private static final BlockPos.MutableBlockPos NB = new BlockPos.MutableBlockPos();
 
     private static int setGeneration;
     private static int feedGeneration = Integer.MIN_VALUE;
@@ -75,7 +75,7 @@ public final class AutoLightManager {
         lastActiveCount = 0;
     }
 
-    public static void tick(ClientWorld world, double centerX, double centerY, double centerZ) {
+    public static void tick(ClientLevel world, double centerX, double centerY, double centerZ) {
         if (!LightConfig.autoLights() || world == null) {
             if (!byPos.isEmpty() || passActive) {
                 clear();
@@ -117,7 +117,7 @@ public final class AutoLightManager {
         passActive = true;
     }
 
-    private static void stepPass(ClientWorld world) {
+    private static void stepPass(ClientLevel world) {
         int total = passSpanX * passSpanZ;
         int chunksThisTick = 0;
         int sectionsThisTick = 0;
@@ -130,7 +130,7 @@ public final class AutoLightManager {
 
             int chunkX = passMinChunkX + (idx % passSpanX);
             int chunkZ = passMinChunkZ + (idx / passSpanX);
-            WorldChunk chunk = world.getChunkManager().getWorldChunk(chunkX, chunkZ, false);
+            LevelChunk chunk = world.getChunkSource().getChunk(chunkX, chunkZ, false);
             if (chunk == null) {
                 continue;
             }
@@ -151,16 +151,16 @@ public final class AutoLightManager {
         }
     }
 
-    private static int scanChunk(ClientWorld world, WorldChunk chunk, int chunkX, int chunkZ) {
-        ChunkSection[] sections = chunk.getSectionArray();
-        int bottomY = chunk.getBottomY();
+    private static int scanChunk(ClientLevel world, LevelChunk chunk, int chunkX, int chunkZ) {
+        LevelChunkSection[] sections = chunk.getSections();
+        int bottomY = chunk.getMinY();
         int baseX = chunkX << 4;
         int baseZ = chunkZ << 4;
         int fullScanned = 0;
 
         for (int s = 0; s < sections.length; s++) {
-            ChunkSection sec = sections[s];
-            if (sec == null || sec.isEmpty()) {
+            LevelChunkSection sec = sections[s];
+            if (sec == null || sec.hasOnlyAir()) {
                 continue;
             }
 
@@ -168,7 +168,7 @@ public final class AutoLightManager {
             if (secMinY + 15 < passMinY || secMinY > passMaxY) {
                 continue;
             }
-            if (!sec.hasAny(EMISSIVE)) {
+            if (!sec.maybeHas(EMISSIVE)) {
                 continue;
             }
             fullScanned++;
@@ -236,7 +236,7 @@ public final class AutoLightManager {
         return fullScanned;
     }
 
-    private static boolean isExposed(ClientWorld world, ChunkSection sec,
+    private static boolean isExposed(ClientLevel world, LevelChunkSection sec,
                                      int lx, int ly, int lz,
                                      int wx, int wy, int wz) {
         return isOpen(world, sec, lx + 1, ly, lz, wx + 1, wy, wz)
@@ -247,7 +247,7 @@ public final class AutoLightManager {
             || isOpen(world, sec, lx, ly, lz - 1, wx, wy, wz - 1);
     }
 
-    private static boolean isOpen(ClientWorld world, ChunkSection sec,
+    private static boolean isOpen(ClientLevel world, LevelChunkSection sec,
                                   int lx, int ly, int lz,
                                   int wx, int wy, int wz) {
         NB.set(wx, wy, wz);
@@ -259,14 +259,14 @@ public final class AutoLightManager {
         return (lx | ly | lz) >= 0 && lx < 16 && ly < 16 && lz < 16;
     }
 
-    private static boolean isOpenState(ClientWorld world, BlockState n, BlockPos pos) {
+    private static boolean isOpenState(ClientLevel world, BlockState n, BlockPos pos) {
         if (BlockLightDefs.resolve(n) != null) {
             return false;
         }
-        return !n.isOpaqueFullCube();
+        return !n.isSolidRender();
     }
 
-    private static long neighborSweep(ClientWorld world, ChunkSection sec, Block self,
+    private static long neighborSweep(ClientLevel world, LevelChunkSection sec, Block self,
                                       int lx, int ly, int lz, int wx, int wy, int wz) {
         boolean exposed = false;
         int same = 0;
@@ -286,7 +286,7 @@ public final class AutoLightManager {
         return (exposed ? 1L : 0L) | ((long) same << 1);
     }
 
-    public static List<PlacedLight> nearest(Vec3d cameraPos, int max) {
+    public static List<PlacedLight> nearest(Vec3 cameraPos, int max) {
         if (byPos.isEmpty() || cameraPos == null || max <= 0) {
             feed.clear();
             feedGeneration = setGeneration;

@@ -13,8 +13,8 @@ import org.qualet.irl.light.VlGlobalsBuffer;
 import org.qualet.irl.light.shadow.PointDepthAtlas;
 import org.qualet.irl.light.shadow.ShadowBaker;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public final class LightDriver {
         autoShadowRamp = 0;
     }
 
-    public static void collect(ClientWorld world, Vec3d cameraPos, float tickDelta) {
+    public static void collect(ClientLevel world, Vec3 cameraPos, float tickDelta) {
         // Track the global-VL knobs each frame: they land in the globals UBO
         // (binding 7) on the SSBO upload, so UBO-era shader patches read every
         // VL number and flag live without a recompile.

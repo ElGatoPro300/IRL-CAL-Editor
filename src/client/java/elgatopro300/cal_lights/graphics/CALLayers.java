@@ -1,25 +1,25 @@
 package elgatopro300.cal_lights.graphics;
 
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BuiltBuffer;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderSetup;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 public final class CALLayers {
     private static final BlendFunction BLEND = BlendFunction.TRANSLUCENT;
 
     private static final RenderPipeline POSITION_COLOR_LINES = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
-            .withLocation(Identifier.of("cal", "pipeline/draw_position_color_lines"))
-            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
+        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("cal", "pipeline/draw_position_color_lines"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
             .withBlend(BLEND)
             .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
             .withCull(false)
@@ -27,9 +27,9 @@ public final class CALLayers {
     );
 
     private static final RenderPipeline POSITION_COLOR_TRIS = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
-            .withLocation(Identifier.of("cal", "pipeline/draw_position_color"))
-            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
+        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("cal", "pipeline/draw_position_color"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
             .withBlend(BLEND)
             .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
             .withCull(false)
@@ -37,9 +37,9 @@ public final class CALLayers {
     );
 
     private static final RenderPipeline POSITION_COLOR_TRIS_NO_DEPTH = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.POSITION_COLOR_SNIPPET)
-            .withLocation(Identifier.of("cal", "pipeline/draw_position_color_no_depth"))
-            .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
+        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("cal", "pipeline/draw_position_color_no_depth"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
             .withBlend(BLEND)
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
             .withDepthWrite(false)
@@ -48,9 +48,9 @@ public final class CALLayers {
     );
 
     private static final RenderPipeline POSITION_TEX_COLOR_QUADS_NO_DEPTH = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
-            .withLocation(Identifier.of("cal", "pipeline/draw_position_tex_color_no_depth"))
-            .withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS)
+        RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("cal", "pipeline/draw_position_tex_color_no_depth"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.DrawMode.QUADS)
             .withBlend(BLEND)
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
             .withDepthWrite(false)
@@ -58,45 +58,45 @@ public final class CALLayers {
             .build()
     );
 
-    private static RenderLayer positionColorLinesLayer;
-    private static RenderLayer positionColorLayer;
-    private static RenderLayer positionColorNoDepthLayer;
-    private static RenderLayer positionTexColorNoDepthLayer;
+    private static RenderType positionColorLinesLayer;
+    private static RenderType positionColorLayer;
+    private static RenderType positionColorNoDepthLayer;
+    private static RenderType positionTexColorNoDepthLayer;
 
-    public static RenderLayer getPositionColorLinesLayer() {
+    public static RenderType getPositionColorLinesLayer() {
         if (positionColorLinesLayer == null) {
-            positionColorLinesLayer = RenderLayer.of("cal_draw_position_color_lines",
-                RenderSetup.builder(POSITION_COLOR_LINES).translucent().build());
+            positionColorLinesLayer = RenderType.create("cal_draw_position_color_lines",
+                RenderSetup.builder(POSITION_COLOR_LINES).sortOnUpload().createRenderSetup());
         }
         return positionColorLinesLayer;
     }
 
-    public static RenderLayer getPositionColorLayer() {
+    public static RenderType getPositionColorLayer() {
         if (positionColorLayer == null) {
-            positionColorLayer = RenderLayer.of("cal_draw_position_color",
-                RenderSetup.builder(POSITION_COLOR_TRIS).translucent().build());
+            positionColorLayer = RenderType.create("cal_draw_position_color",
+                RenderSetup.builder(POSITION_COLOR_TRIS).sortOnUpload().createRenderSetup());
         }
         return positionColorLayer;
     }
 
-    public static RenderLayer getPositionColorNoDepthLayer() {
+    public static RenderType getPositionColorNoDepthLayer() {
         if (positionColorNoDepthLayer == null) {
-            positionColorNoDepthLayer = RenderLayer.of("cal_draw_position_color_no_depth",
-                RenderSetup.builder(POSITION_COLOR_TRIS_NO_DEPTH).translucent().build());
+            positionColorNoDepthLayer = RenderType.create("cal_draw_position_color_no_depth",
+                RenderSetup.builder(POSITION_COLOR_TRIS_NO_DEPTH).sortOnUpload().createRenderSetup());
         }
         return positionColorNoDepthLayer;
     }
 
-    public static RenderLayer getPositionTexColorNoDepthLayer(Identifier texture) {
+    public static RenderType getPositionTexColorNoDepthLayer(Identifier texture) {
         RenderSetup setup = RenderSetup.builder(POSITION_TEX_COLOR_QUADS_NO_DEPTH)
-            .texture("Sampler0", texture)
-            .translucent()
-            .build();
-        return RenderLayer.of("cal_billboard_" + texture.getPath(), setup);
+            .withTexture("Sampler0", texture)
+            .sortOnUpload()
+            .createRenderSetup();
+        return RenderType.create("cal_billboard_" + texture.getPath(), setup);
     }
 
-    public static void flush(BufferBuilder builder, RenderLayer layer) {
-        BuiltBuffer built = builder.endNullable();
+    public static void flush(BufferBuilder builder, RenderType layer) {
+        MeshData built = builder.build();
         if (built != null) {
             layer.draw(built);
         }

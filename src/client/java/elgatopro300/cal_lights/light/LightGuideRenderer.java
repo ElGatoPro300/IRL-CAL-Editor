@@ -8,17 +8,17 @@ import elgatopro300.cal_lights.ui.CALEditorScreen;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 public final class LightGuideRenderer
@@ -45,27 +45,27 @@ public final class LightGuideRenderer
 
         // When the editor overlay is up it draws the richer guides itself
         // suppress this in-world wire pass so they don't double up.
-        if (MinecraftClient.getInstance().currentScreen instanceof CALEditorScreen)
+        if (Minecraft.getInstance().screen instanceof CALEditorScreen)
         {
             return;
         }
 
-        Camera cam = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
         if (cam == null)
         {
             return;
         }
 
-        Vec3d c = cam.getCameraPos();
-        MatrixStack ms = ctx.matrices();
+        Vec3 c = cam.position();
+        PoseStack ms = ctx.matrices();
         Matrix4f m = ms != null
-            ? ms.peek().getPositionMatrix()
+            ? ms.last().pose()
             : new Matrix4f()
-                .rotateX((float) Math.toRadians(cam.getPitch()))
-                .rotateY((float) Math.toRadians(cam.getYaw() + 180.0));
+                .rotateX((float) Math.toRadians(cam.xRot()))
+                .rotateY((float) Math.toRadians(cam.yRot() + 180.0));
 
-        BufferBuilder buf = Tessellator.getInstance()
-            .begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder buf = Tesselator.getInstance()
+            .begin(VertexFormat.DrawMode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (LightInstance l : LightManager.INSTANCE.getPointLights())
         {
@@ -162,8 +162,8 @@ public final class LightGuideRenderer
 
     private static void line(BufferBuilder buf, Matrix4f m, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
     {
-        buf.vertex(m, x1, y1, z1).color(r, g, b, 1f);
-        buf.vertex(m, x2, y2, z2).color(r, g, b, 1f);
+        buf.addVertex(m, x1, y1, z1).setColor(r, g, b, 1f);
+        buf.addVertex(m, x2, y2, z2).setColor(r, g, b, 1f);
     }
 
     private static float vis(float v)

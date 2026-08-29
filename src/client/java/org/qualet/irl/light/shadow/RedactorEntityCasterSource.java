@@ -1,11 +1,11 @@
 package org.qualet.irl.light.shadow;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.Vec3;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -33,22 +33,22 @@ public final class RedactorEntityCasterSource implements ShadowCasterSource
     }
 
     @Override
-    public void collect(ClientWorld world, Vec3d camPos, float tickDelta, OccluderSink sink)
+    public void collect(ClientLevel world, Vec3 camPos, float tickDelta, OccluderSink sink)
     {
         entityGeom.clear();
 
         double camX = camPos.x, camY = camPos.y, camZ = camPos.z;
 
-        for (Entity entity : world.getEntities())
+        for (Entity entity : world.entitiesForRendering())
         {
             if (!(entity instanceof LivingEntity) && !(entity instanceof ItemEntity))
             {
                 continue;
             }
 
-            double ex = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX());
-            double ey = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY());
-            double ez = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ());
+            double ex = Mth.lerp(tickDelta, entity.xOld, entity.getX());
+            double ey = Mth.lerp(tickDelta, entity.yOld, entity.getY());
+            double ez = Mth.lerp(tickDelta, entity.zOld, entity.getZ());
             double dx = ex - camX, dy = ey - camY, dz = ez - camZ;
             if (dx * dx + dy * dy + dz * dz > COLLECT_DIST_SQ)
             {
