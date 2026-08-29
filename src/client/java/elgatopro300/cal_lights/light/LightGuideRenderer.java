@@ -5,8 +5,8 @@ import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -33,10 +33,10 @@ public final class LightGuideRenderer
 
     public static void register()
     {
-        WorldRenderEvents.END_MAIN.register(LightGuideRenderer::onRender);
+        LevelRenderEvents.END_MAIN.register(LightGuideRenderer::onRender);
     }
 
-    private static void onRender(WorldRenderContext ctx)
+    private static void onRender(LevelRenderContext ctx)
     {
         if (!LightConfig.showGuides || (LightManager.INSTANCE.getPointLights().isEmpty() && LightManager.INSTANCE.getSpotLights().isEmpty()))
         {
@@ -57,7 +57,7 @@ public final class LightGuideRenderer
         }
 
         Vec3 c = cam.position();
-        PoseStack ms = ctx.matrices();
+        PoseStack ms = ctx.poseStack();
         Matrix4f m = ms != null
             ? ms.last().pose()
             : new Matrix4f()
@@ -65,7 +65,7 @@ public final class LightGuideRenderer
                 .rotateY((float) Math.toRadians(cam.yRot() + 180.0));
 
         BufferBuilder buf = Tesselator.getInstance()
-            .begin(VertexFormat.DrawMode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            .begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (LightInstance l : LightManager.INSTANCE.getPointLights())
         {

@@ -65,7 +65,7 @@ dependencies {
 	implementation 'io.github.java-diff-utils:java-diff-utils:4.15'
 	
 	// Local dependencies (Put these jars in 'libs' folder)
-	Implementation files('libs/irl-core-1.1.5-26.1.jar')
+	implementation files('libs/irl-core-1.1.5-26.1.jar')
 }
 
 processResources {
@@ -86,8 +86,9 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 }
 
 jar {

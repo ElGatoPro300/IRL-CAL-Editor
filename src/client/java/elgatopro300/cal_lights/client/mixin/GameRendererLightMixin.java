@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = GameRenderer.class, priority = 900)
 public class GameRendererLightMixin {
     @Inject(method = "renderLevel", at = @At("HEAD"))
-    private void irlite$collectLights(DeltaTracker tickCounter, CallbackInfo ci) {
+    private void irlite$collectAndUploadLights(DeltaTracker tickCounter, CallbackInfo ci) {
         if (FabricLoader.getInstance().isModLoaded("irlite")) {
             return;
         }
@@ -30,16 +30,6 @@ public class GameRendererLightMixin {
             LightDriver::collect,
             LightDriver::resetAutoShadowRamp
         );
-    }
-    
-    @Inject(method = "renderLevel",
-            at = @At(value = "INVOKE",
-                     target = "Lnet/minecraft/client/renderer/GameRenderer;extractCamera(F)V",
-                     shift = At.Shift.AFTER,
-                     ordinal = 0),
-            require = 1)
-    private void irlite$uploadLights(DeltaTracker tickCounter, CallbackInfo ci)
-    {
         FramePipeline.uploadIfPending();
     }
 }

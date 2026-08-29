@@ -10,13 +10,13 @@ import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.CalSettings;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.PerspectiveProjectionMatrixBuffer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Intersectiond;
@@ -35,7 +35,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Axis;
 
 import java.util.Collection;
 
@@ -125,7 +124,7 @@ public class LightGizmo {
     private final Matrix4f lastProjectionMatrix = new Matrix4f();
     private final Matrix4f capturedModelView = new Matrix4f();
     private boolean captured = false;
-    private final PerspectiveProjectionMatrixBuffer rawProjection = new PerspectiveProjectionMatrixBuffer("cal_gizmo");
+    private final ProjectionMatrixBuffer rawProjection = new ProjectionMatrixBuffer("cal_gizmo");
 
     private float lastSx = 1F;
     private float lastSy = 1F;
@@ -154,7 +153,7 @@ public class LightGizmo {
     private final Vector3f dragProgressEnd = new Vector3f();
 
     public void init() {
-        WorldRenderEvents.END_MAIN.register(this::render);
+        LevelRenderEvents.END_MAIN.register(this::render);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -191,18 +190,21 @@ public class LightGizmo {
         return this.hoveredHandle;
     }
 
-    private void render(WorldRenderContext context) {
+    private void render(LevelRenderContext context) {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return;
         if (!(client.screen instanceof CALEditorScreen)) return;
 
-        float fov = client.options.fov().get().floatValue();
-        this.lastProjectionMatrix.set(client.gameRenderer.getProjectionMatrix(fov));
+        if (context.levelState() != null && context.levelState().cameraRenderState != null && context.levelState().cameraRenderState.projectionMatrix != null) {
+            this.lastProjectionMatrix.set(context.levelState().cameraRenderState.projectionMatrix);
+        }
         this.capturedModelView.set(RenderSystem.getModelViewMatrix());
         this.captured = true;
+
+        renderOverlay();
     }
 
-    public void renderOverlay(GuiGraphics drawContext) {
+    public void renderOverlay(GuiGraphicsExtractor drawContext) {
         renderOverlay();
     }
 
@@ -282,7 +284,7 @@ public class LightGizmo {
     private void drawBillboardQuad(PoseStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
         if (texture == null) return;
         Matrix4f matrix = stack.last().pose();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.DrawMode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         float u1 = texX / (float) texture.width;
         float v1 = texY / (float) texture.height;
@@ -301,7 +303,7 @@ public class LightGizmo {
         stack.pushPose();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         float r = light.r;
         float g = light.g;
@@ -480,7 +482,7 @@ public class LightGizmo {
 
         this.updateFlipSigns(camPos, light);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         if (this.mode == Mode.ROTATE) drawRotate(builder, stack, scale);
         else if (this.mode == Mode.COMBINED) drawCombined(builder, stack, scale);
@@ -863,8 +865,8 @@ public class LightGizmo {
         double vStep = Math.PI * 2D / (double) segV;
 
         stack.pushPose();
-        if (axis == Axis.X) stack.mulPose(Axis.ZP.rotation((float) (Math.PI / 2F)));
-        if (axis == Axis.Z) stack.mulPose(Axis.XN.rotation((float) (Math.PI / 2F)));
+        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation((float) (Math.PI / 2F)));
+        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XN.rotation((float) (Math.PI / 2F)));
 
         float tubeR = thickness * 0.5F;
         Matrix4f mat = stack.last().pose();
@@ -916,8 +918,8 @@ public class LightGizmo {
 
         stack.pushPose();
         stack.translate(x1, y1, z1);
-        stack.mulPose(Axis.YP.rotationDegrees(yaw));
-        stack.mulPose(Axis.XP.rotationDegrees(pitch));
+        stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw));
+        stack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(pitch));
 
         fillBox(builder, stack, -thickness / 2, -thickness / 2, 0, thickness / 2, thickness / 2, (float) distance, r, g, b, a);
         stack.popPose();

@@ -7,32 +7,27 @@ import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.MovingBlockRenderState;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.BlockModelPart;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Quaternionf;
+import org.joml.Vector3fc;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -45,34 +40,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 /**
  * Captures the REAL model geometry of a shadow occluder into a flat CPU triangle
  * buffer, so {@link ShadowRenderer} can rasterize a faithful silhouette into its
- * depth maps — the 1.21.11 equivalent of the {@code dispatcher.render(...,
- * Immediate, ...)} path used on the 1.20.4 / 1.21.1 redactor lines.
- *
- * <p><b>Why this exists.</b> 1.21.11 (post 1.21.5 RenderPipeline + 1.21.9
- * {@code EntityRenderState}) no longer rasterizes entities through an immediate
- * {@code VertexConsumerProvider}; entity renderers instead <i>submit deferred
- * commands</i> to an {@link SubmitNodeCollector} that MC later executes
- * against its {@code GpuDevice}. There is no reachable immediate-to-FBO path, so
- * the earlier port fell back to an AABB box occluder. But the queue is an
- * <i>interface</i>, and MC's executor simply does {@code model.setAngles(state);
- * model.render(matrices, vertexConsumer, ...)}. So a capturing queue can run the
- * real entity render and redirect its geometry into a position-recording
- * {@link VertexConsumer}, reconstructing the true model silhouette — no GL is
- * issued here (the consumer just records floats); {@link ShadowRenderer} draws
- * the captured triangles itself.</p>
- *
- * <p><b>Coordinate space.</b> The entity is rendered at its lerped world position
- * MINUS the pass's light-relative anchor {@code A = round(lightPos)}
- * ({@link ShadowRenderer#currentOriginX()}), so captured entity vertices come out in
- * anchor-relative {@code world - A} space — matching the anchor-relative light view
- * the depth bake uses (eye {@code = L - A}), the same {@code A} the core block /
- * cutout arms subtract. The subtraction is done in DOUBLE before {@code
- * EntityRenderManager.render}'s matrix narrows to float, keeping sub-block precision
- * at large world coordinates. {@code ModelPart}/{@code quad} hand the consumer
- * positions already transformed by the matrix, so the consumer applies no matrix of
- * its own. (The dead {@link #captureCutoutBlockTris} helper still pre-translates to
- * the absolute block origin; it has no caller on this line — the live cutout bake is
- * core {@code ShadowRenderer}'s.)</p>
+ * depth maps.
  *
  * <p>Single-threaded (render thread); one shared {@link Capture} + {@link CaptureQueue}.</p>
  */
@@ -85,12 +53,7 @@ public final class OccluderGeometryCapturer
     private static final CaptureQueue QUEUE = new CaptureQueue(CAPTURE);
     /** Reused, so a held armor-stand / mob silhouette pose is deterministic. */
     private static final CameraRenderState CAMERA_STATE = new CameraRenderState();
-    /** Entity ids whose render threw hard inside MC's entity pipeline (which wraps
-     *  the failure in a CrashReport + CrashException). Skipped on later bakes so a
-     *  consistently-broken (e.g. buggy modded) entity is not re-attempted — and its
-     *  crash report rebuilt — every frame. Per-entity granularity; a healthy entity
-     *  is never skipped. (Id reuse after despawn could skip a new entity sharing the
-     *  id; benign — at worst one missing shadow, vs. per-frame crash-report spam.) */
+    /** Entity ids whose render threw hard inside MC's entity pipeline. */
     private static final IntOpenHashSet failedEntities = new IntOpenHashSet();
 
     private static final float[] EMPTY = new float[0];
@@ -130,9 +93,6 @@ public final class OccluderGeometryCapturer
                 return EMPTY;
             }
 
-            // Orientation/pos for any camera-aligned sub-render; bodies of living
-            // entities pose from the render state itself. Default (identity) is
-            // safe when the camera is not yet configured.
             Camera cam = mgr.camera;
             if (cam != null)
             {
@@ -142,14 +102,6 @@ public final class OccluderGeometryCapturer
             }
 
             CAPTURE.reset();
-            // Subtract the pass's light-relative anchor A = round(lightPos) (worldPos
-            // - A) in DOUBLE before EntityRenderManager.render's MatrixStack.translate
-            // narrows to float, so captured vertices come out in anchor-relative
-            // (world - A) space — matching the anchor-relative view eye (L - A) and the
-            // same A the core block / cutout arms subtract. Without it the ~1e5
-            // absolute coords fall outside the light frustum and the entity casts no
-            // shadow. The caster (RedactorEntityCasterSource) records this A alongside
-            // the cached geometry so a later light in a different cell can re-base it.
             double ox = ShadowRenderer.currentOriginX();
             double oy = ShadowRenderer.currentOriginY();
             double oz = ShadowRenderer.currentOriginZ();
@@ -158,53 +110,7 @@ public final class OccluderGeometryCapturer
         }
         catch (Throwable t)
         {
-            // A single bad entity must not abort the bake. MC wraps a render
-            // failure in a CrashReport + CrashException, so skip this entity on
-            // later bakes instead of rebuilding that report every frame.
             failedEntities.add(entity.getId());
-            return EMPTY;
-        }
-    }
-
-    /**
-     * Capture one cutout block as world-space POSITION+UV triangles (5 floats per
-     * vertex) through MC's real {@link BlockRenderDispatcher#renderBatched} tessellation
-     * (neighbour-culled, correct atlas UVs) — replacing the earlier hand-rolled
-     * {@code BakedQuad} extraction. {@link ShadowRenderer} draws these with the
-     * atlas-sampling, alpha-discarding cutout program. Empty array on failure.
-     */
-    public static float[] captureCutoutBlockTris(BlockAndTintGetter world, BlockRenderDispatcher brm,
-                                                 BlockPos pos, BlockState state, RandomSource random)
-    {
-        if (world == null || brm == null || state == null)
-        {
-            return EMPTY;
-        }
-        try
-        {
-            BlockStateModel model = brm.getBlockModel(state);
-            if (model == null)
-            {
-                return EMPTY;
-            }
-            random.setSeed(state.getSeed(pos));
-            List<BlockModelPart> parts = model.collectParts(random);
-            if (parts == null || parts.isEmpty())
-            {
-                return EMPTY;
-            }
-
-            PoseStack ms = new PoseStack();
-            // Pre-translate to the absolute block origin: BlockModelRenderer only
-            // applies the block's model offset, never its position.
-            ms.translate(pos.getX(), pos.getY(), pos.getZ());
-
-            CAPTURE.reset();
-            brm.renderBatched(state, pos, world, ms, CAPTURE, true, parts);
-            return CAPTURE.toTris(true);
-        }
-        catch (Throwable t)
-        {
             return EMPTY;
         }
     }
@@ -213,11 +119,7 @@ public final class OccluderGeometryCapturer
 
     /**
      * Records committed vertices as (x, y, z, u, v) and triangulates the implied
-     * QUADS (every 4 vertices -> 2 triangles). Positions arrive already
-     * transformed (see {@link ModelPart.Cube#compile} and the default
-     * {@link VertexConsumer#putBulkData}); only POSITION (+ UV for cutout) is kept, every
-     * other element is dropped. A vertex is committed when the next {@link
-     * #addVertex(float, float, float)} starts or {@link #toTris} flushes the last.
+     * QUADS (every 4 vertices -> 2 triangles).
      */
     private static final class Capture implements VertexConsumer
     {
@@ -343,14 +245,10 @@ public final class OccluderGeometryCapturer
     // --- Capturing render-command queue ---------------------------------------
 
     /**
-     * An {@link SubmitNodeCollector} that, instead of deferring, immediately
-     * renders submitted model geometry into the {@link Capture} consumer. Only the
-     * geometry-bearing submits (model / model part / item) are handled; text /
-     * labels / fire / leashes / shadow pieces / custom layers are dropped (they
-     * are not part of an occluder silhouette). Mirrors {@code
-     * OrderedRenderCommandQueueImpl}'s method surface.
+     * A {@link SubmitNodeCollector} that, instead of deferring, immediately
+     * renders submitted model geometry into the {@link Capture} consumer.
      */
-    private static final class CaptureQueue implements OrderedRenderCommandQueue
+    private static final class CaptureQueue implements SubmitNodeCollector
     {
         private final Capture capture;
 
@@ -360,9 +258,9 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public OrderedSubmitNodeCollector getBatchingQueue(int order)
+        public OrderedSubmitNodeCollector order(int order)
         {
-            return this; // no batching: we render straight into the capture
+            return this;
         }
 
         @Override
@@ -381,7 +279,6 @@ public final class OccluderGeometryCapturer
             }
             catch (Throwable ignored)
             {
-                // skip one bad model; the silhouette degrades, the bake survives
             }
         }
 
@@ -405,7 +302,7 @@ public final class OccluderGeometryCapturer
 
         @Override
         public void submitItem(PoseStack matrices, ItemDisplayContext displayContext, int light, int overlay,
-                               int outlineColors, int[] tintLayers, List<BakedQuad> quads, RenderType renderLayer,
+                               int outlineColors, int[] tintLayers, List<BakedQuad> quads,
                                ItemStackRenderState.FoilType glintType)
         {
             if (quads == null || quads.isEmpty())
@@ -420,9 +317,10 @@ public final class OccluderGeometryCapturer
                     BakedQuad q = quads.get(qi);
                     if (q != null)
                     {
-                        // default quad(...) transforms by the matrix + feeds our
-                        // vertex()/texture() -> captured in world space.
-                        capture.putBulkData(e, q, 1f, 1f, 1f, 1f, light, overlay);
+                        for (int vi = 0; vi < 4; vi++)
+                        {
+                            capture.addVertex(e, q.position(vi));
+                        }
                     }
                 }
             }
@@ -431,16 +329,71 @@ public final class OccluderGeometryCapturer
             }
         }
 
-        // --- no-op submits (not part of an occluder silhouette) ---------------
+        @Override
+        public void submitBlockModel(PoseStack matrices, RenderType renderLayer, List<BlockStateModelPart> parts,
+                                     int[] tintColors, int light, int overlay, int outlineColor)
+        {
+            if (parts == null || parts.isEmpty())
+            {
+                return;
+            }
+            try
+            {
+                PoseStack.Pose e = matrices.last();
+                for (BlockStateModelPart part : parts)
+                {
+                    if (part == null) continue;
+                    for (Direction dir : Direction.values())
+                    {
+                        List<BakedQuad> quads = part.getQuads(dir);
+                        if (quads != null)
+                        {
+                            for (BakedQuad q : quads)
+                            {
+                                if (q != null)
+                                {
+                                    for (int vi = 0; vi < 4; vi++)
+                                    {
+                                        capture.addVertex(e, q.position(vi));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    List<BakedQuad> unculled = part.getQuads(null);
+                    if (unculled != null)
+                    {
+                        for (BakedQuad q : unculled)
+                        {
+                            if (q != null)
+                            {
+                                for (int vi = 0; vi < 4; vi++)
+                                {
+                                    capture.addVertex(e, q.position(vi));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Throwable ignored)
+            {
+            }
+        }
 
         @Override
-        public void submitShadowPieces(PoseStack matrices, float shadowRadius, List<EntityRenderState.ShadowPiece> shadowPieces)
+        public void submitBreakingBlockModel(PoseStack matrices, BlockStateModel model, long seed, int outlineColor)
         {
         }
 
         @Override
-        public void submitLabel(PoseStack matrices, Vec3 nameLabelPos, int y, Component label, boolean notSneaking,
-                                int light, double squaredDistanceToCamera, CameraRenderState cameraState)
+        public void submitShadow(PoseStack matrices, float shadowRadius, List<EntityRenderState.ShadowPiece> shadowPieces)
+        {
+        }
+
+        @Override
+        public void submitNameTag(PoseStack matrices, Vec3 nameLabelPos, int y, Component label, boolean notSneaking,
+                                  int light, double squaredDistanceToCamera, CameraRenderState cameraState)
         {
         }
 
@@ -451,7 +404,7 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitFire(PoseStack matrices, EntityRenderState renderState, Quaternionf rotation)
+        public void submitFlame(PoseStack matrices, EntityRenderState renderState, Quaternionf rotation)
         {
         }
 
@@ -461,66 +414,17 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitBlock(PoseStack matrices, BlockState state, int light, int overlay, int outlineColor)
-        {
-            // Block held/worn by a living mob (enderman carried block, iron-golem
-            // poppy, copper-golem head, ...). Resolve its model and tessellate it
-            // into the capture so the attachment casts a silhouette too.
-            if (state == null || state.getRenderShape() == RenderShape.INVISIBLE)
-            {
-                return;
-            }
-            try
-            {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc == null)
-                {
-                    return;
-                }
-                BlockStateModel model = mc.getBlockRenderer().getBlockModel(state);
-                if (model != null)
-                {
-                    ModelBlockRenderer.renderModel(matrices.last(), capture, model, 1f, 1f, 1f, light, overlay);
-                }
-            }
-            catch (Throwable ignored)
-            {
-            }
-        }
-
-        @Override
         public void submitMovingBlock(PoseStack matrices, MovingBlockRenderState state)
         {
-            // Falling/piston blocks are not living-mob attachments (their entities
-            // are not collected as occluders), so nothing to capture here.
         }
 
         @Override
-        public void submitBlockStateModel(PoseStack matrices, RenderType renderLayer, BlockStateModel model,
-                                          float r, float g, float b, int light, int overlay, int outlineColor)
-        {
-            // Block-state model attached to a living mob (snow-golem pumpkin head,
-            // mooshroom back mushrooms, ...) — tessellate it into the capture.
-            if (model == null)
-            {
-                return;
-            }
-            try
-            {
-                ModelBlockRenderer.renderModel(matrices.last(), capture, model, r, g, b, light, overlay);
-            }
-            catch (Throwable ignored)
-            {
-            }
-        }
-
-        @Override
-        public void submitCustom(PoseStack matrices, RenderType renderLayer, SubmitNodeCollector.CustomGeometryRenderer customRenderer)
+        public void submitCustomGeometry(PoseStack matrices, RenderType renderLayer, SubmitNodeCollector.CustomGeometryRenderer customRenderer)
         {
         }
 
         @Override
-        public void submitCustom(SubmitNodeCollector.ParticleGroupRenderer customRenderer)
+        public void submitParticleGroup(SubmitNodeCollector.ParticleGroupRenderer customRenderer)
         {
         }
     }

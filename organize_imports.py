@@ -30,6 +30,7 @@ IMPORT_GROUPS = [
 # If these are found as FQNs in code, they will NOT be simplified.
 # If they are already imported, they will be kept in imports.
 WHITELIST = [
+    "com.mojang.math.Axis",
     "mchorse.bbs_mod.camera.Camera",
     "net.minecraft.client.render.Camera",
     "mchorse.bbs_mod.graphics.window.Window",

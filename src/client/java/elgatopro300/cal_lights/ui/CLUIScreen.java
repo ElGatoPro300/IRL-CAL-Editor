@@ -2,7 +2,7 @@ package elgatopro300.cal_lights.ui;
 
 import elgatopro300.cal_lights.graphics.CLBatcher;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -39,8 +39,8 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         CLUIContext uiCtx = new CLUIContext();
         uiCtx.batcher = new CLBatcher(context);
@@ -56,8 +56,13 @@ public class CLUIScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        // Override with no-op to disable vanilla background dim and blur shader
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        // No-op to disable vanilla background blur shader and dimming in editor
+    }
+
+    @Override
+    public boolean isInGameUi() {
+        return true;
     }
 
     @Override
@@ -100,7 +105,7 @@ public class CLUIScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        if (this.root != null && this.root.charTyped((char) input.codepoint(), input.modifiers())) {
+        if (this.root != null && this.root.charTyped((char) input.codepoint(), 0)) {
             return true;
         }
         return super.charTyped(input);

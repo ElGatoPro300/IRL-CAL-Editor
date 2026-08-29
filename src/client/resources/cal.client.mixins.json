@@ -9,6 +9,8 @@
     "InGameOverlayRendererMixin",
     "GameRendererLightMixin",
     "WorldBlockChangeMixin",
+    "RenderTypeInvoker",
+    "RenderPipelinesInvoker",
     "iris.ProgramSamplersBuilderMixin",
     "iris.SamplerBindingCubeArrayMixin"
   ],
