@@ -5,12 +5,12 @@
     "name": "IRL CAL Editor",
     "description": "a lighting graphics engine created specifically for animation",
     "authors": [
-        "ElGatoPro300, qualet"
+        "ElGatoPro300, Qualet"
     ],
     "contact": {
         "homepage": "https://discord.gg/MAHVQBSce6"
     },
-    "license": "ARR",
+    "license": "MIT",
     "icon": "assets/cal/icon.png",
     "environment": "*",
     "entrypoints": {
@@ -28,13 +28,8 @@
             "environment": "client"
         }
     ],
-    "jars": [
-        {
-            "file": "META-INF/jars/irl-core-1.1.jar"
-        }
-    ],
     "depends": {
-        "fabricloader": ">=0.16.14",
+        "fabricloader": ">=0.19.0",
         "minecraft": "~1.20.1",
         "java": ">=17",
         "fabric-api": "*",
