@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
@@ -68,8 +67,8 @@ public final class LightGuideRenderer
         RenderSystem.disableCull();
         RenderSystem.lineWidth(2.0f);
 
-        BufferBuilder buf = Tessellator.getInstance()
-            .begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder buf = Tessellator.getInstance().getBuffer();
+        buf.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
         for (LightInstance l : LightManager.INSTANCE.getPointLights())
         {
@@ -97,11 +96,7 @@ public final class LightGuideRenderer
             drawSpot(buf, m, lx, ly, lz, l, r, g, b);
         }
 
-        BuiltBuffer built = buf.endNullable();
-        if (built != null)
-        {
-            BufferRenderer.drawWithGlobalProgram(built);
-        }
+        BufferRenderer.drawWithGlobalProgram(buf.end());
 
         RenderSystem.lineWidth(1.0f);
         RenderSystem.enableCull();
@@ -174,8 +169,8 @@ public final class LightGuideRenderer
 
     private static void line(BufferBuilder buf, Matrix4f m, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
     {
-        buf.vertex(m, x1, y1, z1).color(r, g, b, 1f);
-        buf.vertex(m, x2, y2, z2).color(r, g, b, 1f);
+        buf.vertex(m, x1, y1, z1).color(r, g, b, 1f).next();
+        buf.vertex(m, x2, y2, z2).color(r, g, b, 1f).next();
     }
 
     private static float vis(float v)

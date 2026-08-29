@@ -20,7 +20,6 @@ import net.minecraft.util.math.Vec3d;
 
 import org.joml.Intersectiond;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -212,9 +211,9 @@ public class LightGizmo {
         VertexSorter prevSorter = RenderSystem.getVertexSorting();
         RenderSystem.setProjectionMatrix(lastProjectionMatrix, VertexSorter.BY_DISTANCE);
 
-        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        mvStack.pushMatrix();
-        mvStack.set(capturedModelView);
+        MatrixStack mvStack = RenderSystem.getModelViewStack();
+        mvStack.push();
+        mvStack.peek().getPositionMatrix().set(capturedModelView);
         RenderSystem.applyModelViewMatrix();
 
         RenderSystem.disableDepthTest();
@@ -238,7 +237,7 @@ public class LightGizmo {
 
         RenderSystem.enableDepthTest();
 
-        mvStack.popMatrix();
+        mvStack.pop();
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(prevProjection, prevSorter);
     }
@@ -289,17 +288,18 @@ public class LightGizmo {
 
     private void drawBillboardQuad(MatrixStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
         Matrix4f matrix = stack.peek().getPositionMatrix();
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 
         float u1 = texX / (float) texture.width;
         float v1 = texY / (float) texture.height;
         float u2 = (texX + texW) / (float) texture.width;
         float v2 = (texY + texH) / (float) texture.height;
 
-        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color);
-        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color);
-        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color);
-        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color);
+        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color).next();
+        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color).next();
+        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color).next();
+        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
@@ -313,7 +313,8 @@ public class LightGizmo {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
         float r = light.r;
         float g = light.g;
@@ -351,8 +352,8 @@ public class LightGizmo {
             float x2 = radius * (float) Math.cos(angle2);
             float z2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, x1, 0, z1).color(r, g, b, a);
-            builder.vertex(matrix, x2, 0, z2).color(r, g, b, a);
+            builder.vertex(matrix, x1, 0, z1).color(r, g, b, a).next();
+            builder.vertex(matrix, x2, 0, z2).color(r, g, b, a).next();
         }
 
         for (int i = 0; i < segments; i++) {
@@ -364,8 +365,8 @@ public class LightGizmo {
             float x2 = radius * (float) Math.cos(angle2);
             float y2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, x1, y1, 0).color(r, g, b, a);
-            builder.vertex(matrix, x2, y2, 0).color(r, g, b, a);
+            builder.vertex(matrix, x1, y1, 0).color(r, g, b, a).next();
+            builder.vertex(matrix, x2, y2, 0).color(r, g, b, a).next();
         }
 
         for (int i = 0; i < segments; i++) {
@@ -377,8 +378,8 @@ public class LightGizmo {
             float y2 = radius * (float) Math.cos(angle2);
             float z2 = radius * (float) Math.sin(angle2);
 
-            builder.vertex(matrix, 0, y1, z1).color(r, g, b, a);
-            builder.vertex(matrix, 0, y2, z2).color(r, g, b, a);
+            builder.vertex(matrix, 0, y1, z1).color(r, g, b, a).next();
+            builder.vertex(matrix, 0, y2, z2).color(r, g, b, a).next();
         }
     }
 
@@ -439,8 +440,8 @@ public class LightGizmo {
             float p2y = cy + outerRad * (cos2 * uy + sin2 * vy);
             float p2z = cz + outerRad * (cos2 * uz + sin2 * vz);
 
-            builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, a);
-            builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, a);
+            builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, a).next();
+            builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, a).next();
         }
 
         if (light.soft > 0.1f) {
@@ -462,8 +463,8 @@ public class LightGizmo {
                 float p2y = cy + innerRad * (cos2 * uy + sin2 * vy);
                 float p2z = cz + innerRad * (cos2 * uz + sin2 * vz);
 
-                builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, innerA);
-                builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, innerA);
+                builder.vertex(matrix, p1x, p1y, p1z).color(r, g, b, innerA).next();
+                builder.vertex(matrix, p2x, p2y, p2z).color(r, g, b, innerA).next();
             }
         }
 
@@ -476,8 +477,8 @@ public class LightGizmo {
             float py = cy + outerRad * (cos * uy + sin * vy);
             float pz = cz + outerRad * (cos * uz + sin * vz);
 
-            builder.vertex(matrix, 0f, 0f, 0f).color(r, g, b, a);
-            builder.vertex(matrix, px, py, pz).color(r, g, b, a);
+            builder.vertex(matrix, 0f, 0f, 0f).color(r, g, b, a).next();
+            builder.vertex(matrix, px, py, pz).color(r, g, b, a).next();
         }
     }
 
@@ -498,7 +499,8 @@ public class LightGizmo {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         if (this.mode == Mode.ROTATE) drawRotate(builder, stack, scale);
         else if (this.mode == Mode.COMBINED) drawCombined(builder, stack, scale);
@@ -819,13 +821,13 @@ public class LightGizmo {
             float y2 = baseY + (ry * c2 + uy * s2) * radius;
             float z2 = baseZ + (rz * c2 + uz * s2) * radius;
 
-            builder.vertex(mat, apexX, apexY, apexZ).color(r, g, b, a);
-            builder.vertex(mat, x1, y1, z1).color(r, g, b, a);
-            builder.vertex(mat, x2, y2, z2).color(r, g, b, a);
+            builder.vertex(mat, apexX, apexY, apexZ).color(r, g, b, a).next();
+            builder.vertex(mat, x1, y1, z1).color(r, g, b, a).next();
+            builder.vertex(mat, x2, y2, z2).color(r, g, b, a).next();
 
-            builder.vertex(mat, x1, y1, z1).color(r, g, b, a);
-            builder.vertex(mat, baseX, baseY, baseZ).color(r, g, b, a);
-            builder.vertex(mat, x2, y2, z2).color(r, g, b, a);
+            builder.vertex(mat, x1, y1, z1).color(r, g, b, a).next();
+            builder.vertex(mat, baseX, baseY, baseZ).color(r, g, b, a).next();
+            builder.vertex(mat, x2, y2, z2).color(r, g, b, a).next();
         }
     }
 
@@ -857,13 +859,13 @@ public class LightGizmo {
                 float x21 = sv1 * cu2 * radius; float y21 = y11; float z21 = sv1 * su2 * radius;
                 float x22 = sv2 * cu2 * radius; float y22 = y12; float z22 = sv2 * su2 * radius;
 
-                builder.vertex(mat, x11, y11, z11).color(r, g, b, a);
-                builder.vertex(mat, x12, y12, z12).color(r, g, b, a);
-                builder.vertex(mat, x22, y22, z22).color(r, g, b, a);
+                builder.vertex(mat, x11, y11, z11).color(r, g, b, a).next();
+                builder.vertex(mat, x12, y12, z12).color(r, g, b, a).next();
+                builder.vertex(mat, x22, y22, z22).color(r, g, b, a).next();
 
-                builder.vertex(mat, x11, y11, z11).color(r, g, b, a);
-                builder.vertex(mat, x22, y22, z22).color(r, g, b, a);
-                builder.vertex(mat, x21, y21, z21).color(r, g, b, a);
+                builder.vertex(mat, x11, y11, z11).color(r, g, b, a).next();
+                builder.vertex(mat, x22, y22, z22).color(r, g, b, a).next();
+                builder.vertex(mat, x21, y21, z21).color(r, g, b, a).next();
             }
         }
     }
@@ -915,13 +917,13 @@ public class LightGizmo {
                 float x21 = ring1 * cu2; float z21 = ring1 * su2;
                 float x22 = ring2 * cu2; float z22 = ring2 * su2;
 
-                builder.vertex(mat, x11, y1, z11).color(r, g, b, 1F);
-                builder.vertex(mat, x12, y2, z12).color(r, g, b, 1F);
-                builder.vertex(mat, x22, y2, z22).color(r, g, b, 1F);
+                builder.vertex(mat, x11, y1, z11).color(r, g, b, 1F).next();
+                builder.vertex(mat, x12, y2, z12).color(r, g, b, 1F).next();
+                builder.vertex(mat, x22, y2, z22).color(r, g, b, 1F).next();
 
-                builder.vertex(mat, x11, y1, z11).color(r, g, b, 1F);
-                builder.vertex(mat, x22, y2, z22).color(r, g, b, 1F);
-                builder.vertex(mat, x21, y1, z21).color(r, g, b, 1F);
+                builder.vertex(mat, x11, y1, z11).color(r, g, b, 1F).next();
+                builder.vertex(mat, x22, y2, z22).color(r, g, b, 1F).next();
+                builder.vertex(mat, x21, y1, z21).color(r, g, b, 1F).next();
             }
         }
         stack.pop();
@@ -953,12 +955,12 @@ public class LightGizmo {
 
     private void fillQuad(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a) {
         Matrix4f matrix4f = stack.peek().getPositionMatrix();
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
-        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a);
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a).next();
     }
 
     /* ---- MOUSE PICKING & HOVER INTERACTION ---- */
