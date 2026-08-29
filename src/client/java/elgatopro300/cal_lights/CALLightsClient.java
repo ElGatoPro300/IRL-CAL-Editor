@@ -21,6 +21,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.loader.api.FabricLoader;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
@@ -46,7 +47,7 @@ public class CALLightsClient implements ClientModInitializer {
         LOGGER.info("IRL CAL Editor mod initialized on Client!");
         LightGuideRenderer.register();
 
-        boolean irlitePresent = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("irlite");
+        boolean irlitePresent = FabricLoader.getInstance().isModLoaded("irlite");
 
         // When irlite is present it owns the shared irl-core singletons with composite
         // adapters that also feed CAL lights/shadows/patches. Installing again here
