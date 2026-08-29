@@ -82,7 +82,7 @@ dependencies {
 	implementation 'io.github.java-diff-utils:java-diff-utils:4.15'
 	
 	// Local dependencies (Put these jars in 'libs' folder)
-	modImplementation files('libs/irl-core-1.1.5-1.21.1.jar')
+	modImplementation files('libs/irl-core-1.1.5-1.20.4.jar')
 }
 
 processResources {
@@ -114,7 +114,7 @@ jar {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 
-	from("libs/irl-core-1.1.5-1.21.1.jar") {
+	from("libs/irl-core-1.1.5-1.20.4.jar") {
 		into "META-INF/jars"
 	}
 }
