@@ -722,8 +722,8 @@ public class CALEditorPanel extends CLUIElement {
             ctx.batcher.getCtx().getMatrices().scale(settingsPopupScale, settingsPopupScale, 1.0f);
             ctx.batcher.getCtx().getMatrices().translate(-w / 2.0f, -h / 2.0f, 0.0f);
 
-            // Modal Box Dimensions (Premium BBS size: 520x320)
-            int pW = 520;
+            // Modal Box Dimensions (Premium BBS size: 590x320)
+            int pW = 590;
             int pH = 320;
             int pX = (w - pW) / 2;
             int pY = (h - pH) / 2;
@@ -742,8 +742,8 @@ public class CALEditorPanel extends CLUIElement {
             boolean hoverX = ctx.mouseX >= pX + pW - 22 && ctx.mouseX < pX + pW - 6 && ctx.mouseY >= pY + 4 && ctx.mouseY < pY + 18;
             ctx.batcher.text("X", pX + pW - 18, pY + 6, hoverX ? 0xFFEF5350 : 0xFF9E9E9E);
 
-            // Left category list panel (90 width)
-            int sideW = 90;
+            // Left category list panel (145 width)
+            int sideW = 145;
             ctx.batcher.box(pX, pY + headerH, pX + sideW, pY + pH, 0xFF111115);
             ctx.batcher.outline(pX, pY + headerH, pX + sideW, pY + pH, 0xFF22222A, 1);
 
@@ -1788,12 +1788,12 @@ public class CALEditorPanel extends CLUIElement {
 
         // --- AJUSTES POPUP CLICKS HANDLING ---
         if (showSettingsPopup) {
-            int pW = 520;
+            int pW = 590;
             int pH = 320;
             int pX = (w - pW) / 2;
             int pY = (h - pH) / 2;
             int headerH = 22;
-            int sideW = 90;
+            int sideW = 145;
             int contentX = pX + sideW + 10;
 
             if (showLanguageDropdown) {
@@ -2473,9 +2473,9 @@ public class CALEditorPanel extends CLUIElement {
         if (showPatcherPopup) return true;
         if (showSettingsPopup) {
             if (btn == 0 && selectedSettingsCategory == 1 && draggingGizmoSlider) {
-                int pW = 520;
+                int pW = 590;
                 int pX = (w - pW) / 2;
-                int sideW = 90;
+                int sideW = 145;
                 int contentX = pX + sideW + 10;
                 float t = (float)(mx - contentX) / 160.0f;
                 t = Math.max(0.0f, Math.min(1.0f, t));
