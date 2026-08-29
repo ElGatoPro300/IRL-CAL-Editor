@@ -1,8 +1,13 @@
 package elgatopro300.cal_lights.light;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import elgatopro300.cal_lights.manager.LightInstance;
+import elgatopro300.cal_lights.manager.LightManager;
+import elgatopro300.cal_lights.ui.CALEditorScreen;
+
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
@@ -12,10 +17,10 @@ import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
+
 import org.joml.Matrix4f;
-import elgatopro300.cal_lights.manager.LightInstance;
-import elgatopro300.cal_lights.manager.LightManager;
-import elgatopro300.cal_lights.ui.CALEditorScreen;
+
+import com.mojang.blaze3d.systems.RenderSystem;
 
 public final class LightGuideRenderer
 {
@@ -41,7 +46,7 @@ public final class LightGuideRenderer
 
         // When the editor overlay is up it draws the richer guides itself
         // suppress this in-world wire pass so they don't double up.
-        if (net.minecraft.client.MinecraftClient.getInstance().currentScreen instanceof CALEditorScreen)
+        if (MinecraftClient.getInstance().currentScreen instanceof CALEditorScreen)
         {
             return;
         }
