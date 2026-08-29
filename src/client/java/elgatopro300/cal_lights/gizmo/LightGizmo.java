@@ -185,10 +185,20 @@ public class LightGizmo {
     private void render(WorldRenderContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null) return;
-        if (!(client.currentScreen instanceof CALEditorScreen)) return;
 
-        this.lastProjectionMatrix.set(context.projectionMatrix());
-        this.capturedModelView.set(RenderSystem.getModelViewMatrix());
+        if (context.projectionMatrix() != null) {
+            this.lastProjectionMatrix.set(context.projectionMatrix());
+        }
+        if (context.matrixStack() != null) {
+            this.capturedModelView.set(context.matrixStack().peek().getPositionMatrix());
+        } else {
+            Camera cam = context.camera();
+            if (cam != null) {
+                this.capturedModelView.identity()
+                    .rotateX((float) Math.toRadians(cam.getPitch()))
+                    .rotateY((float) Math.toRadians(cam.getYaw() + 180.0));
+            }
+        }
         this.captured = true;
     }
 
@@ -296,10 +306,10 @@ public class LightGizmo {
         float u2 = (texX + texW) / (float) texture.width;
         float v2 = (texY + texH) / (float) texture.height;
 
-        builder.vertex(matrix, -size, -size, 0).texture(u1, v2).color(color).next();
-        builder.vertex(matrix, size, -size, 0).texture(u2, v2).color(color).next();
-        builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color).next();
-        builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color).next();
+        builder.vertex(matrix, -size, -size, 0).texture(u2, v2).color(color).next();
+        builder.vertex(matrix, size, -size, 0).texture(u1, v2).color(color).next();
+        builder.vertex(matrix, size, size, 0).texture(u1, v1).color(color).next();
+        builder.vertex(matrix, -size, size, 0).texture(u2, v1).color(color).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
     }
@@ -1227,11 +1237,11 @@ public class LightGizmo {
         float y = 1.0f - (2.0f * (float) mouseY) / height;
 
         Matrix4f invProj = new Matrix4f(lastProjectionMatrix).invert();
-        Vector4f rayClip = new Vector4f(x, y, -1.0f, 1.0f).mul(invProj);
+        Vector4f rayClip = invProj.transform(new Vector4f(x, y, -1.0f, 1.0f));
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
 
         Matrix4f invView = new Matrix4f(capturedModelView).invert();
-        Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f).mul(invView);
+        Vector4f rayWorld4 = invView.transform(new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f));
 
         Vector3f rayWorld = new Vector3f(rayWorld4.x, rayWorld4.y, rayWorld4.z).normalize();
         return new Vec3d(rayWorld.x, rayWorld.y, rayWorld.z);
@@ -1474,14 +1484,14 @@ public class LightGizmo {
         Camera camera = client.gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
 
-        Vector4f eye = new Vector4f(
+        Vector4f eye = capturedModelView.transform(new Vector4f(
             (float)(lightPos.x - camPos.x),
             (float)(lightPos.y - camPos.y),
             (float)(lightPos.z - camPos.z),
             1.0f
-        ).mul(capturedModelView);
+        ));
 
-        Vector4f clip = new Vector4f(eye).mul(lastProjectionMatrix);
+        Vector4f clip = lastProjectionMatrix.transform(eye);
         if (clip.w <= 1e-6f) return null;
 
         double ndcX = clip.x / clip.w;
