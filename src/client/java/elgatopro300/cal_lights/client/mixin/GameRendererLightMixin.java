@@ -1,5 +1,6 @@
 package elgatopro300.cal_lights.client.mixin;
 
+import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.light.LightDriver;
 
 import org.qualet.irl.light.FramePipeline;
@@ -31,5 +32,10 @@ public class GameRendererLightMixin {
             LightDriver::resetAutoShadowRamp
         );
         FramePipeline.uploadIfPending();
+    }
+
+    @Inject(method = "renderLevel", at = @At("TAIL"))
+    private void cal$renderInWorldOverlay(DeltaTracker tickCounter, CallbackInfo ci) {
+        LightGizmo.INSTANCE.renderInWorld();
     }
 }

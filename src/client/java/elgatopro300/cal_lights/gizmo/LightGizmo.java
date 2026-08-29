@@ -153,7 +153,12 @@ public class LightGizmo {
     private final Vector3f dragProgressEnd = new Vector3f();
 
     public void init() {
-        LevelRenderEvents.END_MAIN.register(this::render);
+        LevelRenderEvents.END_MAIN.register(context -> {
+            if (context.levelState() != null && context.levelState().cameraRenderState != null && context.levelState().cameraRenderState.projectionMatrix != null) {
+                this.lastProjectionMatrix.set(context.levelState().cameraRenderState.projectionMatrix);
+                this.captured = true;
+            }
+        });
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -190,16 +195,20 @@ public class LightGizmo {
         return this.hoveredHandle;
     }
 
-    private void render(LevelRenderContext context) {
+    public Matrix4f getViewMatrix(Camera camera) {
+        return new Matrix4f().rotation(new Quaternionf(camera.rotation()).conjugate());
+    }
+
+    public void renderInWorld() {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return;
         if (!(client.screen instanceof CALEditorScreen)) return;
 
-        if (context.levelState() != null && context.levelState().cameraRenderState != null && context.levelState().cameraRenderState.projectionMatrix != null) {
-            this.lastProjectionMatrix.set(context.levelState().cameraRenderState.projectionMatrix);
+        Camera camera = client.gameRenderer.getMainCamera();
+        if (camera != null) {
+            this.capturedModelView.set(getViewMatrix(camera));
+            this.captured = true;
         }
-        this.capturedModelView.set(RenderSystem.getModelViewMatrix());
-        this.captured = true;
 
         renderOverlay();
     }
@@ -222,13 +231,14 @@ public class LightGizmo {
 
         Camera camera = client.gameRenderer.getMainCamera();
         Vec3 camPos = camera.position();
+        Matrix4f viewMatrix = getViewMatrix(camera);
 
         RenderSystem.backupProjectionMatrix();
         RenderSystem.setProjectionMatrix(this.rawProjection.getBuffer(lastProjectionMatrix), ProjectionType.PERSPECTIVE);
 
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
-        mvStack.set(capturedModelView);
+        mvStack.set(viewMatrix);
 
         PoseStack stack = new PoseStack();
 
@@ -1211,7 +1221,8 @@ public class LightGizmo {
         Vector4f rayClip = new Vector4f(x, y, -1.0f, 1.0f).mul(invProj);
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
 
-        Matrix4f invView = new Matrix4f(capturedModelView).invert();
+        Camera camera = client.gameRenderer.getMainCamera();
+        Matrix4f invView = (camera != null ? getViewMatrix(camera) : new Matrix4f(capturedModelView)).invert();
         Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f).mul(invView);
 
         Vector3f rayWorld = new Vector3f(rayWorld4.x, rayWorld4.y, rayWorld4.z).normalize();
@@ -1455,12 +1466,13 @@ public class LightGizmo {
         Camera camera = client.gameRenderer.getMainCamera();
         Vec3 camPos = camera.position();
 
+        Matrix4f viewMatrix = camera != null ? getViewMatrix(camera) : capturedModelView;
         Vector4f eye = new Vector4f(
             (float)(lightPos.x - camPos.x),
             (float)(lightPos.y - camPos.y),
             (float)(lightPos.z - camPos.z),
             1.0f
-        ).mul(capturedModelView);
+        ).mul(viewMatrix);
 
         Vector4f clip = new Vector4f(eye).mul(lastProjectionMatrix);
         if (clip.w <= 1e-6f) return null;
