@@ -9,7 +9,6 @@
     "InGameOverlayRendererMixin",
     "GameRendererLightMixin",
     "WorldBlockChangeMixin",
-    "WorldBlockEntityTickersAccessor",
     "iris.ProgramSamplersBuilderMixin",
     "iris.SamplerBindingCubeArrayMixin"
   ],

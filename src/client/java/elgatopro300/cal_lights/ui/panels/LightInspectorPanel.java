@@ -3,8 +3,8 @@ package elgatopro300.cal_lights.ui.panels;
 import elgatopro300.cal_lights.animation.LightAnimation;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
 import elgatopro300.cal_lights.light.LightConfig;
+import elgatopro300.cal_lights.light.cookie.CookieArray;
 import elgatopro300.cal_lights.manager.CALUndoManager;
-import elgatopro300.cal_lights.manager.GoboManager;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
@@ -17,9 +17,9 @@ import elgatopro300.cal_lights.ui.elements.CLUIColorPicker;
 import elgatopro300.cal_lights.ui.elements.CLUISwitch;
 import elgatopro300.cal_lights.ui.elements.CLUITrackpad;
 
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Util;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.math.Vec3d;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -111,15 +111,15 @@ public class LightInspectorPanel extends CLUIElement {
         this.onUpdate = onUpdate;
 
         // Position coordinates (Red, Green, Blue colored badges inside CLUITrackpad)
-        this.trackX = new CLUITrackpad("X", light.x, -10000, 10000, val -> {
+        this.trackX = new CLUITrackpad("X", (float) light.x, -10000, 10000, val -> {
             light.x = val;
             if (onUpdate != null) onUpdate.run();
         });
-        this.trackY = new CLUITrackpad("Y", light.y, -10000, 10000, val -> {
+        this.trackY = new CLUITrackpad("Y", (float) light.y, -10000, 10000, val -> {
             light.y = val;
             if (onUpdate != null) onUpdate.run();
         });
-        this.trackZ = new CLUITrackpad("Z", light.z, -10000, 10000, val -> {
+        this.trackZ = new CLUITrackpad("Z", (float) light.z, -10000, 10000, val -> {
             light.z = val;
             if (onUpdate != null) onUpdate.run();
         });
@@ -153,7 +153,7 @@ public class LightInspectorPanel extends CLUIElement {
         });
 
         // General adjustments
-        this.trackIntensity = new CLUITrackpad(CALKeys.PROP_INTENSITY.get(), light.intensity, 0.0f, 20.0f, val -> {
+        this.trackIntensity = new CLUITrackpad(CALKeys.PROP_INTENSITY, light.intensity, 0.0f, 20.0f, val -> {
             light.intensity = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
@@ -167,39 +167,39 @@ public class LightInspectorPanel extends CLUIElement {
         });
 
         // Specific point / spot adjustments
-        this.trackRadius = new CLUITrackpad(CALKeys.PROP_RADIUS.get(), light.radius, 0.1f, 64.0f, val -> {
+        this.trackRadius = new CLUITrackpad(CALKeys.PROP_RADIUS, light.radius, 0.1f, 64.0f, val -> {
             light.radius = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.5f);
-        this.trackAngle = new CLUITrackpad(CALKeys.PROP_OUTER_ANGLE.get(), light.angle, 1.0f, 179.0f, val -> {
+        this.trackAngle = new CLUITrackpad(CALKeys.PROP_OUTER_ANGLE, light.angle, 1.0f, 179.0f, val -> {
             light.angle = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackSoft = new CLUITrackpad(CALKeys.PROP_SOFT.get(), light.soft, 0.0f, 60.0f, val -> {
+        this.trackSoft = new CLUITrackpad(CALKeys.PROP_SOFT, light.soft, 0.0f, 60.0f, val -> {
             light.soft = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackDistance = new CLUITrackpad(CALKeys.PROP_DISTANCE.get(), light.distance, 0.1f, 128.0f, val -> {
+        this.trackDistance = new CLUITrackpad(CALKeys.PROP_DISTANCE, light.distance, 0.1f, 128.0f, val -> {
             light.distance = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
 
         // Volumetric fog adjustments
-        this.trackBeamStrength = new CLUITrackpad(CALKeys.PANEL_FOG_DISPERSION.get(), light.beamStrength, 0.0f, 5.0f, val -> {
+        this.trackBeamStrength = new CLUITrackpad(CALKeys.PANEL_FOG_DISPERSION, light.beamStrength, 0.0f, 5.0f, val -> {
             light.beamStrength = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
-        this.trackVlDensity = new CLUITrackpad(CALKeys.PANEL_FOG_DENSITY.get(), light.vlDensity, 0.005f, 0.5f, val -> {
+        this.trackVlDensity = new CLUITrackpad(CALKeys.PANEL_FOG_DENSITY, light.vlDensity, 0.005f, 0.5f, val -> {
             light.vlDensity = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.005f);
-        this.trackAnisotropy = new CLUITrackpad(CALKeys.PANEL_FOG_ANISOTROPY.get(), light.anisotropy, -0.95f, 0.95f, val -> {
+        this.trackAnisotropy = new CLUITrackpad(CALKeys.PANEL_FOG_ANISOTROPY, light.anisotropy, -0.95f, 0.95f, val -> {
             light.anisotropy = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
 
         // Shadow adjustments
-        this.trackBulbSize = new CLUITrackpad(CALKeys.PROP_SHADOW_SOFTNESS_LABEL.get(), light.bulbSize, 0.0f, 2.0f, val -> {
+        this.trackBulbSize = new CLUITrackpad(CALKeys.PROP_SHADOW_SOFTNESS_LABEL, light.bulbSize, 0.0f, 2.0f, val -> {
             light.bulbSize = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.1f);
@@ -215,11 +215,11 @@ public class LightInspectorPanel extends CLUIElement {
         });
 
         // Gobo/Cookie adjustments
-        this.trackGoboRotation = new CLUITrackpad(CALKeys.PROP_GOBO_ROTATION_LABEL.get(), light.goboRotation, 0.0f, 360.0f, val -> {
+        this.trackGoboRotation = new CLUITrackpad(CALKeys.PROP_GOBO_ROTATION_LABEL, light.goboRotation, 0.0f, 360.0f, val -> {
             light.goboRotation = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(1.0f);
-        this.trackCookieScale = new CLUITrackpad(CALKeys.PROP_COOKIE_SCALE.get(), light.cookieScale, 0.1f, 4.0f, val -> {
+        this.trackCookieScale = new CLUITrackpad(CALKeys.PROP_COOKIE_SCALE, light.cookieScale, 0.1f, 4.0f, val -> {
             light.cookieScale = val;
             if (onUpdate != null) onUpdate.run();
         }).setArrowStep(0.05f);
@@ -282,7 +282,7 @@ public class LightInspectorPanel extends CLUIElement {
         float targetAnimationH = animationExpanded ? (16 + 3) : 0;
 
         boolean showGobo = light.isSpot;
-        int numGobos = 1 + GoboManager.INSTANCE.getGoboNames().size();
+        int numGobos = 1 + CookieArray.available().size();
         float targetGoboH = showGobo ? (goboExpanded ? ((16 + 3) + (goboSelectorExpanded ? numGobos * (16 + 3) : 0) + (16 + 3) + (16 + 3) + (16 + 3) + (16 + 3) + (16 + 3)) : 0) : 0;
 
         if (transformAnimH < 0) transformAnimH = targetTransformH;
@@ -381,15 +381,15 @@ public class LightInspectorPanel extends CLUIElement {
             int colW = (w - 20 - iconW - 4 - 4) / 3;
             
             trackX.resize(startX, currentY, colW, elementH);
-            trackX.setValue(light.x);
+            trackX.setValue((float) light.x);
             trackX.render(ctx);
 
             trackY.resize(startX + colW + 2, currentY, colW, elementH);
-            trackY.setValue(light.y);
+            trackY.setValue((float) light.y);
             trackY.render(ctx);
 
             trackZ.resize(startX + (colW + 2) * 2, currentY, colW, elementH);
-            trackZ.setValue(light.z);
+            trackZ.setValue((float) light.z);
             trackZ.render(ctx);
 
             int drawY = currentY + elementH + gap;
@@ -397,7 +397,7 @@ public class LightInspectorPanel extends CLUIElement {
             int btnBg = hoverPlaceHere ? 0xFF2A2A35 : 0xFF1C1C22;
             ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, btnBg);
             ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverPlaceHere ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-            int textW = Minecraft.getInstance().font.width(CALKeys.PROP_PLACE_HERE.get());
+            int textW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_PLACE_HERE.get());
             ctx.batcher.text(CALKeys.PROP_PLACE_HERE.get(), x + 10 + (w - 20 - textW) / 2, drawY + 4, 0xFFFFFFFF);
 
             ctx.batcher.unclip();
@@ -434,7 +434,7 @@ public class LightInspectorPanel extends CLUIElement {
                 
                 // Draw separate blinking cursor box!
                 if (nameFocused && System.currentTimeMillis() / 500 % 2 == 0) {
-                    int subW = Minecraft.getInstance().font.width(nameText.substring(0, renameCursorIdx));
+                    int subW = MinecraftClient.getInstance().textRenderer.getWidth(nameText.substring(0, renameCursorIdx));
                     int cursorX = x + 16 + subW;
                     int cursorY = currentY + 3;
                     ctx.batcher.box(cursorX, cursorY, cursorX + 1, cursorY + 10, 0xFFFFFFFF);
@@ -452,7 +452,7 @@ public class LightInspectorPanel extends CLUIElement {
             int pointBorder = (!light.isSpot) ? 0xFF00F0FF : 0xFF2D2D38;
             ctx.batcher.box(x + 10, drawY, x + 10 + btnW, drawY + elementH, pointBg);
             ctx.batcher.outline(x + 10, drawY, x + 10 + btnW, drawY + elementH, pointBorder, 1);
-            int pTextW = Minecraft.getInstance().font.width(CALKeys.TYPE_POINT.get());
+            int pTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.TYPE_POINT.get());
             ctx.batcher.text(CALKeys.TYPE_POINT.get(), x + 10 + (btnW - pTextW) / 2, drawY + 4, 0xFFFFFFFF);
 
             // SPOT Button
@@ -461,7 +461,7 @@ public class LightInspectorPanel extends CLUIElement {
             int spotBorder = (light.isSpot) ? 0xFF00F0FF : 0xFF2D2D38;
             ctx.batcher.box(x + 10 + btnW + 2, drawY, x + w - 10, drawY + elementH, spotBg);
             ctx.batcher.outline(x + 10 + btnW + 2, drawY, x + w - 10, drawY + elementH, spotBorder, 1);
-            int sTextW = Minecraft.getInstance().font.width(CALKeys.TYPE_SPOT.get());
+            int sTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.TYPE_SPOT.get());
             ctx.batcher.text(CALKeys.TYPE_SPOT.get(), x + 10 + btnW + 2 + (btnW - sTextW) / 2, drawY + 4, 0xFFFFFFFF);
 
             drawY += elementH + gap;
@@ -551,7 +551,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int btnBg = hoverAimLook ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, btnBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverAimLook ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int textW = Minecraft.getInstance().font.width(CALKeys.PROP_AIM_LOOK.get());
+                int textW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_AIM_LOOK.get());
                 ctx.batcher.text(CALKeys.PROP_AIM_LOOK.get(), x + 10 + (w - 20 - textW) / 2, drawY + 4, 0xFFFFFFFF);
             }
 
@@ -695,7 +695,7 @@ public class LightInspectorPanel extends CLUIElement {
                 if (goboSelectorExpanded) {
                     List<String> names = new ArrayList<>();
                     names.add("None");
-                    names.addAll(GoboManager.INSTANCE.getGoboNames());
+                    names.addAll(CookieArray.available());
 
                     for (String name : names) {
                         boolean hoverItem = ctx.mouseX >= x + 12 && ctx.mouseX < x + w - 12 && ctx.mouseY >= drawY && ctx.mouseY < drawY + elementH;
@@ -730,7 +730,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int refBg = hoverRefresh ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, refBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverRefresh ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int refTextW = Minecraft.getInstance().font.width(CALKeys.PROP_GOBO_REFRESH.get());
+                int refTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_GOBO_REFRESH.get());
                 ctx.batcher.text(CALKeys.PROP_GOBO_REFRESH.get(), x + 10 + (w - 20 - refTextW) / 2, drawY + 4, 0xFFFFFFFF);
                 drawY += elementH + gap;
 
@@ -739,7 +739,7 @@ public class LightInspectorPanel extends CLUIElement {
                 int foldBg = hoverFolder ? 0xFF2A2A35 : 0xFF1C1C22;
                 ctx.batcher.box(x + 10, drawY, x + w - 10, drawY + elementH, foldBg);
                 ctx.batcher.outline(x + 10, drawY, x + w - 10, drawY + elementH, hoverFolder ? 0xFFFFAA00 : 0xFF2D2D38, 1);
-                int foldTextW = Minecraft.getInstance().font.width(CALKeys.PROP_GOBO_FOLDER.get());
+                int foldTextW = MinecraftClient.getInstance().textRenderer.getWidth(CALKeys.PROP_GOBO_FOLDER.get());
                 ctx.batcher.text(CALKeys.PROP_GOBO_FOLDER.get(), x + 10 + (w - 20 - foldTextW) / 2, drawY + 4, 0xFFFFFFFF);
                 drawY += elementH + gap;
 
@@ -790,7 +790,7 @@ public class LightInspectorPanel extends CLUIElement {
             }
             int drawY = currentY + elementH + gap;
             if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                Minecraft mc = Minecraft.getInstance();
+                MinecraftClient mc = MinecraftClient.getInstance();
                 if (mc.player != null) {
                     CALUndoManager.pushState();
                     light.x = (float) mc.player.getX();
@@ -879,10 +879,10 @@ public class LightInspectorPanel extends CLUIElement {
                 drawY += elementH + gap;
 
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                    Minecraft mc = Minecraft.getInstance();
+                    MinecraftClient mc = MinecraftClient.getInstance();
                     if (mc.player != null) {
                         CALUndoManager.pushState();
-                        Vec3 look = mc.player.getLookAngle();
+                        Vec3d look = mc.player.getRotationVector();
                         light.dx = (float) look.x;
                         light.dy = (float) look.y;
                         light.dz = (float) look.z;
@@ -982,7 +982,7 @@ public class LightInspectorPanel extends CLUIElement {
                 if (goboSelectorExpanded) {
                     List<String> names = new ArrayList<>();
                     names.add("None");
-                    names.addAll(GoboManager.INSTANCE.getGoboNames());
+                    names.addAll(CookieArray.available());
 
                     for (String name : names) {
                         if (mx >= x + 12 && mx < x + w - 12 && relativeMy >= drawY && relativeMy < drawY + elementH) {
@@ -1009,7 +1009,7 @@ public class LightInspectorPanel extends CLUIElement {
 
                 // Click Refresh button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
-                    GoboManager.INSTANCE.scanAndBuild();
+                    CookieArray.reload();
                     if (onUpdate != null) onUpdate.run();
                     return true;
                 }
@@ -1018,12 +1018,11 @@ public class LightInspectorPanel extends CLUIElement {
                 // Click Folder button
                 if (mx >= x + 10 && mx < x + w - 10 && relativeMy >= drawY && relativeMy < drawY + elementH) {
                     try {
-                        Path runDir = Minecraft.getInstance().gameDirectory.toPath();
-                        Path gobosDir = runDir.resolve("config").resolve("cal_lights").resolve("gobos");
+                        Path gobosDir = CookieArray.dir();
                         if (!Files.exists(gobosDir)) {
                             Files.createDirectories(gobosDir);
                         }
-                        Util.getPlatform().openFile(gobosDir.toFile());
+                        Util.getOperatingSystem().open(gobosDir.toFile());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

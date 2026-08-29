@@ -3,12 +3,12 @@ package elgatopro300.cal_lights.ui;
 import elgatopro300.cal_lights.gizmo.LightGizmo;
 import elgatopro300.cal_lights.ui.panels.CALEditorPanel;
 
-import net.minecraft.client.CameraType;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.input.KeyInput;
+import net.minecraft.client.option.Perspective;
+import net.minecraft.util.math.Vec3d;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -17,7 +17,7 @@ public class CALEditorScreen extends CLUIScreen {
     private int lastGuiScale;
     private boolean originalNoClip = false;
     private boolean originalHudHidden = false;
-    private CameraType originalPerspective;
+    private Perspective originalPerspective;
     private double originalX;
     private double originalY;
     private double originalZ;
@@ -29,62 +29,64 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public void added() {
+    public void onDisplayed() {
         CalSettings.INSTANCE.load();
-        Minecraft mc = Minecraft.getInstance();
+        MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
-            this.originalNoClip = mc.player.noPhysics;
+            this.originalNoClip = mc.player.noClip;
             this.originalX = mc.player.getX();
             this.originalY = mc.player.getY();
             this.originalZ = mc.player.getZ();
-            this.originalYaw = mc.player.getYRot();
-            this.originalPitch = mc.player.getXRot();
+            this.originalYaw = mc.player.getYaw();
+            this.originalPitch = mc.player.getPitch();
         }
-        this.originalPerspective = mc.options.getCameraType();
-        mc.options.setCameraType(CameraType.FIRST_PERSON);
-        this.originalHudHidden = mc.options.hideGui;
-        mc.options.hideGui = true;
-        this.lastGuiScale = mc.options.guiScale().get();
-        mc.options.guiScale().set(CalSettings.INSTANCE.guiScale);
-        super.added();
+        this.originalPerspective = mc.options.getPerspective();
+        mc.options.setPerspective(Perspective.FIRST_PERSON);
+        this.originalHudHidden = mc.options.hudHidden;
+        mc.options.hudHidden = true;
+        this.lastGuiScale = mc.options.getGuiScale().getValue();
+        mc.options.getGuiScale().setValue(CalSettings.INSTANCE.guiScale);
+        mc.onResolutionChanged();
+        super.onDisplayed();
     }
 
     @Override
     public void removed() {
         CALEditorPanel.currentlyPressedKeys.clear();
-        Minecraft mc = Minecraft.getInstance();
+        MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
-            mc.player.noPhysics = this.originalNoClip;
-            mc.player.setYRot(this.originalYaw);
-            mc.player.setXRot(this.originalPitch);
-            mc.player.yHeadRot = this.originalYaw;
-            mc.player.yBodyRot = this.originalYaw;
-            mc.player.setPos(this.originalX, this.originalY, this.originalZ);
-            mc.player.setDeltaMovement(0, 0, 0);
+            mc.player.noClip = this.originalNoClip;
+            mc.player.setYaw(this.originalYaw);
+            mc.player.setPitch(this.originalPitch);
+            mc.player.headYaw = this.originalYaw;
+            mc.player.bodyYaw = this.originalYaw;
+            mc.player.setPosition(this.originalX, this.originalY, this.originalZ);
+            mc.player.setVelocity(0, 0, 0);
         }
-        mc.options.hideGui = this.originalHudHidden;
+        mc.options.hudHidden = this.originalHudHidden;
         if (this.originalPerspective != null) {
-            mc.options.setCameraType(this.originalPerspective);
+            mc.options.setPerspective(this.originalPerspective);
         }
-        CalSettings.INSTANCE.guiScale = mc.options.guiScale().get();
+        CalSettings.INSTANCE.guiScale = mc.options.getGuiScale().getValue();
         CalSettings.INSTANCE.save();
-        mc.options.guiScale().set(this.lastGuiScale);
+        mc.options.getGuiScale().setValue(this.lastGuiScale);
+        mc.onResolutionChanged();
         super.removed();
     }
 
     @Override
-    public void onClose() {
+    public void close() {
         if (this.root instanceof CALEditorPanel panel) {
             if (!panel.closing) {
                 panel.closing = true;
                 return; // Wait for the transition to finish!
             }
         }
-        super.onClose();
+        super.close();
     }
 
     @Override
-    public boolean keyPressed(KeyEvent key) {
+    public boolean keyPressed(KeyInput key) {
         if (!CALEditorPanel.currentlyPressedKeys.contains(key.key())) {
             CALEditorPanel.currentlyPressedKeys.add(key.key());
         }
@@ -92,7 +94,7 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean keyReleased(KeyEvent key) {
+    public boolean keyReleased(KeyInput key) {
         CALEditorPanel.currentlyPressedKeys.remove(Integer.valueOf(key.key()));
         return super.keyReleased(key);
     }
@@ -107,7 +109,7 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent click, boolean bool) {
+    public boolean mouseClicked(Click click, boolean bool) {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
@@ -128,7 +130,7 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent click) {
+    public boolean mouseReleased(Click click) {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
@@ -142,7 +144,7 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent click, double deltaX, double deltaY) {
+    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
@@ -159,10 +161,10 @@ public class CALEditorScreen extends CLUIScreen {
         int topBarH = 40;
         if (mouseX >= leftPanelW && mouseX <= this.width - rightPanelW && mouseY >= topBarH && mouseY <= this.height) {
             if (button == 0 || button == 1) {
-                Minecraft mc = Minecraft.getInstance();
+                MinecraftClient mc = MinecraftClient.getInstance();
                 if (mc.player != null) {
-                    mc.player.setYRot(mc.player.getYRot() + (float) deltaX * 0.15f);
-                    mc.player.setXRot(Math.max(-90.0f, Math.min(90.0f, mc.player.getXRot() + (float) deltaY * 0.15f)));
+                    mc.player.setYaw(mc.player.getYaw() + (float) deltaX * 0.15f);
+                    mc.player.setPitch(Math.max(-90.0f, Math.min(90.0f, mc.player.getPitch() + (float) deltaY * 0.15f)));
                     return true;
                 }
             }
@@ -171,12 +173,19 @@ public class CALEditorScreen extends CLUIScreen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        Minecraft mc = Minecraft.getInstance();
+    public void mouseMoved(double mouseX, double mouseY) {
+        LightGizmo.INSTANCE.updateHover(mouseX, mouseY);
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        LightGizmo.INSTANCE.updateHover(mouseX, mouseY);
+        MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
             // Freeze the player and allow block clipping
-            mc.player.setDeltaMovement(0, 0, 0);
-            mc.player.noPhysics = true;
+            mc.player.setVelocity(0, 0, 0);
+            mc.player.noClip = true;
 
             boolean settingsOpen = false;
             boolean searchFocused = false;
@@ -193,10 +202,10 @@ public class CALEditorScreen extends CLUIScreen {
                 boolean up = CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_SPACE);
                 boolean down = CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_LEFT_SHIFT);
 
-                Vec3 move = Vec3.ZERO;
-                float yawRad = (float) Math.toRadians(mc.player.getYRot());
-                Vec3 fwd = mc.player.getViewVector(1.0f);
-                Vec3 rgt = new Vec3(-Math.cos(yawRad), 0, -Math.sin(yawRad));
+                Vec3d move = Vec3d.ZERO;
+                float yawRad = (float) Math.toRadians(mc.player.getYaw());
+                Vec3d fwd = mc.player.getRotationVec(1.0f);
+                Vec3d rgt = new Vec3d(-Math.cos(yawRad), 0, -Math.sin(yawRad));
 
                 if (forward) move = move.add(fwd);
                 if (backward) move = move.subtract(fwd);
@@ -205,24 +214,28 @@ public class CALEditorScreen extends CLUIScreen {
                 if (up) move = move.add(0, 1, 0);
                 if (down) move = move.add(0, -1, 0);
 
-                if (move.lengthSqr() > 0) {
+                if (move.lengthSquared() > 0) {
                     move = move.normalize();
-                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getDeltaTracker().getGameTimeDeltaTicks();
+                    double speed = 0.15 * CALEditorPanel.getCameraSpeed() * mc.getRenderTickCounter().getDynamicDeltaTicks();
                     if (CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_LEFT_CONTROL) || CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_RIGHT_CONTROL)) {
                         speed *= 3.0; // Fast flight
                     }
                     if (CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_LEFT_ALT) || CALEditorPanel.currentlyPressedKeys.contains(GLFW.GLFW_KEY_RIGHT_ALT)) {
                         speed *= 0.25; // Slower movement
                     }
-                    Vec3 vel = move.scale(speed);
-                    mc.player.setPos(mc.player.getX() + vel.x, mc.player.getY() + vel.y, mc.player.getZ() + vel.z);
+                    Vec3d vel = move.multiply(speed);
+                    mc.player.setPosition(mc.player.getX() + vel.x, mc.player.getY() + vel.y, mc.player.getZ() + vel.z);
                 }
             }
         }
-        super.extractRenderState(context, mouseX, mouseY, delta);
+        // Draw the 3D gizmo/billboards in the GUI phase (over the composited
+        // world, under the UI panels) so they survive Iris shader pipelines.
+        LightGizmo.INSTANCE.renderOverlay(context);
+
+        super.render(context, mouseX, mouseY, delta);
         if (this.root instanceof CALEditorPanel panel && panel.closing) {
             if (panel.isFullyClosed()) {
-                this.onClose();
+                this.close();
             }
         }
     }

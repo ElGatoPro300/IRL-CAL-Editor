@@ -47,6 +47,8 @@ Blockbench_full/
 .trae/
 crash-reports/
 open-source/
+.cursor-tmp-rendering-src/
+libs/
 
 #some
 
