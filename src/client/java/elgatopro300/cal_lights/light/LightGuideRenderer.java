@@ -1,20 +1,17 @@
 package elgatopro300.cal_lights.light;
 
+import elgatopro300.cal_lights.graphics.CALLayers;
 import elgatopro300.cal_lights.manager.LightInstance;
 import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
@@ -22,6 +19,7 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 public final class LightGuideRenderer
 {
@@ -35,7 +33,7 @@ public final class LightGuideRenderer
 
     public static void register()
     {
-        WorldRenderEvents.LAST.register(LightGuideRenderer::onRender);
+        WorldRenderEvents.END_MAIN.register(LightGuideRenderer::onRender);
     }
 
     private static void onRender(WorldRenderContext ctx)
@@ -52,26 +50,19 @@ public final class LightGuideRenderer
             return;
         }
 
-        Camera cam = ctx.camera();
+        Camera cam = MinecraftClient.getInstance().gameRenderer.getCamera();
         if (cam == null)
         {
             return;
         }
 
-        Vec3d c = cam.getPos();
-        MatrixStack ms = ctx.matrixStack();
+        Vec3d c = cam.getCameraPos();
+        MatrixStack ms = ctx.matrices();
         Matrix4f m = ms != null
             ? ms.peek().getPositionMatrix()
             : new Matrix4f()
                 .rotateX((float) Math.toRadians(cam.getPitch()))
                 .rotateY((float) Math.toRadians(cam.getYaw() + 180.0));
-
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-        RenderSystem.lineWidth(2.0f);
 
         BufferBuilder buf = Tessellator.getInstance()
             .begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
@@ -102,15 +93,7 @@ public final class LightGuideRenderer
             drawSpot(buf, m, lx, ly, lz, l, r, g, b);
         }
 
-        BuiltBuffer built = buf.endNullable();
-        if (built != null)
-        {
-            BufferRenderer.drawWithGlobalProgram(built);
-        }
-
-        RenderSystem.lineWidth(1.0f);
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        CALLayers.flushLines(buf);
     }
 
     private static void drawPoint(BufferBuilder buf, Matrix4f m, float x, float y, float z, float r, float g, float b)

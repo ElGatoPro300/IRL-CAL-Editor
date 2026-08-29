@@ -11,22 +11,34 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 public final class RedactorEntityCasterSource implements ShadowCasterSource
 {
-    /** Max distance (from the camera) at which an entity is considered a caster. */
     private static final double COLLECT_DIST = 72.0;
     private static final double COLLECT_DIST_SQ = COLLECT_DIST * COLLECT_DIST;
 
-    private final Int2ObjectOpenHashMap<float[]> entityGeom = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectOpenHashMap<Captured> entityGeom = new Int2ObjectOpenHashMap<>();
+
+    private float[] rebase = new float[0];
+
+    private static final class Captured
+    {
+        final float[] tris;
+        final double ax, ay, az;
+
+        Captured(float[] tris, double ax, double ay, double az)
+        {
+            this.tris = tris;
+            this.ax = ax;
+            this.ay = ay;
+            this.az = az;
+        }
+    }
 
     @Override
     public void collect(ClientWorld world, Vec3d camPos, float tickDelta, OccluderSink sink)
     {
-        // New bake: drop the previous bake's captured geometry so a moved / re-posed
-        // entity is re-captured this bake (keyed by entity id, reused across passes).
         entityGeom.clear();
 
         double camX = camPos.x, camY = camPos.y, camZ = camPos.z;
 
-        // --- world entities (real model capture path) ---
         for (Entity entity : world.getEntities())
         {
             if (!(entity instanceof LivingEntity) && !(entity instanceof ItemEntity))
@@ -48,37 +60,51 @@ public final class RedactorEntityCasterSource implements ShadowCasterSource
     }
 
     @Override
-    public void emitOccluder(Object caster, int type, float tickDelta, OccluderBatch batch) {
-        ImmediateOccluderBatch b = (ImmediateOccluderBatch) batch;
-        drawEntity((Entity) caster, b.matrices(), b.immediate(), tickDelta);
-    }
-
-    private static void drawEntity(Entity entity, MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta) {
-        double ox = ShadowRenderer.currentOriginX();
-        double oy = ShadowRenderer.currentOriginY();
-        double oz = ShadowRenderer.currentOriginZ();
-        double cx = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX()) - ox;
-        double cy = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY()) - oy;
-        double cz = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ()) - oz;
-        float yaw = entity.getYaw(tickDelta);
-
-        EntityRenderDispatcher dispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
-        if (dispatcher != null)
+    public void emitOccluder(Object caster, int type, float tickDelta, OccluderBatch batch)
+    {
+        if (!(caster instanceof Entity))
         {
             return;
         }
         Entity entity = (Entity) caster;
 
-        float[] tris = entityGeom.get(entity.getId());
-        if (tris == null)
+        double pax = ShadowRenderer.currentOriginX();
+        double pay = ShadowRenderer.currentOriginY();
+        double paz = ShadowRenderer.currentOriginZ();
+
+        Captured cached = entityGeom.get(entity.getId());
+        if (cached == null)
         {
-            tris = OccluderGeometryCapturer.captureEntityTris(entity, tickDelta);
-            entityGeom.put(entity.getId(), tris);
+            float[] tris = OccluderGeometryCapturer.captureEntityTris(entity, tickDelta);
+            cached = new Captured(tris, pax, pay, paz);
+            entityGeom.put(entity.getId(), cached);
         }
-        if (tris.length == 0)
+        if (cached.tris.length == 0)
         {
             return;
         }
-        ((RawOccluderBatch) batch).append(tris);
+
+        if (pax == cached.ax && pay == cached.ay && paz == cached.az)
+        {
+            ((RawOccluderBatch) batch).append(cached.tris);
+            return;
+        }
+        float dx = (float) (cached.ax - pax);
+        float dy = (float) (cached.ay - pay);
+        float dz = (float) (cached.az - paz);
+        float[] src = cached.tris;
+        int n = src.length;
+        if (rebase.length < n)
+        {
+            rebase = new float[n];
+        }
+        float[] dst = rebase;
+        for (int i = 0; i + 3 <= n; i += 3)
+        {
+            dst[i]     = src[i]     + dx;
+            dst[i + 1] = src[i + 1] + dy;
+            dst[i + 2] = src[i + 2] + dz;
+        }
+        ((RawOccluderBatch) batch).append(dst, 0, n);
     }
 }

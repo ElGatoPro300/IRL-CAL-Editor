@@ -1,5 +1,6 @@
 package elgatopro300.cal_lights.gizmo;
 
+import elgatopro300.cal_lights.graphics.CALLayers;
 import elgatopro300.cal_lights.graphics.CLIcon;
 import elgatopro300.cal_lights.graphics.CLTexture;
 import elgatopro300.cal_lights.graphics.CalLightsIcons;
@@ -9,12 +10,16 @@ import elgatopro300.cal_lights.manager.LightManager;
 import elgatopro300.cal_lights.ui.CALEditorScreen;
 import elgatopro300.cal_lights.ui.CalSettings;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgramKeys;
-import net.minecraft.client.render.*;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.RawProjectionMatrix;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
@@ -30,6 +35,7 @@ import org.joml.Vector4f;
 
 import com.mojang.blaze3d.systems.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import java.util.Collection;
 
@@ -108,36 +114,37 @@ public class LightGizmo {
     // Settings & State
     public static boolean renderLightIcons = true;
     public static boolean snapToGrid = false;
+    public static boolean snapAngles = false;
 
-    private LightInstance selectedLight = null;
-    private Mode mode = Mode.COMBINED;
-
+    private Mode mode = Mode.TRANSLATE;
     private int activeHandle = STENCIL_NONE;
     private int hoveredHandle = STENCIL_NONE;
-    private boolean dragging = false;
+    private LightInstance selectedLight = null;
 
     // Captured matrices & viewing vectors
     private final Matrix4f lastProjectionMatrix = new Matrix4f();
     private final Matrix4f capturedModelView = new Matrix4f();
     private boolean captured = false;
+    private final RawProjectionMatrix rawProjection = new RawProjectionMatrix("cal_gizmo");
 
-    private float lastSx = 1.0f;
-    private float lastSy = 1.0f;
-    private float lastSz = 1.0f;
+    private float lastSx = 1F;
+    private float lastSy = 1F;
+    private float lastSz = 1F;
     private final Vector3f lastCamDir = new Vector3f(0f, 1f, 0f);
 
     // Drag start states
+    private boolean dragging = false;
+    private Vec3d dragStartLightPos = Vec3d.ZERO;
     private Vec3d dragStartMousePos = null;
+    private float dragStartRadius = 0f;
+    private float dragStartDistance = 0f;
     private double dragStartMouseAngle = 0.0;
     private double dragStart3DAngle = 0.0;
-    private Vec3d dragStartLightPos = null;
-    private float dragStartRadius = 6.0f;
-    private float dragStartDistance = 12.0f;
 
     // Rotation Arc visual feedback
     private boolean arcActive = false;
-    private boolean arcView = false;
     private Axis arcAxis = Axis.Y;
+    private boolean arcView = false;
     private float arcStartU = 0f;
     private float arcSweep = 0f;
 
@@ -147,7 +154,7 @@ public class LightGizmo {
     private final Vector3f dragProgressEnd = new Vector3f();
 
     public void init() {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(this::render);
+        WorldRenderEvents.END_MAIN.register(this::render);
     }
 
     public void setSelectedLight(LightInstance light) {
@@ -189,9 +196,14 @@ public class LightGizmo {
         if (client.world == null) return;
         if (!(client.currentScreen instanceof CALEditorScreen)) return;
 
-        this.lastProjectionMatrix.set(context.projectionMatrix());
+        float fov = client.options.getFov().getValue().floatValue();
+        this.lastProjectionMatrix.set(client.gameRenderer.getBasicProjectionMatrix(fov));
         this.capturedModelView.set(RenderSystem.getModelViewMatrix());
         this.captured = true;
+    }
+
+    public void renderOverlay(DrawContext drawContext) {
+        renderOverlay();
     }
 
     /**
@@ -207,19 +219,14 @@ public class LightGizmo {
         }
 
         Camera camera = client.gameRenderer.getCamera();
-        Vec3d camPos = camera.getPos();
+        Vec3d camPos = camera.getCameraPos();
 
-        Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
-        ProjectionType prevProjectionType = RenderSystem.getProjectionType();
-        RenderSystem.setProjectionMatrix(lastProjectionMatrix, ProjectionType.PERSPECTIVE);
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(this.rawProjection.set(lastProjectionMatrix), ProjectionType.PERSPECTIVE);
 
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
         mvStack.set(capturedModelView);
-
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
 
         MatrixStack stack = new MatrixStack();
 
@@ -236,10 +243,8 @@ public class LightGizmo {
             drawGizmo3D(stack, camPos, selectedLight);
         }
 
-        RenderSystem.enableDepthTest();
-
         mvStack.popMatrix();
-        RenderSystem.setProjectionMatrix(prevProjection, prevProjectionType);
+        RenderSystem.restoreProjectionMatrix();
     }
 
     private void drawBillboards(MatrixStack stack, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
@@ -248,9 +253,6 @@ public class LightGizmo {
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Quaternionf camRot = camera.getRotation();
-
-        RenderSystem.disableCull();
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         for (LightInstance light : lights) {
             if (!renderLightIcons && light != selectedLight) continue;
@@ -267,26 +269,18 @@ public class LightGizmo {
 
             if (icon.staticTexture != null && icon.tintTexture != null) {
                 int tintColor = (light == selectedLight) ? 0xFFFFAA00 : (0xFF000000 | ((int) (light.r * 255) << 16) | ((int) (light.g * 255) << 8) | (int) (light.b * 255));
-                icon.tintTexture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
-
-                icon.staticTexture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
             } else if (icon.texture != null) {
-                icon.texture.bind();
-                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 int color = (light == selectedLight) ? 0xFFFFAA00 : 0xFFFFFFFF;
                 drawBillboardQuad(stack, size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
             }
             stack.pop();
         }
-
-        RenderSystem.enableCull();
     }
 
     private void drawBillboardQuad(MatrixStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
+        if (texture == null) return;
         Matrix4f matrix = stack.peek().getPositionMatrix();
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 
@@ -300,17 +294,12 @@ public class LightGizmo {
         builder.vertex(matrix, size, size, 0).texture(u2, v1).color(color);
         builder.vertex(matrix, -size, size, 0).texture(u1, v1).color(color);
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        CALLayers.flush(builder, CALLayers.getPositionTexColorNoDepthLayer(texture.identifier));
     }
 
     private void drawLightIndicators(MatrixStack stack, Vec3d camPos, LightInstance light) {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
-
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableCull();
 
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
@@ -331,8 +320,7 @@ public class LightGizmo {
             drawPointIndicator(builder, stack, light, r, g, b, alpha);
         }
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
-        RenderSystem.enableCull();
+        CALLayers.flushLines(builder);
         stack.pop();
     }
 
@@ -492,11 +480,6 @@ public class LightGizmo {
 
         this.updateFlipSigns(camPos, light);
 
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableCull();
-
         BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         if (this.mode == Mode.ROTATE) drawRotate(builder, stack, scale);
@@ -508,10 +491,9 @@ public class LightGizmo {
         drawDragProgress(builder, stack, scale);
 
         try {
-            BufferRenderer.drawWithGlobalProgram(builder.end());
+            CALLayers.flushTrianglesNoDepth(builder);
         } catch (IllegalStateException ignored) {}
 
-        RenderSystem.enableCull();
         stack.pop();
     }
 
@@ -973,7 +955,7 @@ public class LightGizmo {
 
         Camera camera = client.gameRenderer.getCamera();
         Vec3d rayDir = getRayDirection(mouseX, mouseY);
-        Vec3d rayStart = camera.getPos();
+        Vec3d rayStart = camera.getCameraPos();
 
         int picked = checkAxisClickLocal(rayStart, rayDir, selectedLight, mouseX, mouseY);
         this.hoveredHandle = picked;
@@ -986,7 +968,7 @@ public class LightGizmo {
 
         Camera camera = client.gameRenderer.getCamera();
         Vec3d rayDir = getRayDirection(mouseX, mouseY);
-        Vec3d rayStart = camera.getPos();
+        Vec3d rayStart = camera.getCameraPos();
 
         if (selectedLight != null) {
             int clickedAxis = checkAxisClickLocal(rayStart, rayDir, selectedLight, mouseX, mouseY);
@@ -1061,7 +1043,7 @@ public class LightGizmo {
             MinecraftClient client = MinecraftClient.getInstance();
             Camera camera = client.gameRenderer.getCamera();
             Vec3d rayDir = getRayDirection(mouseX, mouseY);
-            Vec3d rayStart = camera.getPos();
+            Vec3d rayStart = camera.getCameraPos();
 
             if (isTranslateHandle(activeHandle)) {
                 Vec3d currentProj = null;
@@ -1469,7 +1451,7 @@ public class LightGizmo {
         int height = client.getWindow().getScaledHeight();
 
         Camera camera = client.gameRenderer.getCamera();
-        Vec3d camPos = camera.getPos();
+        Vec3d camPos = camera.getCameraPos();
 
         Vector4f eye = new Vector4f(
             (float)(lightPos.x - camPos.x),
