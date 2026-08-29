@@ -158,6 +158,9 @@ public class LightGizmo {
     private final Vector3f dragProgressEnd = new Vector3f();
 
     public void init() {
+        if (CalSettings.INSTANCE.gizmoMode >= 0 && CalSettings.INSTANCE.gizmoMode < Mode.values().length) {
+            this.mode = Mode.values()[CalSettings.INSTANCE.gizmoMode];
+        }
         LevelRenderEvents.END_MAIN.register(context -> {
             if (context.levelState() != null && context.levelState().cameraRenderState != null && context.levelState().cameraRenderState.projectionMatrix != null) {
                 this.lastProjectionMatrix.set(context.levelState().cameraRenderState.projectionMatrix);
@@ -176,6 +179,8 @@ public class LightGizmo {
 
     public void setMode(Mode mode) {
         this.mode = mode;
+        CalSettings.INSTANCE.gizmoMode = mode.ordinal();
+        CalSettings.INSTANCE.save();
     }
 
     public Mode getMode() {
@@ -241,10 +246,6 @@ public class LightGizmo {
         }
 
         if (!captured) return;
-
-        if (CalSettings.INSTANCE.gizmoMode >= 0 && CalSettings.INSTANCE.gizmoMode < Mode.values().length) {
-            this.mode = Mode.values()[CalSettings.INSTANCE.gizmoMode];
-        }
 
         Camera camera = client.gameRenderer.mainCamera();
         if (camera == null) return;
