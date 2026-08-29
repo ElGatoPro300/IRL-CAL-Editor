@@ -17,6 +17,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
+import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Intersectiond;
@@ -33,10 +34,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import java.util.Collection;
+
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 
 /**
  * Modern CML/BBS-inspired 3D Gizmo for CAL Lights.
@@ -48,16 +52,8 @@ import java.util.Collection;
 public class LightGizmo {
     public static final LightGizmo INSTANCE = new LightGizmo();
 
-    public enum Mode {
-        TRANSLATE, ROTATE, COMBINED, TOP
-    }
-
-    public enum Axis {
-        X, Y, Z
-    }
-
-    /* Handle IDs matching BBS CML gizmo constants */
-    public static final int STENCIL_NONE = -1;
+    // Interaction Axis / Plane / Mode Constants
+    public static final int STENCIL_NONE = 0;
     public static final int STENCIL_X = 1;
     public static final int STENCIL_Y = 2;
     public static final int STENCIL_Z = 3;
@@ -65,25 +61,39 @@ public class LightGizmo {
     public static final int STENCIL_XY = 5;
     public static final int STENCIL_ZY = 6;
     public static final int STENCIL_FREE = 7;
+    public static final int STENCIL_ROTATE_X = 8;
+    public static final int STENCIL_ROTATE_Y = 9;
+    public static final int STENCIL_ROTATE_Z = 10;
+    public static final int STENCIL_TRACKBALL = 11;
+    public static final int STENCIL_VIEW = 12;
+    public static final int STENCIL_SCALE_X = 13;
+    public static final int STENCIL_SCALE_Y = 14;
+    public static final int STENCIL_SCALE_Z = 15;
 
-    public static final int STENCIL_SCALE_X = 8;
-    public static final int STENCIL_SCALE_Y = 9;
-    public static final int STENCIL_SCALE_Z = 10;
-    public static final int STENCIL_ROTATE_X = 11;
-    public static final int STENCIL_ROTATE_Y = 12;
-    public static final int STENCIL_ROTATE_Z = 13;
+    public enum Mode {
+        TRANSLATE,
+        ROTATE,
+        SCALE,
+        COMBINED,
+        TOP
+    }
 
-    public static final int STENCIL_TRACKBALL = 14;
-    public static final int STENCIL_VIEW = 16;
+    public enum Axis {
+        X, Y, Z
+    }
 
-    /* Colors matching BBS CML */
+    // Color Theme - Industry Standard (Blender / Maya / BBS)
+    private static final float[] COLOR_X_IDLE = {0.92F, 0.22F, 0.22F};
+    private static final float[] COLOR_X_HOVER = {1.00F, 0.45F, 0.45F};
+    private static final float[] COLOR_Y_IDLE = {0.22F, 0.85F, 0.22F};
+    private static final float[] COLOR_Y_HOVER = {0.45F, 1.00F, 0.45F};
+    private static final float[] COLOR_Z_IDLE = {0.22F, 0.45F, 0.95F};
+    private static final float[] COLOR_Z_HOVER = {0.45F, 0.70F, 1.00F};
+
+    private static final float[] COLOR_FREE_IDLE = { 1.00F, 1.00F, 1.00F };
+    private static final float[] COLOR_VIEW_IDLE = { 0.80F, 0.80F, 0.80F };
+    private static final float[] COLOR_VIEW_HOVER = { 1.00F, 1.00F, 1.00F };
     private static final float[] COLOR_ACTIVE = { 1.00F, 1.00F, 1.00F };
-    private static final float[] COLOR_X_IDLE = { 0.80F, 0.28F, 0.28F };
-    private static final float[] COLOR_X_HOVER = { 1.00F, 0.35F, 0.35F };
-    private static final float[] COLOR_Y_IDLE = { 0.30F, 0.75F, 0.35F };
-    private static final float[] COLOR_Y_HOVER = { 0.40F, 1.00F, 0.45F };
-    private static final float[] COLOR_Z_IDLE = { 0.28F, 0.50F, 0.95F };
-    private static final float[] COLOR_Z_HOVER = { 0.35F, 0.62F, 1.00F };
 
     private static final float[] COLOR_XZ_IDLE = { 0.85F, 0.25F, 0.85F };
     private static final float[] COLOR_XZ_HOVER = { 1.00F, 0.35F, 1.00F };
@@ -92,17 +102,12 @@ public class LightGizmo {
     private static final float[] COLOR_ZY_IDLE = { 0.20F, 0.75F, 0.80F };
     private static final float[] COLOR_ZY_HOVER = { 0.30F, 0.90F, 0.95F };
 
-    private static final float[] COLOR_FREE_IDLE = { 1.00F, 1.00F, 1.00F };
-    private static final float[] COLOR_VIEW_IDLE = { 0.80F, 0.80F, 0.80F };
-    private static final float[] COLOR_VIEW_HOVER = { 1.00F, 1.00F, 1.00F };
-
     private static final float PLANE_ALPHA_IDLE = 0.55F;
     private static final float PLANE_ALPHA_HOVER = 0.80F;
     private static final float PLANE_ALPHA_ACTIVE = 0.95F;
-
-    private static final float COMBINED_MOVE_SCALE = 0.85F;
-    private static final float COMBINED_ROTATE_SCALE = 1.55F;
-    private static final float VIEW_RING_SCALE = 1.12F;
+    private static final float COMBINED_MOVE_SCALE = 0.78F;
+    private static final float COMBINED_ROTATE_SCALE = 0.95F;
+    private static final float VIEW_RING_SCALE = 1.18F;
 
     /* Render scratch arrays for torus & sphere geometry */
     private static final float[] SCRATCH_COS_U = new float[65];
@@ -147,7 +152,7 @@ public class LightGizmo {
     private float arcStartU = 0f;
     private float arcSweep = 0f;
 
-    // Drag progress indicator
+    // Progress line visual feedback during translation drag
     private boolean dragProgressActive = false;
     private final Vector3f dragProgressStart = new Vector3f();
     private final Vector3f dragProgressEnd = new Vector3f();
@@ -163,28 +168,22 @@ public class LightGizmo {
 
     public void setSelectedLight(LightInstance light) {
         this.selectedLight = light;
-        if (light == null) {
-            this.activeHandle = STENCIL_NONE;
-            this.hoveredHandle = STENCIL_NONE;
-            this.dragging = false;
-            this.arcActive = false;
-            this.dragProgressActive = false;
-        }
     }
 
     public LightInstance getSelectedLight() {
         return this.selectedLight;
     }
 
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
     public Mode getMode() {
         return this.mode;
     }
 
-    public void setMode(Mode mode) {
-        if (mode != null) {
-            this.mode = mode;
-            CalSettings.INSTANCE.gizmoMode = mode.ordinal();
-        }
+    public boolean isDragging() {
+        return this.dragging;
     }
 
     public int getActiveHandle() {
@@ -202,11 +201,19 @@ public class LightGizmo {
     public void renderInWorld() {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return;
-        if (!(client.screen instanceof CALEditorScreen)) return;
+        if (!(client.gui.screen() instanceof CALEditorScreen)) return;
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
         if (camera != null) {
             this.capturedModelView.set(getViewMatrix(camera));
+            this.captured = true;
+        }
+
+        if (client.gameRenderer.gameRenderState() != null
+                && client.gameRenderer.gameRenderState().levelRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix != null) {
+            this.lastProjectionMatrix.set(client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix);
             this.captured = true;
         }
 
@@ -222,14 +229,25 @@ public class LightGizmo {
      */
     public void renderOverlay() {
         Minecraft client = Minecraft.getInstance();
-        if (client.level == null || !captured) return;
-        if (!(client.screen instanceof CALEditorScreen)) return;
+        if (client.level == null) return;
+        if (!(client.gui.screen() instanceof CALEditorScreen)) return;
+
+        if (client.gameRenderer.gameRenderState() != null
+                && client.gameRenderer.gameRenderState().levelRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix != null) {
+            this.lastProjectionMatrix.set(client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix);
+            this.captured = true;
+        }
+
+        if (!captured) return;
 
         if (CalSettings.INSTANCE.gizmoMode >= 0 && CalSettings.INSTANCE.gizmoMode < Mode.values().length) {
             this.mode = Mode.values()[CalSettings.INSTANCE.gizmoMode];
         }
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
+        if (camera == null) return;
         Vec3 camPos = camera.position();
         Matrix4f viewMatrix = getViewMatrix(camera);
 
@@ -263,7 +281,7 @@ public class LightGizmo {
         CLIcon icon = isSpot ? CalLightsIcons.SPOT_LIGHT : CalLightsIcons.POINT_LIGHT;
         if (icon == null) return;
 
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
         Quaternionf camRot = camera.rotation();
 
         for (LightInstance light : lights) {
@@ -294,7 +312,7 @@ public class LightGizmo {
     private void drawBillboardQuad(PoseStack stack, float size, CLTexture texture, int texX, int texY, int texW, int texH, int color) {
         if (texture == null) return;
         Matrix4f matrix = stack.last().pose();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder builder = CALLayers.beginQuads(DefaultVertexFormat.POSITION_TEX_COLOR);
 
         float u1 = texX / (float) texture.width;
         float v1 = texY / (float) texture.height;
@@ -306,14 +324,14 @@ public class LightGizmo {
         builder.addVertex(matrix, size, size, 0).setUv(u2, v1).setColor(color);
         builder.addVertex(matrix, -size, size, 0).setUv(u1, v1).setColor(color);
 
-        CALLayers.flush(builder, CALLayers.getPositionTexColorNoDepthLayer(texture.identifier));
+        CALLayers.flush(builder, CALLayers.getBillboardLayer(texture.identifier));
     }
 
     private void drawLightIndicators(PoseStack stack, Vec3 camPos, LightInstance light) {
         stack.pushPose();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = CALLayers.beginLines();
 
         float r = light.r;
         float g = light.g;
@@ -336,7 +354,7 @@ public class LightGizmo {
         stack.popPose();
     }
 
-    private void drawPointIndicator(BufferBuilder builder, PoseStack stack, LightInstance light, float r, float g, float b, float a) {
+    private void drawPointIndicator(VertexConsumer builder, PoseStack stack, LightInstance light, float r, float g, float b, float a) {
         float radius = light.radius;
         int segments = 64;
         Matrix4f matrix = stack.last().pose();
@@ -381,7 +399,7 @@ public class LightGizmo {
         }
     }
 
-    private void drawSpotIndicator(BufferBuilder builder, PoseStack stack, LightInstance light, float r, float g, float b, float a) {
+    private void drawSpotIndicator(VertexConsumer builder, PoseStack stack, LightInstance light, float r, float g, float b, float a) {
         float dx = light.dx;
         float dy = light.dy;
         float dz = light.dz;
@@ -492,7 +510,7 @@ public class LightGizmo {
 
         this.updateFlipSigns(camPos, light);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = CALLayers.beginTriangles();
 
         if (this.mode == Mode.ROTATE) drawRotate(builder, stack, scale);
         else if (this.mode == Mode.COMBINED) drawCombined(builder, stack, scale);
@@ -502,9 +520,7 @@ public class LightGizmo {
         drawActiveGuide(builder, stack, scale);
         drawDragProgress(builder, stack, scale);
 
-        try {
-            CALLayers.flushTrianglesNoDepth(builder);
-        } catch (IllegalStateException ignored) {}
+        CALLayers.flushTriangles(builder);
 
         stack.popPose();
     }
@@ -543,7 +559,7 @@ public class LightGizmo {
 
     /* ---- Translation handles ---- */
 
-    private void drawTranslate(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawTranslate(VertexConsumer builder, PoseStack stack, float scale) {
         float moveScale = scale * COMBINED_MOVE_SCALE;
         float axisSize = 0.22F * COMBINED_ROTATE_SCALE * scale * 0.50F;
         float axisOffset = 0.0075F * moveScale;
@@ -556,7 +572,7 @@ public class LightGizmo {
         drawScreenCube(builder, stack, axisOffset);
     }
 
-    private void drawMoveBars(BufferBuilder builder, PoseStack stack, float axisSize, float axisOffset) {
+    private void drawMoveBars(VertexConsumer builder, PoseStack stack, float axisSize, float axisOffset) {
         float[] xCol = pickColor(STENCIL_X, COLOR_X_IDLE, COLOR_X_HOVER);
         float[] yCol = pickColor(STENCIL_Y, COLOR_Y_IDLE, COLOR_Y_HOVER);
         float[] zCol = pickColor(STENCIL_Z, COLOR_Z_IDLE, COLOR_Z_HOVER);
@@ -581,7 +597,7 @@ public class LightGizmo {
         }
     }
 
-    private void drawMovePlanes(BufferBuilder builder, PoseStack stack, float planeInner, float planeOuter, float offset) {
+    private void drawMovePlanes(VertexConsumer builder, PoseStack stack, float planeInner, float planeOuter, float offset) {
         float xzAlpha = pickPlaneAlpha(STENCIL_XZ);
         float xyAlpha = pickPlaneAlpha(STENCIL_XY);
         float zyAlpha = pickPlaneAlpha(STENCIL_ZY);
@@ -595,7 +611,7 @@ public class LightGizmo {
         if (showHandle(STENCIL_ZY)) fillBox(builder, stack, -offset, planeInner * this.lastSy, planeInner * this.lastSz, offset, planeOuter * this.lastSy, planeOuter * this.lastSz, zyCol[0], zyCol[1], zyCol[2], zyAlpha);
     }
 
-    private void drawScreenCube(BufferBuilder builder, PoseStack stack, float axisOffset) {
+    private void drawScreenCube(VertexConsumer builder, PoseStack stack, float axisOffset) {
         if (!showHandle(STENCIL_FREE)) return;
         float[] color = pickColor(STENCIL_FREE, COLOR_FREE_IDLE, COLOR_FREE_IDLE);
         fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, color[0], color[1], color[2], 1F);
@@ -603,7 +619,7 @@ public class LightGizmo {
 
     /* ---- Scale handles ---- */
 
-    private void drawScale(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawScale(VertexConsumer builder, PoseStack stack, float scale) {
         float moveScale = scale * COMBINED_MOVE_SCALE;
         float axisSize = 0.22F * COMBINED_ROTATE_SCALE * scale * 0.50F;
         float axisOffset = 0.0075F * moveScale;
@@ -633,7 +649,7 @@ public class LightGizmo {
 
     /* ---- Rotate handles ---- */
 
-    private void drawTop(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawTop(VertexConsumer builder, PoseStack stack, float scale) {
         float radius = 0.22F * scale;
         float topRadius = radius * 1.85F * 0.5F;
         boolean active = this.activeHandle == STENCIL_TRACKBALL;
@@ -641,7 +657,7 @@ public class LightGizmo {
         sphere(builder, stack, topRadius, 16, 24, 0.92F, 0.92F, 0.92F, sa);
     }
 
-    private void drawRotate(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawRotate(VertexConsumer builder, PoseStack stack, float scale) {
         float rotateRadius = 0.22F * scale * COMBINED_ROTATE_SCALE;
         float ringThickness = 0.010F * scale;
         drawTrackball(builder, stack, rotateRadius * 1.85F * 0.5F);
@@ -649,7 +665,7 @@ public class LightGizmo {
         drawViewRing(builder, stack, rotateRadius * VIEW_RING_SCALE, ringThickness);
     }
 
-    private void drawRings(BufferBuilder builder, PoseStack stack, float radius, float ringThickness, int idX, int idY, int idZ) {
+    private void drawRings(VertexConsumer builder, PoseStack stack, float radius, float ringThickness, int idX, int idY, int idZ) {
         float[] xCol = pickColor(idX, COLOR_X_IDLE, COLOR_X_HOVER);
         float[] yCol = pickColor(idY, COLOR_Y_IDLE, COLOR_Y_HOVER);
         float[] zCol = pickColor(idZ, COLOR_Z_IDLE, COLOR_Z_HOVER);
@@ -663,14 +679,14 @@ public class LightGizmo {
         }
     }
 
-    private void drawTrackball(BufferBuilder builder, PoseStack stack, float radius) {
+    private void drawTrackball(VertexConsumer builder, PoseStack stack, float radius) {
         if (!showHandle(STENCIL_TRACKBALL)) return;
         boolean active = this.activeHandle == STENCIL_TRACKBALL;
         float alpha = active ? 0.28F : 0.14F;
         sphere(builder, stack, radius, 16, 24, 0.92F, 0.92F, 0.92F, alpha);
     }
 
-    private void drawViewRing(BufferBuilder builder, PoseStack stack, float radius, float ringThickness) {
+    private void drawViewRing(VertexConsumer builder, PoseStack stack, float radius, float ringThickness) {
         if (!showHandle(STENCIL_VIEW)) return;
         float[] color = pickColor(STENCIL_VIEW, COLOR_VIEW_IDLE, COLOR_VIEW_HOVER);
 
@@ -685,7 +701,7 @@ public class LightGizmo {
         stack.popPose();
     }
 
-    private void drawRotationSweepArc(BufferBuilder builder, PoseStack stack, Axis axis, float radius, float thickness, boolean viewRing) {
+    private void drawRotationSweepArc(VertexConsumer builder, PoseStack stack, Axis axis, float radius, float thickness, boolean viewRing) {
         if (Math.abs(this.arcSweep) <= 0.01F) return;
         float[] color = viewRing ? COLOR_ACTIVE : (axis == Axis.X ? COLOR_X_HOVER : axis == Axis.Y ? COLOR_Y_HOVER : COLOR_Z_HOVER);
         arc3D(builder, stack, axis, radius, thickness, color[0], color[1], color[2], this.arcStartU, this.arcSweep);
@@ -693,7 +709,7 @@ public class LightGizmo {
 
     /* ---- Combined mode ---- */
 
-    private void drawCombined(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawCombined(VertexConsumer builder, PoseStack stack, float scale) {
         float moveScale = scale * COMBINED_MOVE_SCALE;
         float rotateRadius = 0.22F * scale * COMBINED_ROTATE_SCALE;
         float axisSize = rotateRadius * 0.50F;
@@ -716,7 +732,7 @@ public class LightGizmo {
 
     /* ---- Active guide & progress lines ---- */
 
-    private void drawActiveGuide(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawActiveGuide(VertexConsumer builder, PoseStack stack, float scale) {
         if (this.activeHandle == STENCIL_XY) {
             drawGuideLine(builder, stack, scale, Axis.X, COLOR_X_HOVER);
             drawGuideLine(builder, stack, scale, Axis.Y, COLOR_Y_HOVER);
@@ -746,7 +762,7 @@ public class LightGizmo {
         }
     }
 
-    private void drawGuideLine(BufferBuilder builder, PoseStack stack, float scale, Axis axis, float[] color) {
+    private void drawGuideLine(VertexConsumer builder, PoseStack stack, float scale, Axis axis, float[] color) {
         float length = 10F * scale * 2F;
         float t = 0.0025F * scale * 2F;
         if (axis == Axis.X) fillBox(builder, stack, -length, -t, -t, length, t, t, color[0], color[1], color[2], 0.35F);
@@ -754,7 +770,7 @@ public class LightGizmo {
         else fillBox(builder, stack, -t, -t, -length, t, t, length, color[0], color[1], color[2], 0.35F);
     }
 
-    private void drawDragProgress(BufferBuilder builder, PoseStack stack, float scale) {
+    private void drawDragProgress(VertexConsumer builder, PoseStack stack, float scale) {
         if (!this.dragProgressActive) return;
         float dx = this.dragProgressEnd.x - this.dragProgressStart.x;
         float dy = this.dragProgressEnd.y - this.dragProgressStart.y;
@@ -768,7 +784,7 @@ public class LightGizmo {
 
     /* ---- 3D Primitive Rendering Helpers (BBS CML Draw) ---- */
 
-    private void cone(BufferBuilder builder, PoseStack stack, float apexX, float apexY, float apexZ, float baseX, float baseY, float baseZ, float radius, int segments, float r, float g, float b, float a) {
+    private void cone(VertexConsumer builder, PoseStack stack, float apexX, float apexY, float apexZ, float baseX, float baseY, float baseZ, float radius, int segments, float r, float g, float b, float a) {
         Matrix4f mat = stack.last().pose();
 
         float dx = baseX - apexX;
@@ -822,7 +838,7 @@ public class LightGizmo {
         }
     }
 
-    private void sphere(BufferBuilder builder, PoseStack stack, float radius, int rings, int sectors, float r, float g, float b, float a) {
+    private void sphere(VertexConsumer builder, PoseStack stack, float radius, int rings, int sectors, float r, float g, float b, float a) {
         Matrix4f mat = stack.last().pose();
 
         for (int i = 0; i <= rings; i++) {
@@ -861,7 +877,7 @@ public class LightGizmo {
         }
     }
 
-    private void arc3D(BufferBuilder builder, PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b, float startDeg, float sweepDeg) {
+    private void arc3D(VertexConsumer builder, PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b, float startDeg, float sweepDeg) {
         float absSweep = Math.abs(sweepDeg);
         if (absSweep < 0.01F || thickness <= 0F || radius <= 0F) return;
 
@@ -920,7 +936,7 @@ public class LightGizmo {
         stack.popPose();
     }
 
-    private void fillBoxTo(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a) {
+    private void fillBoxTo(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a) {
         float dx = x2 - x1; float dy = y2 - y1; float dz = z2 - z1;
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         float pitch = (float) Math.toDegrees(Math.asin(-dy / Math.max(0.0001, distance)));
@@ -935,7 +951,7 @@ public class LightGizmo {
         stack.popPose();
     }
 
-    private void fillBox(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a) {
+    private void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a) {
         fillQuad(builder, stack, x1, y1, z2, x1, y2, z2, x1, y2, z1, x1, y1, z1, r, g, b, a);
         fillQuad(builder, stack, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, r, g, b, a);
         fillQuad(builder, stack, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
@@ -944,7 +960,7 @@ public class LightGizmo {
         fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
     }
 
-    private void fillQuad(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a) {
+    private void fillQuad(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a) {
         Matrix4f matrix4f = stack.last().pose();
         builder.addVertex(matrix4f, x1, y1, z1).setColor(r, g, b, a);
         builder.addVertex(matrix4f, x2, y2, z2).setColor(r, g, b, a);
@@ -965,7 +981,7 @@ public class LightGizmo {
             return;
         }
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
         Vec3 rayDir = getRayDirection(mouseX, mouseY);
         Vec3 rayStart = camera.position();
 
@@ -978,7 +994,7 @@ public class LightGizmo {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return false;
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
         Vec3 rayDir = getRayDirection(mouseX, mouseY);
         Vec3 rayStart = camera.position();
 
@@ -1053,7 +1069,7 @@ public class LightGizmo {
     public boolean onMouseDragged(double mouseX, double mouseY, int btn, double dx, double dy) {
         if (btn == 0 && dragging && selectedLight != null && activeHandle != STENCIL_NONE) {
             Minecraft client = Minecraft.getInstance();
-            Camera camera = client.gameRenderer.getMainCamera();
+            Camera camera = client.gameRenderer.mainCamera();
             Vec3 rayDir = getRayDirection(mouseX, mouseY);
             Vec3 rayStart = camera.position();
 
@@ -1217,11 +1233,18 @@ public class LightGizmo {
         float x = (2.0f * (float) mouseX) / width - 1.0f;
         float y = 1.0f - (2.0f * (float) mouseY) / height;
 
+        if (client.gameRenderer.gameRenderState() != null
+                && client.gameRenderer.gameRenderState().levelRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState != null
+                && client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix != null) {
+            lastProjectionMatrix.set(client.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.projectionMatrix);
+        }
+
         Matrix4f invProj = new Matrix4f(lastProjectionMatrix).invert();
         Vector4f rayClip = new Vector4f(x, y, -1.0f, 1.0f).mul(invProj);
         Vector3f rayEye = new Vector3f(rayClip.x / rayClip.w, rayClip.y / rayClip.w, rayClip.z / rayClip.w);
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
         Matrix4f invView = (camera != null ? getViewMatrix(camera) : new Matrix4f(capturedModelView)).invert();
         Vector4f rayWorld4 = new Vector4f(rayEye.x, rayEye.y, rayEye.z, 0.0f).mul(invView);
 
@@ -1281,7 +1304,7 @@ public class LightGizmo {
         if (mode == Mode.ROTATE || mode == Mode.COMBINED) {
             Vector2d center2D = getLightScreenPos(pos);
             if (center2D != null) {
-                Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+                Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
                 float yawRad = (float) Math.toRadians(camera.yRot());
                 Vec3 camRight = new Vec3(-Math.cos(yawRad), 0, -Math.sin(yawRad));
                 double viewRingWorldR = 0.22 * COMBINED_ROTATE_SCALE * VIEW_RING_SCALE * scale;
@@ -1463,7 +1486,7 @@ public class LightGizmo {
         int width = client.getWindow().getGuiScaledWidth();
         int height = client.getWindow().getGuiScaledHeight();
 
-        Camera camera = client.gameRenderer.getMainCamera();
+        Camera camera = client.gameRenderer.mainCamera();
         Vec3 camPos = camera.position();
 
         Matrix4f viewMatrix = camera != null ? getViewMatrix(camera) : capturedModelView;

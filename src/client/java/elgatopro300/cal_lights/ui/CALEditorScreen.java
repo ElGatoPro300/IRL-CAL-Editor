@@ -42,8 +42,10 @@ public class CALEditorScreen extends CLUIScreen {
         }
         this.originalPerspective = mc.options.getCameraType();
         mc.options.setCameraType(CameraType.FIRST_PERSON);
-        this.originalHudHidden = mc.options.hideGui;
-        mc.options.hideGui = true;
+        this.originalHudHidden = mc.gui.hud.isHidden();
+        if (!this.originalHudHidden) {
+            mc.gui.hud.toggle();
+        }
         this.lastGuiScale = mc.options.guiScale().get();
         mc.options.guiScale().set(CalSettings.INSTANCE.guiScale);
         mc.resizeGui();
@@ -63,7 +65,9 @@ public class CALEditorScreen extends CLUIScreen {
             mc.player.setPos(this.originalX, this.originalY, this.originalZ);
             mc.player.setDeltaMovement(0, 0, 0);
         }
-        mc.options.hideGui = this.originalHudHidden;
+        if (mc.gui.hud.isHidden() != this.originalHudHidden) {
+            mc.gui.hud.toggle();
+        }
         if (this.originalPerspective != null) {
             mc.options.setCameraType(this.originalPerspective);
         }
@@ -229,6 +233,7 @@ public class CALEditorScreen extends CLUIScreen {
             }
         }
 
+        LightGizmo.INSTANCE.renderOverlay();
         super.extractRenderState(context, mouseX, mouseY, delta);
         if (this.root instanceof CALEditorPanel panel && panel.closing) {
             if (panel.isFullyClosed()) {

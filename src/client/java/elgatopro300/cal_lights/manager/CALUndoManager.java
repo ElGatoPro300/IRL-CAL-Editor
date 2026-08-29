@@ -177,7 +177,7 @@ public class CALUndoManager {
 
         // Rebuild UI editor settings
         Minecraft mc = Minecraft.getInstance();
-        if (mc.screen instanceof CALEditorScreen screen) {
+        if (mc.gui.screen() instanceof CALEditorScreen screen) {
             if (screen.getRoot() instanceof CALEditorPanel p) {
                 p.rebuildSettings();
                 p.resize(p.x, p.y, p.w, p.h);

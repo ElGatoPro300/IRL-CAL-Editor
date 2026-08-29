@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ClientPlayerEntityMixin {
     @Inject(method = "sendPosition", at = @At("HEAD"), cancellable = true)
     private void cal_cancelSendMovementPackets(CallbackInfo ci) {
-        if (Minecraft.getInstance().screen instanceof CALEditorScreen) {
+        if (Minecraft.getInstance().gui.screen() instanceof CALEditorScreen) {
             ci.cancel();
         }
     }

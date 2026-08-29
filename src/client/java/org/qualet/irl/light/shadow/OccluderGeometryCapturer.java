@@ -13,9 +13,11 @@ import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.gizmos.DrawableGizmoPrimitives;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.Direction;
@@ -25,6 +27,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3fc;
@@ -284,7 +287,7 @@ public final class OccluderGeometryCapturer
 
         @Override
         public void submitModelPart(ModelPart part, PoseStack matrices, RenderType renderLayer, int light, int overlay,
-                                    TextureAtlasSprite sprite, boolean sheeted, boolean hasGlint, int tintedColor,
+                                    TextureAtlasSprite sprite, int tintedColor,
                                     ModelFeatureRenderer.CrumblingOverlay crumblingOverlay, int i)
         {
             if (part == null)
@@ -382,7 +385,7 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitBreakingBlockModel(PoseStack matrices, BlockStateModel model, long seed, int outlineColor)
+        public void submitBreakingBlockModel(PoseStack matrices, List<BlockStateModelPart> parts, int outlineColor)
         {
         }
 
@@ -393,7 +396,7 @@ public final class OccluderGeometryCapturer
 
         @Override
         public void submitNameTag(PoseStack matrices, Vec3 nameLabelPos, int y, Component label, boolean notSneaking,
-                                  int light, double squaredDistanceToCamera, CameraRenderState cameraState)
+                                  int light, CameraRenderState cameraState)
         {
         }
 
@@ -414,7 +417,13 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitMovingBlock(PoseStack matrices, MovingBlockRenderState state)
+        public void submitMovingBlock(PoseStack matrices, MovingBlockRenderState state, int outlineColor)
+        {
+        }
+
+        @Override
+        public void submitShapeOutline(PoseStack matrices, VoxelShape shape,
+                                       RenderType renderType, int color, float lineWidth, boolean throughWalls)
         {
         }
 
@@ -424,7 +433,13 @@ public final class OccluderGeometryCapturer
         }
 
         @Override
-        public void submitParticleGroup(SubmitNodeCollector.ParticleGroupRenderer customRenderer)
+        public void submitQuadParticleGroup(QuadParticleRenderState state)
+        {
+        }
+
+        @Override
+        public void submitGizmoPrimitives(DrawableGizmoPrimitives.Group group,
+                                          CameraRenderState cameraState, boolean throughWalls)
         {
         }
     }

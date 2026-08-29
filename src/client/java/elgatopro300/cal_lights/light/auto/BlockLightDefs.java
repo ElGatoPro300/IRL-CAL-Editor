@@ -116,23 +116,8 @@ public final class BlockLightDefs {
 
         // --- candles --------------------------------------------------------
         float cr = 1.00f, cg = 0.70f, cb = 0.35f, ci = 0.8f, crad = 8f;
-        put(Blocks.CANDLE,            cr, cg, cb, ci, crad);
-        put(Blocks.WHITE_CANDLE,      cr, cg, cb, ci, crad);
-        put(Blocks.ORANGE_CANDLE,     cr, cg, cb, ci, crad);
-        put(Blocks.MAGENTA_CANDLE,    cr, cg, cb, ci, crad);
-        put(Blocks.LIGHT_BLUE_CANDLE, cr, cg, cb, ci, crad);
-        put(Blocks.YELLOW_CANDLE,     cr, cg, cb, ci, crad);
-        put(Blocks.LIME_CANDLE,       cr, cg, cb, ci, crad);
-        put(Blocks.PINK_CANDLE,       cr, cg, cb, ci, crad);
-        put(Blocks.GRAY_CANDLE,       cr, cg, cb, ci, crad);
-        put(Blocks.LIGHT_GRAY_CANDLE, cr, cg, cb, ci, crad);
-        put(Blocks.CYAN_CANDLE,       cr, cg, cb, ci, crad);
-        put(Blocks.PURPLE_CANDLE,     cr, cg, cb, ci, crad);
-        put(Blocks.BLUE_CANDLE,       cr, cg, cb, ci, crad);
-        put(Blocks.BROWN_CANDLE,      cr, cg, cb, ci, crad);
-        put(Blocks.GREEN_CANDLE,      cr, cg, cb, ci, crad);
-        put(Blocks.RED_CANDLE,        cr, cg, cb, ci, crad);
-        put(Blocks.BLACK_CANDLE,      cr, cg, cb, ci, crad);
+        put(Blocks.CANDLE, cr, cg, cb, ci, crad);
+        Blocks.DYED_CANDLE.forEach(candle -> put(candle, cr, cg, cb, ci, crad));
 
         for (int p = 1; p <= 15; p++) {
             float t = p / 15f;

@@ -16,7 +16,7 @@ public class EntityMixin {
     @Inject(method = "isSpectator", at = @At("HEAD"), cancellable = true)
     private void cal_isSpectator(CallbackInfoReturnable<Boolean> cir) {
         if ((Object) this instanceof LocalPlayer) {
-            if (Minecraft.getInstance().screen instanceof CALEditorScreen) {
+            if (Minecraft.getInstance().gui.screen() instanceof CALEditorScreen) {
                 cir.setReturnValue(true);
             }
         }

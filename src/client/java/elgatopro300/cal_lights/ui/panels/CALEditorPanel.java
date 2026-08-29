@@ -1730,7 +1730,7 @@ public class CALEditorPanel extends CLUIElement {
                 Minecraft client = Minecraft.getInstance();
                 if (client.level != null) {
                     Vec3 rayDir = LightGizmo.INSTANCE.getRayDirection(mx, my);
-                    Camera camera = client.gameRenderer.getMainCamera();
+                    Camera camera = client.gameRenderer.mainCamera();
                     Vec3 rayStart = camera.position();
                     
                     // Check if right-clicking directly on a light billboard
@@ -2230,10 +2230,10 @@ public class CALEditorPanel extends CLUIElement {
                         }
                     } else if (clickedIdx == 3) {
                         Minecraft mc = Minecraft.getInstance();
-                        if (mc.screen != null) {
-                            mc.screen.onClose();
+                        if (mc.gui.screen() != null) {
+                            mc.gui.screen().onClose();
                         } else {
-                            mc.setScreen(null);
+                            mc.gui.setScreen(null);
                         }
                     }
                     activeMenuDropdown = 0;
@@ -2305,7 +2305,7 @@ public class CALEditorPanel extends CLUIElement {
             int btnW = (leftPanelW - 22) / 2;
             if (mx >= 8 && mx < 8 + btnW && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3 p = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+                Vec3 p = Minecraft.getInstance().gameRenderer.mainCamera().position();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updatePoint(id, (float) p.x, (float) p.y, (float) p.z, 1f, 1f, 1f, 1.0f, 6.0f);
                 light.persistent = true;
@@ -2317,7 +2317,7 @@ public class CALEditorPanel extends CLUIElement {
             // Quick Add Spot
             if (mx >= 8 + btnW + 6 && mx < leftPanelW - 8 && my >= addY && my < addY + 16) {
                 CALUndoManager.pushState();
-                Vec3 p = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+                Vec3 p = Minecraft.getInstance().gameRenderer.mainCamera().position();
                 int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                 LightInstance light = LightManager.INSTANCE.updateSpot(id, (float) p.x, (float) p.y, (float) p.z, 0f, -1f, 0f, 1f, 1f, 1f, 1.0f, 35.0f, 10.0f, 12.0f);
                 light.persistent = true;
@@ -2567,8 +2567,8 @@ public class CALEditorPanel extends CLUIElement {
         }
         if (keyCode == GLFW.GLFW_KEY_F8) {
             Minecraft mc = Minecraft.getInstance();
-            if (mc.screen != null) {
-                mc.screen.onClose();
+            if (mc.gui.screen() != null) {
+                mc.gui.screen().onClose();
             }
             return true;
         }

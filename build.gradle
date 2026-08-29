@@ -56,8 +56,8 @@ dependencies {
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
 	// modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
-	implementation "maven.modrinth:sodium:mc26.1.1-0.8.9-fabric"
-	implementation "maven.modrinth:iris:1.10.9+26.1-fabric"
+	implementation "maven.modrinth:sodium:mc26.2-0.9.1-fabric"
+	implementation "maven.modrinth:iris:1.11.2+26.2-fabric"
 
 	implementation "org.anarres:jcpp:1.4.14"
 	implementation "io.github.douira:glsl-transformer:3.0.0-pre3"
@@ -65,7 +65,7 @@ dependencies {
 	implementation 'io.github.java-diff-utils:java-diff-utils:4.15'
 	
 	// Local dependencies (Put these jars in 'libs' folder)
-	implementation files('libs/irl-core-1.1.5-26.1.jar')
+	implementation files('libs/irl-core-1.1.5-26.2.jar')
 }
 
 processResources {
@@ -98,7 +98,7 @@ jar {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 
-	from("libs/irl-core-1.1.5-26.1.jar") {
+	from("libs/irl-core-1.1.5-26.2.jar") {
 		into "META-INF/jars"
 	}
 }

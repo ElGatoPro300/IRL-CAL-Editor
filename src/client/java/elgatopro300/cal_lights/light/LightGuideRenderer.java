@@ -10,16 +10,14 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 public final class LightGuideRenderer
 {
@@ -45,12 +43,12 @@ public final class LightGuideRenderer
 
         // When the editor overlay is up it draws the richer guides itself
         // suppress this in-world wire pass so they don't double up.
-        if (Minecraft.getInstance().screen instanceof CALEditorScreen)
+        if (Minecraft.getInstance().gui.screen() instanceof CALEditorScreen)
         {
             return;
         }
 
-        Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Camera cam = Minecraft.getInstance().gameRenderer.mainCamera();
         if (cam == null)
         {
             return;
@@ -64,8 +62,7 @@ public final class LightGuideRenderer
                 .rotateX((float) Math.toRadians(cam.xRot()))
                 .rotateY((float) Math.toRadians(cam.yRot() + 180.0));
 
-        BufferBuilder buf = Tesselator.getInstance()
-            .begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buf = CALLayers.beginLines();
 
         for (LightInstance l : LightManager.INSTANCE.getPointLights())
         {
@@ -96,14 +93,14 @@ public final class LightGuideRenderer
         CALLayers.flushLines(buf);
     }
 
-    private static void drawPoint(BufferBuilder buf, Matrix4f m, float x, float y, float z, float r, float g, float b)
+    private static void drawPoint(VertexConsumer buf, Matrix4f m, float x, float y, float z, float r, float g, float b)
     {
         line(buf, m, x - POINT_CROSS, y, z, x + POINT_CROSS, y, z, r, g, b);
         line(buf, m, x, y - POINT_CROSS, z, x, y + POINT_CROSS, z, r, g, b);
         line(buf, m, x, y, z - POINT_CROSS, x, y, z + POINT_CROSS, r, g, b);
     }
 
-    private static void drawSpot(BufferBuilder buf, Matrix4f m, float x, float y, float z, LightInstance l, float r, float g, float b)
+    private static void drawSpot(VertexConsumer buf, Matrix4f m, float x, float y, float z, LightInstance l, float r, float g, float b)
     {
         // Normalize direction vector (defaults straight down when degenerate).
         float dx = l.dx, dy = l.dy, dz = l.dz;
@@ -160,7 +157,7 @@ public final class LightGuideRenderer
         }
     }
 
-    private static void line(BufferBuilder buf, Matrix4f m, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
+    private static void line(VertexConsumer buf, Matrix4f m, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
     {
         buf.addVertex(m, x1, y1, z1).setColor(r, g, b, 1f);
         buf.addVertex(m, x2, y2, z2).setColor(r, g, b, 1f);

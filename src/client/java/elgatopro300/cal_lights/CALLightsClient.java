@@ -106,14 +106,14 @@ public class CALLightsClient implements ClientModInitializer {
             }
             
             while (editorKeyBinding.consumeClick()) {
-                if (client.player != null && client.screen == null) {
-                    client.setScreen(new CALEditorScreen());
+                if (client.player != null && client.gui.screen() == null) {
+                    client.gui.setScreen(new CALEditorScreen());
                 }
             }
 
             while (createLightKeyBinding.consumeClick()) {
                 if (client.player != null) {
-                    Vec3 p = client.gameRenderer.getMainCamera().position();
+                    Vec3 p = client.gameRenderer.mainCamera().position();
                     int id = ThreadLocalRandom.current().nextInt(100000, 999999);
                     boolean isSpot = ThreadLocalRandom.current().nextBoolean();
                     if (isSpot) {
