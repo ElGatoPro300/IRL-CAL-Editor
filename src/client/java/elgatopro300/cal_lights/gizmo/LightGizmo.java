@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
@@ -27,8 +28,8 @@ import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import com.mojang.blaze3d.systems.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
 
 import java.util.Collection;
 
@@ -209,13 +210,12 @@ public class LightGizmo {
         Vec3d camPos = camera.getPos();
 
         Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
-        VertexSorter prevSorter = RenderSystem.getVertexSorting();
-        RenderSystem.setProjectionMatrix(lastProjectionMatrix, VertexSorter.BY_DISTANCE);
+        ProjectionType prevProjectionType = RenderSystem.getProjectionType();
+        RenderSystem.setProjectionMatrix(lastProjectionMatrix, ProjectionType.PERSPECTIVE);
 
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
         mvStack.set(capturedModelView);
-        RenderSystem.applyModelViewMatrix();
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -239,8 +239,7 @@ public class LightGizmo {
         RenderSystem.enableDepthTest();
 
         mvStack.popMatrix();
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.setProjectionMatrix(prevProjection, prevSorter);
+        RenderSystem.setProjectionMatrix(prevProjection, prevProjectionType);
     }
 
     private void drawBillboards(MatrixStack stack, Vec3d camPos, Collection<LightInstance> lights, boolean isSpot) {
@@ -269,15 +268,15 @@ public class LightGizmo {
             if (icon.staticTexture != null && icon.tintTexture != null) {
                 int tintColor = (light == selectedLight) ? 0xFFFFAA00 : (0xFF000000 | ((int) (light.r * 255) << 16) | ((int) (light.g * 255) << 8) | (int) (light.b * 255));
                 icon.tintTexture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.tintTexture, icon.x, icon.y, icon.w, icon.h, tintColor);
 
                 icon.staticTexture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 drawBillboardQuad(stack, size, icon.staticTexture, icon.x, icon.y, icon.w, icon.h, 0xFFFFFFFF);
             } else if (icon.texture != null) {
                 icon.texture.bind();
-                RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+                RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
                 int color = (light == selectedLight) ? 0xFFFFAA00 : 0xFFFFFFFF;
                 drawBillboardQuad(stack, size, icon.texture, icon.x, icon.y, icon.w, icon.h, color);
             }
@@ -308,7 +307,7 @@ public class LightGizmo {
         stack.push();
         stack.translate(light.x - camPos.x, light.y - camPos.y, light.z - camPos.z);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
@@ -493,7 +492,7 @@ public class LightGizmo {
 
         this.updateFlipSigns(camPos, light);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
