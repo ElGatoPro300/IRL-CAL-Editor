@@ -48,9 +48,22 @@ public final class RedactorEntityCasterSource implements ShadowCasterSource
     }
 
     @Override
-    public void emitOccluder(Object caster, int type, float tickDelta, OccluderBatch batch)
-    {
-        if (!(caster instanceof Entity))
+    public void emitOccluder(Object caster, int type, float tickDelta, OccluderBatch batch) {
+        ImmediateOccluderBatch b = (ImmediateOccluderBatch) batch;
+        drawEntity((Entity) caster, b.matrices(), b.immediate(), tickDelta);
+    }
+
+    private static void drawEntity(Entity entity, MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta) {
+        double ox = ShadowRenderer.currentOriginX();
+        double oy = ShadowRenderer.currentOriginY();
+        double oz = ShadowRenderer.currentOriginZ();
+        double cx = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX()) - ox;
+        double cy = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY()) - oy;
+        double cz = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ()) - oz;
+        float yaw = entity.getYaw(tickDelta);
+
+        EntityRenderDispatcher dispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
+        if (dispatcher != null)
         {
             return;
         }

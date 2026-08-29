@@ -80,7 +80,7 @@ public class AnimationEditorPanel extends CLUIElement {
         this.light = light;
         this.onUpdate = onUpdate;
 
-        kfTickPad = new CLUITrackpad("Tiempo", 0, 0, 60000, val -> {
+        kfTickPad = new CLUITrackpad(CALKeys.TIME_LABEL, 0, 0, 60000, val -> {
             LightKeyframe kf = getSelectedKeyframe();
             if (kf != null) {
                 kf.tick = parseTimeToMs(val);
@@ -113,7 +113,7 @@ public class AnimationEditorPanel extends CLUIElement {
             }
         });
 
-        trackDurationPad = new CLUITrackpad("Duración", 2000, 100, 60000, val -> {
+        trackDurationPad = new CLUITrackpad(CALKeys.DURATION_LABEL, 2000, 100, 60000, val -> {
             LightAnimationTrack tr = getSelectedTrackObj();
             if (tr != null) {
                 tr.duration = parseTimeToMs(val);

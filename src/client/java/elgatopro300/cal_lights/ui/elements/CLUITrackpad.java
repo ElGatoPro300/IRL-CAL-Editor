@@ -4,6 +4,7 @@ import elgatopro300.cal_lights.manager.CALUndoManager;
 import elgatopro300.cal_lights.ui.CLUIContext;
 import elgatopro300.cal_lights.ui.CLUIElement;
 import elgatopro300.cal_lights.ui.CalSettings;
+import elgatopro300.cal_lights.ui.IKey;
 import elgatopro300.cal_lights.ui.panels.AnimationEditorPanel;
 
 import net.minecraft.client.MinecraftClient;
@@ -24,7 +25,8 @@ public class CLUITrackpad extends CLUIElement {
     private int dragStartX;
     private float dragStartVal;
     private Consumer<Float> onChange;
-    private String label;
+    private IKey labelKey;
+    private String rawLabel;
     private String editBuffer = "";
     private int cursorIdx = 0;
     private float hoverAnim = 0.0f;
@@ -50,13 +52,28 @@ public class CLUITrackpad extends CLUIElement {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
+    public CLUITrackpad(IKey labelKey, float initial, float min, float max, Consumer<Float> onChange) {
+        this.labelKey = labelKey;
+        this.rawLabel = null;
+        this.value = initial;
+        this.min = min;
+        this.max = max;
+        this.onChange = onChange;
+        configureArrowStep(getLabel());
+    }
+
     public CLUITrackpad(String label, float initial, float min, float max, Consumer<Float> onChange) {
-        this.label = label;
+        this.rawLabel = label;
+        this.labelKey = null;
         this.value = initial;
         this.min = min;
         this.max = max;
         this.onChange = onChange;
         configureArrowStep(label);
+    }
+
+    public String getLabel() {
+        return labelKey != null ? labelKey.get() : (rawLabel != null ? rawLabel : "");
     }
 
     private void configureArrowStep(String label) {
@@ -75,8 +92,17 @@ public class CLUITrackpad extends CLUIElement {
         }
     }
 
+    public void updateConfig(IKey labelKey, float min, float max) {
+        this.labelKey = labelKey;
+        this.rawLabel = null;
+        this.min = min;
+        this.max = max;
+        configureArrowStep(getLabel());
+    }
+
     public void updateConfig(String label, float min, float max) {
-        this.label = label;
+        this.rawLabel = label;
+        this.labelKey = null;
         this.min = min;
         this.max = max;
         configureArrowStep(label);
@@ -101,6 +127,7 @@ public class CLUITrackpad extends CLUIElement {
 
     @Override
     public void render(CLUIContext ctx) {
+        String label = getLabel();
         boolean isTranslation = label.equals("X") || label.equals("Y") || label.equals("Z");
         boolean isRotation = label.equals("RX") || label.equals("RY") || label.equals("RZ");
         boolean isBadge = isTranslation || isRotation || label.isEmpty();
@@ -278,6 +305,7 @@ public class CLUITrackpad extends CLUIElement {
 
     @Override
     public boolean mouseClicked(int mx, int my, int btn) {
+        String label = getLabel();
         boolean isTranslation = label.equals("X") || label.equals("Y") || label.equals("Z");
         boolean isRotation = label.equals("RX") || label.equals("RY") || label.equals("RZ");
         boolean isBadge = isTranslation || isRotation || label.isEmpty();

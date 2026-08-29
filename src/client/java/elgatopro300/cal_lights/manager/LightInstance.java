@@ -9,7 +9,7 @@ public class LightInstance {
     public boolean visible = true;
     
     // Position
-    public float x, y, z;
+    public double x, y, z;
     
     // Color (R, G, B floats 0-1)
     public float r = 1f;
@@ -48,36 +48,40 @@ public class LightInstance {
     //   anisotropy -> aniso parameter (-0.95..0.95)
     public boolean fogEnabled = true;
     public float beamStrength = 1.0f;    // volumetric beam strength (0..5)
-    public float vlDensity = 0.05f;      // volumetric density (0.005..0.5)
-    public float anisotropy = 0.4f;      // Henyey-Greenstein g (-0.95..0.95)
+    public float vlDensity = 0.05f;      // volumetric fog density (0.005..0.5)
+    public float anisotropy = 0.4f;      // volumetric scattering anisotropy (-0.95..0.95)
 
-    // Shadow properties
-    // bulbSize maps to the 'bulb' parameter in IRL Core (0..2)
-    // This controls shadow softness (0 = hard / shader global, 2 = very soft)
-    public boolean shadowEnabled = true;
-    public float bulbSize = 0.0f;        // shadow softness / penumbra (0..2)
+    // Shadow Mapping properties
+    public boolean shadowEnabled = false; // per-light shadow mapping switch
+    public float bulbSize = 0.0f;          // shadow softness / light source radius (0..2)
 
-    // Exclusions
-    public boolean entitiesOnly = false;
-    public boolean blocksOnly = false;
+    // Selective Lighting Filters
+    public boolean entitiesOnly = false;   // affect entities only (skip block lightmap)
+    public boolean blocksOnly   = false;   // affect blocks only (skip entity lighting)
 
-    // Gobo properties
-    public String goboName = "None";
-    public float goboRotation = 0.0f;    // degrees in UI, converted to radians for API
-    public float cookieScale = 1.0f;
-    public boolean cookieInvert = false;
-    
+    // Gobo / Cookie Texture Masking
+    public String goboName = "None";       // gobo asset identifier
+    public float goboRotation = 0.0f;     // gobo rotation angle in degrees
+    public float cookieScale = 1.0f;       // gobo texture UV scale
+    public boolean cookieInvert = false;   // invert gobo mask intensity
+
+    // Persist light across world saves
+    public boolean persistent = false;
+
+    // Tick counter for automatic disposal of non-persistent lights
+    public int counter = 2;
+
     // Coordinates specialized for shaders (replays/model blocks)
-    public Float shaderX = null;
-    public Float shaderY = null;
-    public Float shaderZ = null;
+    public Double shaderX = null;
+    public Double shaderY = null;
+    public Double shaderZ = null;
     public Float shaderDx = null;
     public Float shaderDy = null;
     public Float shaderDz = null;
 
-    public float getShaderX() { return shaderX != null ? shaderX : x; }
-    public float getShaderY() { return shaderY != null ? shaderY : y; }
-    public float getShaderZ() { return shaderZ != null ? shaderZ : z; }
+    public double getShaderX() { return shaderX != null ? shaderX : x; }
+    public double getShaderY() { return shaderY != null ? shaderY : y; }
+    public double getShaderZ() { return shaderZ != null ? shaderZ : z; }
     public float getShaderDx() { return shaderDx != null ? shaderDx : dx; }
     public float getShaderDy() { return shaderDy != null ? shaderDy : dy; }
     public float getShaderDz() { return shaderDz != null ? shaderDz : dz; }
@@ -93,10 +97,6 @@ public class LightInstance {
         return Math.min(inner, angle);
     }
 
-    public int counter = 2; // lifecycle ticks
-    public boolean persistent = false; // if true, won't be deleted by tick() decrement
-
-    // Animation
     /** Optional animation state. When non-null and enabled, overrides live values every tick. */
     public LightAnimation animation = null;
 
@@ -108,7 +108,7 @@ public class LightInstance {
         this.counter = 2; // stays alive for 2 ticks (prevents deletion on frame gaps)
     }
 
-    public void setPoint(float x, float y, float z, float r, float g, float b, float intensity, float radius) {
+    public void setPoint(double x, double y, double z, float r, float g, float b, float intensity, float radius) {
         this.isSpot = false;
         this.x = x; this.y = y; this.z = z;
         this.r = r; this.g = g; this.b = b;
@@ -122,7 +122,7 @@ public class LightInstance {
         this.shaderDz = null;
     }
 
-    public void setSpot(float x, float y, float z, float dx, float dy, float dz, float r, float g, float b, float intensity, float angle, float soft, float distance) {
+    public void setSpot(double x, double y, double z, float dx, float dy, float dz, float r, float g, float b, float intensity, float angle, float soft, float distance) {
         this.isSpot = true;
         this.x = x; this.y = y; this.z = z;
         this.dx = dx; this.dy = dy; this.dz = dz;

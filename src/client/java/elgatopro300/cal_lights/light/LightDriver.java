@@ -9,7 +9,8 @@ import org.qualet.irl.light.FramePipeline;
 import org.qualet.irl.light.LightBuffer;
 import org.qualet.irl.light.LightMath;
 import org.qualet.irl.light.LightRegistry;
-import org.qualet.irl.light.shadow.PointShadowArray;
+import org.qualet.irl.light.VlGlobalsBuffer;
+import org.qualet.irl.light.shadow.PointDepthAtlas;
 import org.qualet.irl.light.shadow.ShadowBaker;
 
 import net.minecraft.client.world.ClientWorld;
@@ -33,6 +34,36 @@ public final class LightDriver {
     }
 
     public static void collect(ClientWorld world, Vec3d cameraPos, float tickDelta) {
+        // Track the global-VL knobs each frame: they land in the globals UBO
+        // (binding 7) on the SSBO upload, so UBO-era shader patches read every
+        // VL number and flag live without a recompile.
+        VlGlobalsBuffer.set(
+            LightConfig.vlIntensity(),
+            LightConfig.vlMaxDist(),
+            LightConfig.vlTipBoost(),
+            LightConfig.vlTipRadius(),
+            LightConfig.vlNoiseAmount(),
+            LightConfig.vlNoiseScale(),
+            LightConfig.vlNoiseSpeed(),
+            LightConfig.vlNoiseMorph(),
+            LightConfig.vlSteps(),
+            LightConfig.vlShadowStride(),
+            LightConfig.vlNoiseStride(),
+            (LightConfig.vlShadows() ? 1 : 0) | (LightConfig.vlNoise() ? 2 : 0)
+                | (LightConfig.vlBlueNoise() ? 4 : 0) | (LightConfig.vlDitherTemporal() ? 8 : 0)
+                | (LightConfig.vlClusterCull() ? 16 : 0) | (LightConfig.vlShadowHiz() ? 32 : 0)
+                | 64);   // bit6 = depth-aware bilateral VL upsample, always on (no UI knob)
+
+        // Outline knobs -> globals UBO (also live)
+        VlGlobalsBuffer.setOutline(
+            LightConfig.outline, LightConfig.outlineTarget, LightConfig.outlineStrength,
+            LightConfig.outlineFresnelPower, LightConfig.outlineBack, LightConfig.outlineFront,
+            LightConfig.outlineFrontStrength, LightConfig.outlineGlow, LightConfig.outlineGlowStrength,
+            LightConfig.outlinePixelSize);
+
+        // Live shadow knobs (master enable + default penumbra width) -> globals UBO
+        VlGlobalsBuffer.setShadow(LightConfig.shadowsLive, LightConfig.shadowSoftness);
+
         if (world == null || cameraPos == null) {
             return;
         }
@@ -59,9 +90,9 @@ public final class LightDriver {
             int headroom = Math.max(0, LightBuffer.MAX_LIGHTS - LightRegistry.getCount());
             int feedMax = Math.min(LightConfig.autoLightMax(), headroom);
 
-            autoShadowRamp = Math.min(PointShadowArray.MAX_SHADOWS, autoShadowRamp + AUTO_SHADOW_RAMP_STEP);
+            autoShadowRamp = Math.min(PointDepthAtlas.blockCount(), autoShadowRamp + AUTO_SHADOW_RAMP_STEP);
             int shadowBudget = LightConfig.autoLightShadows()
-                ? Math.min(autoShadowRamp, Math.max(0, PointShadowArray.MAX_SHADOWS - manualShadowPoints))
+                ? Math.min(autoShadowRamp, Math.max(0, PointDepthAtlas.blockCount() - manualShadowPoints))
                 : 0;
 
             List<PlacedLight> autos = AutoLightManager.nearest(cameraPos, feedMax);
@@ -90,7 +121,7 @@ public final class LightDriver {
             l.intensity, l.radius,
             l.entitiesOnly, l.blocksOnly,
             l.anisotropy, l.vlDensity, beamStrength, l.bulbSize,
-            l.shadowEnabled, (long) l.id
+            l.shadowEnabled && !LightConfig.holdBake, (long) l.id
         );
     }
 
@@ -110,7 +141,7 @@ public final class LightDriver {
             l.intensity, l.distance, cone.cosOuter(), cone.cosInner(),
             l.entitiesOnly, l.blocksOnly,
             l.anisotropy, l.vlDensity, beamStrength, l.bulbSize,
-            l.shadowEnabled,
+            l.shadowEnabled && !LightConfig.holdBake,
             (float) cookieLayer, cookieRot, l.cookieScale, cookieFlags,
             (long) l.id
         );
@@ -118,12 +149,12 @@ public final class LightDriver {
 
     private static void emitAutoPoint(PlacedLight l) {
         LightRegistry.registerPoint(
-            (float) l.x, (float) l.y, (float) l.z,
+            l.x, l.y, l.z,
             l.r, l.g, l.b,
             l.intensity, l.radius,
             l.entitiesOnly, l.blocksOnly,
             l.anisotropy, l.vlDensity, l.beamStrength, l.bulbSize,
-            l.shadows, l.id
+            l.shadows && !LightConfig.holdBake, l.id
         );
     }
 }
