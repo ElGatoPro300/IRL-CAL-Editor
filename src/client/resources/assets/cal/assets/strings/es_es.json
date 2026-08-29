@@ -273,7 +273,6 @@
   "cal.bbs.tooltip.outline_enabled": "Activar o desactivar contorno de la luz",
   "cal.bbs.tooltip.outline_intensity": "Escalar la intensidad del contorno de la luz",
   "cal.bbs.tooltip.outline_thickness": "Escalar el grosor del contorno de la luz",
-
   "cal.ui.patcher_shaderpacks": "Shaderpacks",
   "cal.ui.patcher_patches": "Parches de Compatibilidad",
   "cal.ui.patcher_newpack": "Crear nuevo pack (no sobrescribir)",
@@ -297,7 +296,6 @@
   "cal.ui.patcher_meta_pickpack_notarget": "Selecciona un shaderpack para aplicar este parche.",
   "cal.ui.patcher_meta_mismatch": "Advertencia: El shaderpack no coincide con el objetivo del parche '%s'",
   "cal.ui.patcher_meta_match": "El shaderpack coincide con el objetivo: '%s'",
-
   "cal.ui.motor": "Motor",
   "cal.ui.presets": "Ajustes Preestablecidos",
   "cal.ui.shadows": "Sombras",
@@ -326,7 +324,6 @@
   "cal.panel.exclusions": "Exclusiones",
   "cal.prop.entities_only": "Solo Entidades",
   "cal.prop.blocks_only": "Solo Bloques",
-
   "cal.ui.shadow_softness": "Suavizado de Sombras",
   "cal.ui.shadows_live": "Habilitar Sombras (Live)",
   "cal.ui.hold_bake": "Pausar Bakeado Inicial (Hold)",
@@ -358,5 +355,13 @@
   "cal.ui.outline_fresnel_power": "Exp. Fresnel",
   "cal.ui.outline_back": "Brillo Posterior",
   "cal.ui.outline_front_strength": "Fuerza Frontal",
-  "cal.ui.outline_glow_strength": "Fuerza de Brillo"
+  "cal.ui.outline_glow_strength": "Fuerza de Brillo",
+  "cal.ui.gizmo_mode_move": "Mover",
+  "cal.ui.gizmo_mode_rotate": "Rotar",
+  "cal.ui.gizmo_mode_combined": "Combinado",
+  "cal.ui.target_all": "TODOS",
+  "cal.ui.target_entities": "ENTIDADES",
+  "cal.ui.target_blocks": "BLOQUES",
+  "cal.ui.time_label": "Tiempo",
+  "cal.ui.duration_label": "Duración"
 }

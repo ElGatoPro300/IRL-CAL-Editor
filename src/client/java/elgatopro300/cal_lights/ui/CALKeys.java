@@ -274,4 +274,12 @@ public class CALKeys {
     public static final IKey PROP_DIRECTION = IKey.lang("cal.prop.direction");
     public static final IKey PROP_GOBO_REFRESH = IKey.lang("cal.prop.gobo_refresh");
     public static final IKey PROP_GOBO_FOLDER = IKey.lang("cal.prop.gobo_folder");
+    public static final IKey GIZMO_MODE_MOVE = IKey.lang("cal.ui.gizmo_mode_move");
+    public static final IKey GIZMO_MODE_ROTATE = IKey.lang("cal.ui.gizmo_mode_rotate");
+    public static final IKey GIZMO_MODE_COMBINED = IKey.lang("cal.ui.gizmo_mode_combined");
+    public static final IKey TARGET_ALL = IKey.lang("cal.ui.target_all");
+    public static final IKey TARGET_ENTITIES = IKey.lang("cal.ui.target_entities");
+    public static final IKey TARGET_BLOCKS = IKey.lang("cal.ui.target_blocks");
+    public static final IKey TIME_LABEL = IKey.lang("cal.ui.time_label");
+    public static final IKey DURATION_LABEL = IKey.lang("cal.ui.duration_label");
 }

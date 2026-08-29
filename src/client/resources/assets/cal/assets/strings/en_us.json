@@ -273,7 +273,6 @@
   "cal.bbs.tooltip.outline_enabled": "Toggle light outline",
   "cal.bbs.tooltip.outline_intensity": "Scale light outline intensity",
   "cal.bbs.tooltip.outline_thickness": "Scale light outline thickness",
-
   "cal.ui.patcher_shaderpacks": "Shaderpacks",
   "cal.ui.patcher_patches": "Compatibility Patches",
   "cal.ui.patcher_newpack": "Create new pack (don't overwrite)",
@@ -297,7 +296,6 @@
   "cal.ui.patcher_meta_pickpack_notarget": "Select a shaderpack to apply this patch.",
   "cal.ui.patcher_meta_mismatch": "Warning: Shaderpack doesn't match patch target '%s'",
   "cal.ui.patcher_meta_match": "Shaderpack matches target: '%s'",
-
   "cal.ui.motor": "Engine",
   "cal.ui.presets": "Presets",
   "cal.ui.shadows": "Shadows",
@@ -326,7 +324,6 @@
   "cal.panel.exclusions": "Exclusions",
   "cal.prop.entities_only": "Entities Only",
   "cal.prop.blocks_only": "Blocks Only",
-
   "cal.ui.shadow_softness": "Shadow Softness",
   "cal.ui.shadows_live": "Enable Live Shadows",
   "cal.ui.hold_bake": "Pause Initial Bake (Hold)",
@@ -358,5 +355,13 @@
   "cal.ui.outline_fresnel_power": "Fresnel Exp.",
   "cal.ui.outline_back": "Back Glow",
   "cal.ui.outline_front_strength": "Front Strength",
-  "cal.ui.outline_glow_strength": "Glow Strength"
+  "cal.ui.outline_glow_strength": "Glow Strength",
+  "cal.ui.gizmo_mode_move": "Move",
+  "cal.ui.gizmo_mode_rotate": "Rotate",
+  "cal.ui.gizmo_mode_combined": "Combined",
+  "cal.ui.target_all": "ALL",
+  "cal.ui.target_entities": "ENTITIES",
+  "cal.ui.target_blocks": "BLOCKS",
+  "cal.ui.time_label": "Time",
+  "cal.ui.duration_label": "Duration"
 }

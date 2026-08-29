@@ -157,70 +157,70 @@ public class CALEditorPanel extends CLUIElement {
     public boolean searchFocused = false;
 
     public CALEditorPanel() {
-        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS.get(), LightConfig.shadowBlockRadius, 4f, 96f, val -> {
+        this.trackShadowBlockRadius = new CLUITrackpad(CALKeys.SHADOW_BLOCK_RADIUS, LightConfig.shadowBlockRadius, 4f, 96f, val -> {
             LightConfig.shadowBlockRadius = Math.round(val);
         }).setArrowStep(1f);
-        this.trackShadowSoftness = new CLUITrackpad(CALKeys.SHADOW_SOFTNESS.get(), LightConfig.shadowSoftness, 0.0f, 0.8f, val -> {
+        this.trackShadowSoftness = new CLUITrackpad(CALKeys.SHADOW_SOFTNESS, LightConfig.shadowSoftness, 0.0f, 0.8f, val -> {
             LightConfig.shadowSoftness = val;
         }).setArrowStep(0.01f);
 
-        this.trackVlIntensity = new CLUITrackpad(CALKeys.VL_INTENSITY.get(), LightConfig.vlIntensity, 0.0f, 5.0f, val -> {
+        this.trackVlIntensity = new CLUITrackpad(CALKeys.VL_INTENSITY, LightConfig.vlIntensity, 0.0f, 5.0f, val -> {
             LightConfig.vlIntensity = val;
         }).setArrowStep(0.05f);
-        this.trackVlSteps = new CLUITrackpad(CALKeys.VL_STEPS.get(), LightConfig.vlSteps, 1f, 96f, val -> {
+        this.trackVlSteps = new CLUITrackpad(CALKeys.VL_STEPS, LightConfig.vlSteps, 1f, 96f, val -> {
             LightConfig.vlSteps = Math.round(val);
         }).setArrowStep(1f);
-        this.trackVlMaxDist = new CLUITrackpad(CALKeys.VL_MAX_DIST.get(), LightConfig.vlMaxDist, 10f, 300f, val -> {
+        this.trackVlMaxDist = new CLUITrackpad(CALKeys.VL_MAX_DIST, LightConfig.vlMaxDist, 10f, 300f, val -> {
             LightConfig.vlMaxDist = val;
         }).setArrowStep(5f);
-        this.trackVlTipBoost = new CLUITrackpad(CALKeys.VL_TIP_BOOST.get(), LightConfig.vlTipBoost, 0.0f, 10.0f, val -> {
+        this.trackVlTipBoost = new CLUITrackpad(CALKeys.VL_TIP_BOOST, LightConfig.vlTipBoost, 0.0f, 10.0f, val -> {
             LightConfig.vlTipBoost = val;
         }).setArrowStep(0.1f);
-        this.trackVlTipRadius = new CLUITrackpad(CALKeys.VL_TIP_RADIUS.get(), LightConfig.vlTipRadius, 0.0f, 10.0f, val -> {
+        this.trackVlTipRadius = new CLUITrackpad(CALKeys.VL_TIP_RADIUS, LightConfig.vlTipRadius, 0.0f, 10.0f, val -> {
             LightConfig.vlTipRadius = val;
         }).setArrowStep(0.1f);
-        this.trackVlNoiseAmount = new CLUITrackpad(CALKeys.VL_NOISE_AMOUNT.get(), LightConfig.vlNoiseAmount, 0.0f, 1.0f, val -> {
+        this.trackVlNoiseAmount = new CLUITrackpad(CALKeys.VL_NOISE_AMOUNT, LightConfig.vlNoiseAmount, 0.0f, 1.0f, val -> {
             LightConfig.vlNoiseAmount = val;
         }).setArrowStep(0.05f);
-        this.trackVlNoiseScale = new CLUITrackpad(CALKeys.VL_NOISE_SCALE.get(), LightConfig.vlNoiseScale, 0.1f, 10.0f, val -> {
+        this.trackVlNoiseScale = new CLUITrackpad(CALKeys.VL_NOISE_SCALE, LightConfig.vlNoiseScale, 0.1f, 10.0f, val -> {
             LightConfig.vlNoiseScale = val;
         }).setArrowStep(0.1f);
-        this.trackVlNoiseSpeed = new CLUITrackpad(CALKeys.VL_NOISE_SPEED.get(), LightConfig.vlNoiseSpeed, 0.0f, 5.0f, val -> {
+        this.trackVlNoiseSpeed = new CLUITrackpad(CALKeys.VL_NOISE_SPEED, LightConfig.vlNoiseSpeed, 0.0f, 5.0f, val -> {
             LightConfig.vlNoiseSpeed = val;
         }).setArrowStep(0.25f);
-        this.trackVlNoiseMorph = new CLUITrackpad(CALKeys.VL_NOISE_MORPH.get(), LightConfig.vlNoiseMorph, 0.0f, 3.0f, val -> {
+        this.trackVlNoiseMorph = new CLUITrackpad(CALKeys.VL_NOISE_MORPH, LightConfig.vlNoiseMorph, 0.0f, 3.0f, val -> {
             LightConfig.vlNoiseMorph = val;
         }).setArrowStep(0.25f);
 
-        this.trackOutlineStrength = new CLUITrackpad(CALKeys.OUTLINE_STRENGTH.get(), LightConfig.outlineStrength, 0.0f, 3.0f, val -> {
+        this.trackOutlineStrength = new CLUITrackpad(CALKeys.OUTLINE_STRENGTH, LightConfig.outlineStrength, 0.0f, 3.0f, val -> {
             LightConfig.outlineStrength = val;
         }).setArrowStep(0.05f);
-        this.trackOutlinePixelSize = new CLUITrackpad(CALKeys.OUTLINE_PIXEL_SIZE.get(), LightConfig.outlinePixelSize, 1f, 6f, val -> {
+        this.trackOutlinePixelSize = new CLUITrackpad(CALKeys.OUTLINE_PIXEL_SIZE, LightConfig.outlinePixelSize, 1f, 6f, val -> {
             LightConfig.outlinePixelSize = Math.round(val);
         }).setArrowStep(1f);
-        this.trackOutlineFresnelPower = new CLUITrackpad(CALKeys.OUTLINE_FRESNEL_POWER.get(), LightConfig.outlineFresnelPower, 0.1f, 10.0f, val -> {
+        this.trackOutlineFresnelPower = new CLUITrackpad(CALKeys.OUTLINE_FRESNEL_POWER, LightConfig.outlineFresnelPower, 0.1f, 10.0f, val -> {
             LightConfig.outlineFresnelPower = val;
         }).setArrowStep(0.1f);
-        this.trackOutlineBack = new CLUITrackpad(CALKeys.OUTLINE_BACK.get(), LightConfig.outlineBack, 0.0f, 2.0f, val -> {
+        this.trackOutlineBack = new CLUITrackpad(CALKeys.OUTLINE_BACK, LightConfig.outlineBack, 0.0f, 2.0f, val -> {
             LightConfig.outlineBack = val;
         }).setArrowStep(0.05f);
-        this.trackOutlineFrontStrength = new CLUITrackpad(CALKeys.OUTLINE_FRONT_STRENGTH.get(), LightConfig.outlineFrontStrength, 0.0f, 1.5f, val -> {
+        this.trackOutlineFrontStrength = new CLUITrackpad(CALKeys.OUTLINE_FRONT_STRENGTH, LightConfig.outlineFrontStrength, 0.0f, 1.5f, val -> {
             LightConfig.outlineFrontStrength = val;
         }).setArrowStep(0.05f);
-        this.trackOutlineGlowStrength = new CLUITrackpad(CALKeys.OUTLINE_GLOW_STRENGTH.get(), LightConfig.outlineGlowStrength, 0.0f, 1.0f, val -> {
+        this.trackOutlineGlowStrength = new CLUITrackpad(CALKeys.OUTLINE_GLOW_STRENGTH, LightConfig.outlineGlowStrength, 0.0f, 1.0f, val -> {
             LightConfig.outlineGlowStrength = val;
         }).setArrowStep(0.05f);
 
-        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY.get(), LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
+        this.trackAutoLightIntensity = new CLUITrackpad(CALKeys.AUTO_LIGHT_INTENSITY, LightConfig.autoLightIntensity, 0.0f, 5.0f, val -> {
             LightConfig.autoLightIntensity = val;
         }).setArrowStep(0.05f);
-        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH.get(), LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
+        this.trackAutoLightReach = new CLUITrackpad(CALKeys.AUTO_LIGHT_REACH, LightConfig.autoLightReach, 0.25f, 3.0f, val -> {
             LightConfig.autoLightReach = val;
         }).setArrowStep(0.05f);
-        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS.get(), LightConfig.autoLightRadius, 8f, 96f, val -> {
+        this.trackAutoLightRadius = new CLUITrackpad(CALKeys.AUTO_LIGHT_RADIUS, LightConfig.autoLightRadius, 8f, 96f, val -> {
             LightConfig.autoLightRadius = Math.round(val);
         }).setArrowStep(1f);
-        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX.get(), LightConfig.autoLightMax, 0f, 2000f, val -> {
+        this.trackAutoLightMax = new CLUITrackpad(CALKeys.AUTO_LIGHT_MAX, LightConfig.autoLightMax, 0f, 2000f, val -> {
             LightConfig.autoLightMax = Math.round(val);
         }).setArrowStep(10f);
 
@@ -454,7 +454,7 @@ public class CALEditorPanel extends CLUIElement {
         int modeStartX = animLeftPanelW + 235;
         LightGizmo.Mode currentMode = LightGizmo.INSTANCE.getMode();
         LightGizmo.Mode[] modes = { LightGizmo.Mode.TRANSLATE, LightGizmo.Mode.ROTATE, LightGizmo.Mode.COMBINED };
-        String[] modeLabels = { "Move", "Rotate", "Combined" };
+        IKey[] modeLabels = { CALKeys.GIZMO_MODE_MOVE, CALKeys.GIZMO_MODE_ROTATE, CALKeys.GIZMO_MODE_COMBINED };
         int modeBtnW = 60;
 
         for (int i = 0; i < modes.length; i++) {
@@ -466,7 +466,9 @@ public class CALEditorPanel extends CLUIElement {
 
             ctx.batcher.box(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, bg);
             ctx.batcher.outline(btnX, topY + topMenuH + 2, btnX + modeBtnW, topY + topMenuH + 18, border, 1);
-            ctx.batcher.text(modeLabels[i], btnX + 8, topY + topMenuH + 5, isSelected ? 0xFFFFFFFF : (hoverMode ? 0xFFFFAA00 : 0xFFCCCCCC));
+            String labelStr = modeLabels[i].get();
+            int lblW = MinecraftClient.getInstance().textRenderer.getWidth(labelStr);
+            ctx.batcher.text(labelStr, btnX + (modeBtnW - lblW) / 2, topY + topMenuH + 5, isSelected ? 0xFFFFFFFF : (hoverMode ? 0xFFFFAA00 : 0xFFCCCCCC));
         }
 
         // --- RENDER LEFT SIDEBAR (ESQUEMA / LIST) ---
@@ -1245,7 +1247,7 @@ public class CALEditorPanel extends CLUIElement {
                 // Target segmented: ALL, ENTITIES, BLOCKS
                 ctx.batcher.text(CALKeys.OUTLINE_TARGET.get(), contentX, curY, 0xFFCCCCCC);
                 curY += 12;
-                String[] tLabels = {"ALL", "ENTITIES", "BLOCKS"};
+                IKey[] tLabels = { CALKeys.TARGET_ALL, CALKeys.TARGET_ENTITIES, CALKeys.TARGET_BLOCKS };
                 int segW = (colW - 6) / 3;
                 for (int i = 0; i < tLabels.length; i++) {
                     int btnX = contentX + i * (segW + 3);
@@ -1254,8 +1256,9 @@ public class CALEditorPanel extends CLUIElement {
                     int tBg = isCurrentT ? 0xFF1976D2 : (hoverT ? 0xFF2A2A35 : 0xFF1E1E24);
                     ctx.batcher.box(btnX, curY, btnX + segW, curY + 14, tBg);
                     ctx.batcher.outline(btnX, curY, btnX + segW, curY + 14, isCurrentT ? 0xFF64B5F6 : 0xFF3E3E4D, 1);
-                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(tLabels[i]);
-                    ctx.batcher.text(tLabels[i], btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
+                    String tStr = tLabels[i].get();
+                    int textW = MinecraftClient.getInstance().textRenderer.getWidth(tStr);
+                    ctx.batcher.text(tStr, btnX + (segW - textW) / 2, curY + 3, 0xFFFFFFFF);
                 }
                 curY += 20;
 
