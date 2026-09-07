@@ -44,6 +44,8 @@ loom {
 	}
 }
 
+def irlCoreJar = "irl-core-${project.irl_core_version}-${project.minecraft_version}.jar"
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -65,14 +67,20 @@ dependencies {
 	implementation 'io.github.java-diff-utils:java-diff-utils:4.15'
 	
 	// Local dependencies (Put these jars in 'libs' folder)
-	implementation files('libs/irl-core-1.1.5-26.2.jar')
+	implementation files("libs/${irlCoreJar}")
 }
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "minecraft_version", project.minecraft_version
+	inputs.property "irl_core_jar", irlCoreJar
 
 	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+		expand(
+			"version": project.version,
+			"minecraft_version": project.minecraft_version,
+			"irl_core_jar": irlCoreJar
+		)
 	}
 }
 
@@ -98,7 +106,7 @@ jar {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 
-	from("libs/irl-core-1.1.5-26.2.jar") {
+	from("libs/${irlCoreJar}") {
 		into "META-INF/jars"
 	}
 }
