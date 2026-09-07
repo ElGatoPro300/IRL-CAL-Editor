@@ -49,6 +49,17 @@ loom {
 	}
 }
 
+configurations.all {
+    resolutionStrategy {
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.lwjgl') {
+                details.useVersion '3.3.1'
+            }
+        }
+    }
+}
+
+def irlCoreJar = "irl-core-${project.irl_core_version}-${project.minecraft_version}.jar"
 
 dependencies {
 	// To change the versions see the gradle.properties file
