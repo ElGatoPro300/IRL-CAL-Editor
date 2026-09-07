@@ -49,8 +49,7 @@ loom {
 	}
 }
 
-def irlCoreVersion = project.hasProperty("irl_core_version") ? project.property("irl_core_version") : "1.1.5"
-def irlCoreJar = "irl-core-${irlCoreVersion}-${project.minecraft_version}.jar"
+def irlCoreJar = "irl-core-${project.irl_core_version}-${project.minecraft_version}.jar"
 
 dependencies {
 	// To change the versions see the gradle.properties file
