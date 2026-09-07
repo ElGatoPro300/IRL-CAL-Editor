@@ -67,7 +67,7 @@ dependencies {
 	implementation 'io.github.java-diff-utils:java-diff-utils:4.15'
 	
 	// Local dependencies (Put these jars in 'libs' folder)
-	modImplementation files("libs/${irlCoreJar}")
+	implementation files("libs/${irlCoreJar}")
 }
 
 processResources {
