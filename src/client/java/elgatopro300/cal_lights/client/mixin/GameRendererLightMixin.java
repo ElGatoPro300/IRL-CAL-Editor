@@ -40,6 +40,9 @@ public class GameRendererLightMixin {
             require = 1)
     private void irlite$uploadLights(RenderTickCounter tickCounter, CallbackInfo ci)
     {
+        if (FabricLoader.getInstance().isModLoaded("irlite")) {
+            return;
+        }
         FramePipeline.uploadIfPending();
     }
 }
